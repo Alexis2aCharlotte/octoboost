@@ -28,10 +28,13 @@ export async function GET(
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });
   }
 
+  const articles = variant.articles as unknown as { project_id: string; title: string };
+  const channels = variant.channels as unknown as { platform_type: string; name: string };
+
   const { data: project } = await supabase
     .from("projects")
     .select("id")
-    .eq("id", variant.articles.project_id)
+    .eq("id", articles.project_id)
     .eq("user_id", user.id)
     .single();
 
@@ -53,9 +56,9 @@ export async function GET(
     modelUsed: variant.model_used,
     createdAt: variant.created_at,
     updatedAt: variant.updated_at,
-    platformType: variant.channels.platform_type,
-    channelName: variant.channels.name,
-    masterTitle: variant.articles.title,
+    platformType: channels.platform_type,
+    channelName: channels.name,
+    masterTitle: articles.title,
   });
 }
 
@@ -86,10 +89,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });
   }
 
+  const patchArticles = variant.articles as unknown as { project_id: string };
+
   const { data: project } = await supabase
     .from("projects")
     .select("id")
-    .eq("id", variant.articles.project_id)
+    .eq("id", patchArticles.project_id)
     .eq("user_id", user.id)
     .single();
 
@@ -150,10 +155,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });
   }
 
+  const deleteArticles = variant.articles as unknown as { project_id: string };
+
   const { data: project } = await supabase
     .from("projects")
     .select("id")
-    .eq("id", variant.articles.project_id)
+    .eq("id", deleteArticles.project_id)
     .eq("user_id", user.id)
     .single();
 

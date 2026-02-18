@@ -35,7 +35,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Article not found" }, { status: 404 });
   }
 
-  if (article.projects.user_id !== user.id) {
+  const articleProjects = article.projects as unknown as {
+    id: string;
+    user_id: string;
+    name: string;
+    url: string;
+  };
+
+  if (articleProjects.user_id !== user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -89,8 +96,8 @@ export async function POST(req: NextRequest) {
       },
       platform: channel.platform_type,
       productContext: {
-        name: analysis?.site_title ?? article.projects.name ?? "",
-        url: article.projects.url,
+        name: analysis?.site_title ?? articleProjects.name ?? "",
+        url: articleProjects.url,
         summary: analysis?.product_summary ?? "",
       },
     });

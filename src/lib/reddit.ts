@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-interface RedditConfig {
+interface RedditConfig extends Record<string, unknown> {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;

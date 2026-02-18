@@ -39,10 +39,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });
   }
 
+  const pubArticles = variant.articles as unknown as {
+    title: string;
+    project_id: string;
+    canonical_url: string | null;
+    pillar_keyword: string | null;
+    supporting_keywords: string[] | null;
+  };
+  const pubChannels = variant.channels as unknown as {
+    id: string;
+    platform_type: string;
+    config: unknown;
+    project_id: string;
+  };
+
   const { data: project } = await supabase
     .from("projects")
     .select("id, user_id")
-    .eq("id", variant.articles.project_id)
+    .eq("id", pubArticles.project_id)
     .eq("user_id", user.id)
     .single();
 
@@ -57,8 +71,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const platform = variant.channels.platform_type;
-  const config = variant.channels.config as Record<string, unknown>;
+  const platform = pubChannels.platform_type;
+  const config = pubChannels.config as Record<string, unknown>;
 
   try {
     let publishedUrl: string;
@@ -69,7 +83,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No API key configured for Dev.to" }, { status: 400 });
       }
 
-      const tags = (variant.articles.supporting_keywords ?? [])
+      const tags = (pubArticles.supporting_keywords ?? [])
         .slice(0, 4)
         .map((k: string) => k.replace(/[^a-zA-Z0-9]/g, "").toLowerCase())
         .filter((t: string) => t.length > 0);
@@ -78,7 +92,7 @@ export async function POST(req: NextRequest) {
         title: variant.title,
         bodyMarkdown: variant.content,
         tags,
-        canonicalUrl: variant.articles.canonical_url ?? undefined,
+        canonicalUrl: pubArticles.canonical_url ?? undefined,
         published: true,
       });
 
@@ -96,7 +110,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const tags = (variant.articles.supporting_keywords ?? [])
+      const tags = (pubArticles.supporting_keywords ?? [])
         .slice(0, 5)
         .map((k: string) => k.replace(/[^a-zA-Z0-9]/g, "").toLowerCase())
         .filter((t: string) => t.length > 0);
@@ -105,7 +119,7 @@ export async function POST(req: NextRequest) {
         title: variant.title,
         bodyMarkdown: variant.content,
         tags,
-        canonicalUrl: variant.articles.canonical_url ?? undefined,
+        canonicalUrl: pubArticles.canonical_url ?? undefined,
       });
 
       publishedUrl = result.url;
@@ -165,7 +179,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const labels = (variant.articles.supporting_keywords ?? [])
+      const labels = (pubArticles.supporting_keywords ?? [])
         .slice(0, 5)
         .map((k: string) => k.replace(/[^a-zA-Z0-9]/g, "").toLowerCase())
         .filter((t: string) => t.length > 0);
@@ -232,7 +246,8 @@ export async function GET(req: NextRequest) {
     .eq("id", channelId)
     .single();
 
-  if (!channel || channel.projects.user_id !== user.id) {
+  const channelProjects = channel?.projects as unknown as { user_id: string } | null;
+  if (!channel || !channelProjects || channelProjects.user_id !== user.id) {
     return NextResponse.json({ error: "Channel not found" }, { status: 404 });
   }
 
