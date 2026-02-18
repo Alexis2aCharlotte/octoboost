@@ -428,7 +428,7 @@ export default function ArticlesPage() {
           <div
             className="prose prose-invert prose-lg max-w-none
               prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
-              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3
+              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border prose-h2:pb-3
               prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-base
               prose-p:text-[15px] prose-p:leading-[1.8] prose-p:text-muted
               prose-li:text-[15px] prose-li:text-muted prose-li:leading-[1.7]
@@ -500,7 +500,7 @@ export default function ArticlesPage() {
           </div>
 
           {previewArticle.outline.length > 0 && (
-            <div className="mt-4 border-t border-border/50 pt-4">
+            <div className="mt-4 border-t border-border pt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted/60">
                 Outline
               </p>
@@ -517,7 +517,7 @@ export default function ArticlesPage() {
 
         {/* ─── Distribution Section ─────────────────────── */}
         {channels.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
             <Radio className="mx-auto mb-3 h-6 w-6 text-muted" />
             <p className="text-sm text-muted">
               No channels configured yet.{" "}
@@ -593,7 +593,7 @@ export default function ArticlesPage() {
                         const meta = platformMeta[v.platformType];
                         const Icon = meta?.icon ?? Radio;
                         return (
-                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border/50 bg-card-hover/30 p-3">
+                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border bg-card-hover p-3">
                             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
                               <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
                             </div>
@@ -698,7 +698,7 @@ export default function ArticlesPage() {
                         const meta = platformMeta[v.platformType];
                         const Icon = meta?.icon ?? Radio;
                         return (
-                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border/50 bg-card-hover/30 p-3">
+                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border bg-card-hover p-3">
                             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
                               <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
                             </div>
@@ -752,7 +752,7 @@ export default function ArticlesPage() {
           <div
             className="prose prose-invert prose-lg max-w-none
               prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
-              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3
+              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border prose-h2:pb-3
               prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-base
               prose-p:text-[15px] prose-p:leading-[1.8] prose-p:text-muted
               prose-li:text-[15px] prose-li:text-muted prose-li:leading-[1.7]
@@ -778,7 +778,7 @@ export default function ArticlesPage() {
             Articles are generated from keyword clusters.
           </p>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-20">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card py-20">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <FileText className="h-7 w-7 text-accent-light" />
           </div>
@@ -973,7 +973,7 @@ function ArticleCard({
       </button>
 
       {isExpanded && (
-        <div className="border-t border-border/50 px-5 pb-5 pt-4">
+        <div className="border-t border-border px-5 pb-5 pt-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted/60">Topic</p>

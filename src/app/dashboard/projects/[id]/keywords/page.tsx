@@ -160,7 +160,7 @@ export default function ProjectKeywordsPage() {
             All keywords discovered across your analyses.
           </p>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-20">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card py-20">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <Search className="h-7 w-7 text-accent-light" />
           </div>
@@ -383,7 +383,7 @@ function KeywordsTab({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -403,7 +403,7 @@ function KeywordsTab({
               {keywords.map((kw) => (
                 <tr
                   key={kw.id}
-                  className="border-b border-border/50 transition hover:bg-card/80"
+                  className="border-b border-border transition hover:bg-card-hover"
                 >
                   <td className="px-4 py-3 font-medium">{kw.keyword}</td>
                   <td className="px-4 py-3">
@@ -470,7 +470,7 @@ function KeywordsTab({
 function ClustersTab({ clusters }: { clusters: Cluster[] }) {
   if (clusters.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-16">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card py-16">
         <Layers className="mb-3 h-8 w-8 text-muted" />
         <h3 className="mb-1 text-lg font-semibold">No clusters yet</h3>
         <p className="max-w-sm text-center text-sm text-muted">

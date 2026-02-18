@@ -110,7 +110,7 @@ export default function SettingsPage() {
             type="email"
             value={email}
             disabled
-            className="w-full rounded-lg border border-border bg-background/50 px-4 py-2.5 text-sm text-muted outline-none"
+            className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-muted outline-none"
           />
           <p className="mt-1 text-xs text-muted">
             Email cannot be changed at this time

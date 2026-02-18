@@ -18,7 +18,7 @@ export default function ProjectAnalyticsPage() {
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-20">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card py-20">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
           <BarChart3 className="h-7 w-7 text-accent-light" />
         </div>

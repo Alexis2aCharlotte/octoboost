@@ -405,7 +405,7 @@ export default function SchedulePage() {
       )}
 
       {!loading && variants.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
           <Calendar className="mx-auto h-10 w-10 text-muted/30" />
           <p className="mt-3 text-sm text-muted">Aucune variante planifiée</p>
           <p className="mt-1 text-xs text-muted/60">
