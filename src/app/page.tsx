@@ -1,20 +1,7 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Send, ArrowRight, Search } from "lucide-react";
+import { Send, ArrowRight } from "lucide-react";
 
 export default function Home() {
-  const [url, setUrl] = useState("");
-  const router = useRouter();
-
-  function handleAnalyze(e: React.FormEvent) {
-    e.preventDefault();
-    if (!url.trim()) return;
-    const encoded = encodeURIComponent(url.trim());
-    router.push(`/dashboard/analyze?url=${encoded}`);
-  }
 
   return (
     <main className="flex min-h-screen flex-col bg-background px-6 text-foreground">
@@ -51,28 +38,13 @@ export default function Home() {
           discover the keywords that will drive traffic.
         </p>
 
-        <form onSubmit={handleAnalyze} className="mx-auto w-full max-w-xl">
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-2 transition-colors focus-within:border-accent/50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-muted">
-              <Search className="h-5 w-5" />
-            </div>
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://yoursite.com"
-              required
-              className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted/50"
-            />
-            <button
-              type="submit"
-              className="group flex shrink-0 items-center gap-2 rounded-xl bg-accent px-6 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light"
-            >
-              Analyze
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </button>
-          </div>
-        </form>
+        <Link
+          href="/login"
+          className="group mx-auto flex items-center gap-2 rounded-xl bg-accent px-8 py-3 text-base font-medium text-white transition hover:bg-accent-light"
+        >
+          Get Started
+          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+        </Link>
 
         <p className="mt-6 text-sm text-muted/60">
           Free analysis · No credit card required
