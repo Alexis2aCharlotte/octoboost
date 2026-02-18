@@ -1,5 +1,5 @@
 {
-  "name": "postbox-init",
+  "name": "octoboost",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,19 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.45",
+    "@ai-sdk/openai": "^3.0.29",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.96.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "ai": "^6.0.90",
+    "cheerio": "^1.2.0",
+    "lucide-react": "^0.574.0",
+    "marked": "^17.0.3",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
