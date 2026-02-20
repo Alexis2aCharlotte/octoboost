@@ -30,15 +30,13 @@ import {
   Clock,
   CheckCircle2,
   RefreshCw,
-  Shield,
   GitBranch,
   FolderOpen,
   ChevronDown,
-  Settings,
 } from "lucide-react";
 import {
-  generateSnippetNextjs,
-  generateSnippetExpress,
+  generateSnippetFetchUtil,
+  generateSnippetUsageExample,
   type SiteConnection,
 } from "@/lib/custom-api";
 import type { GitHubRepo, DirectoryEntry } from "@/lib/github";
@@ -125,13 +123,16 @@ export default function PublishPage() {
 
   // Site connection state
   const [connection, setConnection] = useState<SiteConnection | null>(null);
-  const [endpointInput, setEndpointInput] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [snippetLang, setSnippetLang] = useState<"nextjs" | "express">("nextjs");
+  
+  const [snippetTab, setSnippetTab] = useState<"util" | "usage">("util");
   const [showSecret, setShowSecret] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
+
+  // API key state
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [copiedApiKey, setCopiedApiKey] = useState(false);
 
   // GitHub connection state
   const [ghRepos, setGhRepos] = useState<GitHubRepo[]>([]);
@@ -165,15 +166,20 @@ export default function PublishPage() {
       const projData = await projRes.json();
       setRealProjectId(projData.projectId);
 
-      const [connRes, chRes, schedRes] = await Promise.all([
+      const [connRes, chRes, schedRes, keyRes] = await Promise.all([
         fetch(`/api/site-connection?projectId=${projData.projectId}`),
         fetch(`/api/channels?projectId=${projData.projectId}`),
         fetch(`/api/schedule?projectId=${projData.projectId}`),
+        fetch(`/api/projects/${projData.projectId}/api-key`),
       ]);
 
       if (connRes.ok) {
         const connData = await connRes.json();
         setConnection(connData.connection ?? null);
+      }
+      if (keyRes.ok) {
+        const keyData = await keyRes.json();
+        setApiKey(keyData.apiKey ?? null);
       }
       if (chRes.ok) {
         const chData = await chRes.json();
@@ -281,43 +287,6 @@ export default function PublishPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection]);
 
-  async function handleSaveEndpoint() {
-    if (!realProjectId || !endpointInput.trim() || saving) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/site-connection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: realProjectId, endpointUrl: endpointInput.trim() }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setConnection(data.connection);
-        setEndpointInput("");
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleTestConnection() {
-    if (!realProjectId || testing) return;
-    setTesting(true);
-    try {
-      const res = await fetch("/api/site-connection", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: realProjectId, action: "test" }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setConnection(data.connection);
-      }
-    } finally {
-      setTesting(false);
-    }
-  }
-
   async function handleDisconnect() {
     if (!realProjectId || !confirm("Disconnect your site?")) return;
     const res = await fetch("/api/site-connection", {
@@ -331,23 +300,25 @@ export default function PublishPage() {
     }
   }
 
-  async function handleRegenerateSecret() {
-    if (!realProjectId || !confirm("Regenerate secret? You'll need to update your endpoint.")) return;
-    const res = await fetch("/api/site-connection", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId: realProjectId, action: "regenerate-secret" }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setConnection(data.connection);
-    }
-  }
-
-  function copyToClipboard(text: string, type: "snippet" | "secret") {
+  function copyToClipboard(text: string, type: "snippet" | "secret" | "apikey") {
     navigator.clipboard.writeText(text);
     if (type === "snippet") { setCopiedSnippet(true); setTimeout(() => setCopiedSnippet(false), 2000); }
+    else if (type === "apikey") { setCopiedApiKey(true); setTimeout(() => setCopiedApiKey(false), 2000); }
     else { setCopiedSecret(true); setTimeout(() => setCopiedSecret(false), 2000); }
+  }
+
+  async function handleRegenerateApiKey() {
+    if (!realProjectId || !confirm("Regenerate API key? The old key will stop working.")) return;
+    setApiKeyLoading(true);
+    try {
+      const res = await fetch(`/api/projects/${realProjectId}/api-key`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setApiKey(data.apiKey);
+      }
+    } finally {
+      setApiKeyLoading(false);
+    }
   }
 
   /* ── Channel handlers ── */
@@ -451,9 +422,9 @@ export default function PublishPage() {
   const selectedVariants = selectedDay ? (variantsByDay.get(selectedDay) ?? []) : [];
   const selectedDate = selectedDay ? new Date(selectedDay + "T00:00:00") : null;
 
-  const snippet = snippetLang === "nextjs"
-    ? generateSnippetNextjs(connection?.secret ?? "YOUR_SECRET")
-    : generateSnippetExpress();
+  const snippet = snippetTab === "util"
+    ? generateSnippetFetchUtil(apiKey ?? "YOUR_API_KEY")
+    : generateSnippetUsageExample(apiKey ?? "YOUR_API_KEY");
 
   if (loading) {
     return (
@@ -504,327 +475,223 @@ export default function PublishPage() {
       {tab === "site" && (
         <div className="space-y-6">
 
-          {/* ── Connected state (GitHub or Custom API) ── */}
-          {connection?.status === "connected" ? (
-            <div className="space-y-6">
-              <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
-                      <CheckCircle2 className="h-5 w-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-green-400">Site Connected</h2>
-                      {connection.type === "github" ? (
-                        <p className="text-xs text-muted">
-                          GitHub &middot; {connection.repo_owner}/{connection.repo_name} &middot; /{connection.content_dir || "root"} &middot; .{connection.file_format}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted">{connection.endpoint_url}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleTestConnection} disabled={testing} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:text-foreground disabled:opacity-50">
-                      {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                      Test
-                    </button>
-                    <button onClick={handleDisconnect} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-red-500/50 hover:text-red-400">
-                      <X className="h-3 w-3" />
-                      Disconnect
-                    </button>
-                  </div>
-                </div>
-                {connection.last_tested_at && (
-                  <p className="mt-2 text-xs text-muted/50">
-                    Last tested: {new Date(connection.last_tested_at).toLocaleString("fr-FR")}
-                  </p>
-                )}
-              </div>
+          {/* ── API Key Section (primary) ── */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold">Integrate OctoBoost on your site</h2>
+              <p className="mt-2 text-sm text-muted leading-relaxed">
+                Use your API key to fetch published articles directly from OctoBoost.
+                Copy the snippets below into your project — articles appear automatically
+                when you click &quot;Publish&quot;.
+              </p>
+            </div>
 
-              {connection.type === "github" && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <GitBranch className="h-4 w-4 text-accent-light" />
-                    <h3 className="text-sm font-semibold">How it works</h3>
-                  </div>
-                  <p className="text-xs text-muted leading-relaxed">
-                    When you publish an article, OctoBoost creates a <code className="rounded bg-white/[0.06] px-1 py-0.5">.{connection.file_format}</code> file
-                    in <code className="rounded bg-white/[0.06] px-1 py-0.5">{connection.content_dir || "/"}</code> with
-                    SEO frontmatter (title, description, tags, date). Your site auto-deploys via Vercel/Netlify.
-                  </p>
+            {/* API Key display */}
+            <div>
+              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
+                <Key className="h-4 w-4 text-accent-light" />
+                Your API Key
+              </label>
+              {apiKey ? (
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90 font-mono">
+                    {showSecret ? apiKey : `${apiKey.slice(0, 10)}${"•".repeat(24)}`}
+                  </code>
+                  <button onClick={() => setShowSecret(!showSecret)} className="rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
+                    {showSecret ? "Hide" : "Show"}
+                  </button>
+                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
+                    {copiedApiKey ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {copiedApiKey ? "Copied!" : "Copy"}
+                  </button>
+                  <button onClick={handleRegenerateApiKey} disabled={apiKeyLoading} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-50">
+                    {apiKeyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  </button>
                 </div>
-              )}
-
-              {connection.type === "custom_api" && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="h-4 w-4 text-accent-light" />
-                    <h3 className="text-sm font-semibold">Secret Token</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90">
-                      {showSecret ? connection.secret : "ob_••••••••••••••••••••••••••••••••"}
-                    </code>
-                    <button onClick={() => setShowSecret(!showSecret)} className="rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">{showSecret ? "Hide" : "Show"}</button>
-                    <button onClick={() => copyToClipboard(connection.secret ?? "", "secret")} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
-                      {copiedSecret ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{copiedSecret ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
+              ) : (
+                <div className="flex items-center gap-2 py-2 text-xs text-muted">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading API key...
                 </div>
               )}
             </div>
-          ) : connection?.type === "github" && !connection.repo_name ? (
-            /* ── GitHub connected but repo not selected yet ── */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                      <CheckCircle2 className="h-5 w-5 text-accent-light" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold">GitHub connected</h2>
-                      <p className="text-xs text-muted">Signed in as <strong>{connection.repo_owner}</strong>. Now pick your repository.</p>
-                    </div>
-                  </div>
-                  <button onClick={handleDisconnect} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-red-500/50 hover:text-red-400">
-                    <X className="h-3 w-3" />
-                    Disconnect
-                  </button>
+
+            {/* API Endpoints */}
+            <div className="rounded-lg border border-border bg-[#0d1117] p-4 space-y-2">
+              <p className="text-xs font-semibold text-muted/70 uppercase tracking-wider">Endpoints</p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                  <code className="text-green-400/80">https://octoboost.app/api/public/articles?key=YOUR_KEY</code>
+                </div>
+                <p className="pl-11 text-xs text-muted/50">Returns all published articles (title, slug, metaDescription, tags)</p>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                  <code className="text-green-400/80">https://octoboost.app/api/public/articles/[slug]?key=YOUR_KEY</code>
+                </div>
+                <p className="pl-11 text-xs text-muted/50">Returns a single article with full markdown content</p>
+              </div>
+            </div>
+
+            {/* Snippet tabs */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Code2 className="h-4 w-4 text-accent-light" />
+                <span className="text-sm font-medium">Integration snippets</span>
+                <div className="ml-auto flex gap-1">
+                  {([
+                    { id: "util" as const, label: "lib/octoboost.ts" },
+                    { id: "usage" as const, label: "Usage example" },
+                  ]).map(({ id: tabId, label }) => (
+                    <button
+                      key={tabId}
+                      onClick={() => setSnippetTab(tabId)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                        snippetTab === tabId ? "bg-accent/15 text-accent-light" : "text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="relative">
+                <pre className="max-h-[350px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90">
+                  <code>{snippet}</code>
+                </pre>
+                <button
+                  onClick={() => copyToClipboard(snippet, "snippet")}
+                  className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/20"
+                >
+                  {copiedSnippet ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copiedSnippet ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
 
-              <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-                {/* Repo picker */}
-                <div>
-                  <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
-                    <FolderOpen className="h-4 w-4 text-accent-light" />
-                    Repository
-                  </label>
-                  {ghLoadingRepos ? (
-                    <div className="flex items-center gap-2 py-3 text-xs text-muted">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading your repos...
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <select
-                        value={ghSelectedRepo}
-                        onChange={(e) => handleSelectRepo(e.target.value)}
-                        className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none"
-                      >
-                        <option value="">Select a repository...</option>
-                        {ghRepos.map((r) => (
-                          <option key={r.id} value={r.full_name}>
-                            {r.full_name} {r.private ? "(private)" : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                    </div>
-                  )}
+            {/* How it works */}
+            <div className="rounded-lg border border-border bg-white/[0.02] p-4">
+              <p className="mb-3 text-xs font-semibold text-muted/70 uppercase tracking-wider">How it works</p>
+              <div className="space-y-2 text-xs text-muted leading-relaxed">
+                <div className="flex items-start gap-2">
+                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
+                  Copy <code className="rounded bg-white/[0.06] px-1 py-0.5">lib/octoboost.ts</code> into your project — it&apos;s a simple fetch utility
                 </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
+                  Import and merge OctoBoost articles with your existing blog posts
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>
+                  Click &quot;Publish&quot; on OctoBoost — articles appear on your site within 60s
+                </div>
+              </div>
+            </div>
+          </div>
 
-                {/* Folder picker */}
-                {ghSelectedRepo && (
-                  <div>
-                    <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
-                      <FolderOpen className="h-4 w-4 text-accent-light" />
-                      Blog folder
-                    </label>
-                    <p className="mb-2 text-xs text-muted">Where should articles be saved? (e.g. content/blog, src/posts)</p>
-                    {ghLoadingDirs ? (
-                      <div className="flex items-center gap-2 py-3 text-xs text-muted">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading folders...
+          {/* ── GitHub Push — accordion (advanced) ── */}
+          <div className="rounded-xl border border-border bg-card">
+            <button
+              onClick={() => setShowCustomApi(!showCustomApi)}
+              className="flex w-full items-center justify-between p-5 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <GitBranch className="h-4 w-4 text-muted" />
+                <div>
+                  <span className="text-sm font-medium text-muted">Advanced: Push to GitHub</span>
+                  <p className="text-xs text-muted/60">For static sites (Astro, Hugo, Jekyll) — commits Markdown files to your repo</p>
+                </div>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-muted transition ${showCustomApi ? "rotate-180" : ""}`} />
+            </button>
+
+            {showCustomApi && (
+              <div className="border-t border-border p-5 space-y-5">
+                {connection?.type === "github" && connection.status === "connected" ? (
+                  <div className="flex items-center justify-between rounded-lg border border-green-500/30 bg-green-500/5 p-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-400" />
+                      <div>
+                        <p className="text-sm font-medium text-green-400">GitHub connected</p>
+                        <p className="text-xs text-muted">{connection.repo_owner}/{connection.repo_name} · /{connection.content_dir || "root"} · .{connection.file_format}</p>
                       </div>
-                    ) : (() => {
-                      const suggested = ghDirs.filter((d) => d.suggested);
-                      const others = ghDirs.filter((d) => !d.suggested);
-                      return (
+                    </div>
+                    <button onClick={handleDisconnect} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-red-500/50 hover:text-red-400">
+                      <X className="h-3 w-3" /> Disconnect
+                    </button>
+                  </div>
+                ) : connection?.type === "github" && !connection.repo_name ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted">GitHub connected — pick your repository:</p>
+                      <button onClick={handleDisconnect} className="flex items-center gap-1.5 text-xs text-muted hover:text-red-400"><X className="h-3 w-3" /> Disconnect</button>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-2 text-sm font-medium"><FolderOpen className="h-4 w-4 text-accent-light" /> Repository</label>
+                      {ghLoadingRepos ? (
+                        <div className="flex items-center gap-2 py-3 text-xs text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Loading repos...</div>
+                      ) : (
                         <div className="relative">
-                          <select
-                            value={ghSelectedDir}
-                            onChange={(e) => setGhSelectedDir(e.target.value)}
-                            className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none"
-                          >
-                            <option value="">/ (root)</option>
-                            {suggested.length > 0 && (
-                              <optgroup label="Suggested (blog/content folders)">
-                                {suggested.map((d) => (
-                                  <option key={d.path} value={d.path}>{d.path}</option>
-                                ))}
-                              </optgroup>
-                            )}
-                            {others.length > 0 && (
-                              <optgroup label={suggested.length > 0 ? "Other folders" : "All folders"}>
-                                {others.map((d) => (
-                                  <option key={d.path} value={d.path}>{d.path}</option>
-                                ))}
-                              </optgroup>
-                            )}
+                          <select value={ghSelectedRepo} onChange={(e) => handleSelectRepo(e.target.value)} className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none">
+                            <option value="">Select a repository...</option>
+                            {ghRepos.map((r) => (<option key={r.id} value={r.full_name}>{r.full_name} {r.private ? "(private)" : ""}</option>))}
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                         </div>
-                      );
-                    })()}
-                  </div>
-                )}
-
-                {/* Format picker */}
-                {ghSelectedRepo && (
-                  <div>
-                    <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
-                      <FileText className="h-4 w-4 text-accent-light" />
-                      File format
-                    </label>
-                    <div className="flex gap-2">
-                      {(["mdx", "md"] as const).map((fmt) => (
-                        <button
-                          key={fmt}
-                          onClick={() => setGhFileFormat(fmt)}
-                          className={`rounded-lg px-4 py-2 text-xs font-medium transition ${
-                            ghFileFormat === fmt
-                              ? "bg-accent/15 text-accent-light ring-1 ring-accent/30"
-                              : "bg-white/[0.04] text-muted hover:text-foreground"
-                          }`}
-                        >
-                          .{fmt} {fmt === "mdx" ? "(Markdown + JSX)" : "(Markdown)"}
+                      )}
+                    </div>
+                    {ghSelectedRepo && (
+                      <>
+                        <div>
+                          <label className="mb-1.5 flex items-center gap-2 text-sm font-medium"><FolderOpen className="h-4 w-4 text-accent-light" /> Blog folder</label>
+                          {ghLoadingDirs ? (
+                            <div className="flex items-center gap-2 py-3 text-xs text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Loading folders...</div>
+                          ) : (() => {
+                            const suggested = ghDirs.filter((d) => d.suggested);
+                            const others = ghDirs.filter((d) => !d.suggested);
+                            return (
+                              <div className="relative">
+                                <select value={ghSelectedDir} onChange={(e) => setGhSelectedDir(e.target.value)} className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none">
+                                  <option value="">/ (root)</option>
+                                  {suggested.length > 0 && (<optgroup label="Suggested">{suggested.map((d) => (<option key={d.path} value={d.path}>{d.path}</option>))}</optgroup>)}
+                                  {others.length > 0 && (<optgroup label={suggested.length > 0 ? "Other" : "All"}>{others.map((d) => (<option key={d.path} value={d.path}>{d.path}</option>))}</optgroup>)}
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        <div>
+                          <label className="mb-1.5 flex items-center gap-2 text-sm font-medium"><FileText className="h-4 w-4 text-accent-light" /> File format</label>
+                          <div className="flex gap-2">
+                            {(["mdx", "md"] as const).map((fmt) => (
+                              <button key={fmt} onClick={() => setGhFileFormat(fmt)} className={`rounded-lg px-4 py-2 text-xs font-medium transition ${ghFileFormat === fmt ? "bg-accent/15 text-accent-light ring-1 ring-accent/30" : "bg-white/[0.04] text-muted hover:text-foreground"}`}>
+                                .{fmt} {fmt === "mdx" ? "(MDX)" : "(Markdown)"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <button onClick={handleSaveGitHubConfig} disabled={ghSaving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50">
+                          {ghSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          {ghSaving ? "Connecting..." : "Connect & Test"}
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Save button */}
-                {ghSelectedRepo && (
-                  <button
-                    onClick={handleSaveGitHubConfig}
-                    disabled={ghSaving}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                  >
-                    {ghSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    {ghSaving ? "Connecting..." : "Connect & Test"}
-                  </button>
-                )}
-
-              </div>
-            </div>
-          ) : (
-            /* ── Not connected — show GitHub as primary option ── */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-border bg-card p-6">
-                <h2 className="text-lg font-semibold">Publish articles directly on your blog</h2>
-                <p className="mt-2 text-sm text-muted leading-relaxed">
-                  OctoBoost generates SEO articles and pushes them straight to your site.
-                  Connect your GitHub and articles will be committed as Markdown files —
-                  your site auto-deploys. Zero code to write.
-                </p>
-              </div>
-
-              {/* GitHub — primary */}
-              <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
-                    <svg className="h-5 w-5 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Connect with GitHub</h3>
-                    <p className="text-xs text-muted">Recommended — 3 clicks, zero code</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs text-muted leading-relaxed">
-                  <div className="flex items-start gap-2">
-                    <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
-                    Click &quot;Connect GitHub&quot; and authorize OctoBoost
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
-                    Pick your repo and the folder where articles should go
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>
-                    Done — OctoBoost commits articles, your site auto-deploys
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleConnectGitHub}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                  Connect GitHub
-                </button>
-              </div>
-
-              {/* Custom API — accordion */}
-              <div className="rounded-xl border border-border bg-card">
-                <button
-                  onClick={() => setShowCustomApi(!showCustomApi)}
-                  className="flex w-full items-center justify-between p-5 text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <Settings className="h-4 w-4 text-muted" />
-                    <div>
-                      <span className="text-sm font-medium text-muted">Advanced: Custom API endpoint</span>
-                      <p className="text-xs text-muted/60">For custom setups — deploy your own webhook</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={`h-4 w-4 text-muted transition ${showCustomApi ? "rotate-180" : ""}`} />
-                </button>
-
-                {showCustomApi && (
-                  <div className="border-t border-border p-5 space-y-4">
-                    <div className="flex gap-2 mb-3">
-                      {(["nextjs", "express"] as const).map((lang) => (
-                        <button
-                          key={lang}
-                          onClick={() => setSnippetLang(lang)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                            snippetLang === lang ? "bg-accent/15 text-accent-light" : "text-muted hover:text-foreground"
-                          }`}
-                        >
-                          {lang === "nextjs" ? "Next.js" : "Express"}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="relative">
-                      <pre className="max-h-[250px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90">
-                        <code>{snippet}</code>
-                      </pre>
-                      <button
-                        onClick={() => copyToClipboard(snippet, "snippet")}
-                        className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/20"
-                      >
-                        {copiedSnippet ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        {copiedSnippet ? "Copied!" : "Copy"}
-                      </button>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs text-muted">Endpoint URL</label>
-                      <div className="flex gap-3">
-                        <input
-                          type="url"
-                          value={endpointInput}
-                          onChange={(e) => setEndpointInput(e.target.value)}
-                          placeholder="https://yoursite.com/api/octoboost"
-                          className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
-                        />
-                        <button
-                          onClick={handleSaveEndpoint}
-                          disabled={!endpointInput.trim() || saving}
-                          className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                        >
-                          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}
-                          Connect
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted leading-relaxed">
+                      Connect your GitHub to push articles as Markdown/MDX files directly to your repository. Best for static sites that auto-deploy on push.
+                    </p>
+                    <button onClick={handleConnectGitHub} className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background transition hover:opacity-90">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                      Connect GitHub
+                    </button>
+                  </>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
         </div>
       )}
 

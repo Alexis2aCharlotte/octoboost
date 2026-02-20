@@ -153,6 +153,8 @@ export default function ArticlesPage() {
   const [generatingVariant, setGeneratingVariant] = useState<string | null>(null);
   const [showChannelPicker, setShowChannelPicker] = useState<false | "auto" | "manual">(false);
 
+  const [publishingToSite, setPublishingToSite] = useState(false);
+
   const loadData = useCallback(async () => {
     try {
       const [kwRes, projRes] = await Promise.all([
@@ -343,6 +345,29 @@ export default function ArticlesPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function handlePublishToSite(articleId: string) {
+    if (publishingToSite) return;
+    setPublishingToSite(true);
+    try {
+      const res = await fetch(`/api/articles/${articleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "published" }),
+      });
+      if (res.ok) {
+        await loadData();
+        if (previewArticle) setPreviewArticle({ ...previewArticle, status: "published" });
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Publication failed");
+      }
+    } catch {
+      alert("Something went wrong");
+    } finally {
+      setPublishingToSite(false);
+    }
+  }
+
   const totalVolume = clusters.reduce((s, c) => s + c.totalVolume, 0);
   const easyCount = clusters.filter((c) => c.difficulty === "easy").length;
   const generatedCount = articles.length;
@@ -465,6 +490,21 @@ export default function ArticlesPage() {
             Back to articles
           </button>
           <div className="flex items-center gap-2">
+            {previewArticle.status !== "published" ? (
+              <button
+                onClick={() => handlePublishToSite(previewArticle.id)}
+                disabled={publishingToSite}
+                className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+              >
+                {publishingToSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {publishingToSite ? "Publishing..." : "Publish"}
+              </button>
+            ) : (
+              <span className="flex items-center gap-1.5 rounded-lg bg-green-500/10 px-3 py-2 text-sm font-medium text-green-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Published
+              </span>
+            )}
             <button
               onClick={handleCopy}
               className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-accent/50 hover:text-foreground"

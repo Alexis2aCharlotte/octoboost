@@ -141,66 +141,81 @@ export function generateSecret(): string {
   return result;
 }
 
-export function generateSnippetNextjs(secret: string): string {
-  return `// app/api/octoboost/route.ts
-import { NextRequest, NextResponse } from "next/server";
-
-export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== \`Bearer \${process.env.OCTOBOOST_SECRET}\`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export function generateApiKey(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "ob_pk_";
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
+  return result;
+}
 
-  const body = await req.json();
+export function generateSnippetFetchUtil(apiKey: string): string {
+  return `// lib/octoboost.ts
+// Utility to fetch your OctoBoost articles — add this file to your project
 
-  // Test ping — just return OK
-  if (body._test) {
-    return NextResponse.json({ success: true, url: "" });
-  }
+const OCTOBOOST_KEY = "${apiKey}";
+const BASE_URL = "https://octoboost.app/api/public/articles";
 
-  const { title, slug, content, contentHtml, metaDescription, tags } = body;
+export type OctoArticle = {
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription: string;
+  keyword: string;
+  tags: string[];
+  wordCount: number;
+  publishedAt: string;
+};
 
-  // ─── Adapt this to your stack ───
-  // Example: save to your database, write an MDX file, etc.
-  //
-  // await db.posts.create({
-  //   title,
-  //   slug,
-  //   content,       // markdown
-  //   contentHtml,   // pre-rendered HTML
-  //   metaDescription,
-  //   tags,
-  // });
+/** Fetch all published articles */
+export async function getOctoArticles(): Promise<OctoArticle[]> {
+  const res = await fetch(\`\${BASE_URL}?key=\${OCTOBOOST_KEY}\`, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.articles ?? [];
+}
 
-  const url = \`\${process.env.NEXT_PUBLIC_SITE_URL}/blog/\${slug}\`;
-  return NextResponse.json({ success: true, url });
+/** Fetch a single article by slug */
+export async function getOctoArticle(
+  slug: string
+): Promise<OctoArticle | null> {
+  const res = await fetch(\`\${BASE_URL}/\${slug}?key=\${OCTOBOOST_KEY}\`, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return null;
+  return res.json();
 }`;
 }
 
-export function generateSnippetExpress(): string {
-  return `// routes/octoboost.js
-const express = require("express");
-const router = express.Router();
+export function generateSnippetUsageExample(apiKey: string): string {
+  void apiKey;
+  return `// Example: integrate in your existing blog page
+// Works alongside your current articles — nothing gets replaced
 
-router.post("/api/octoboost", (req, res) => {
-  const auth = req.headers.authorization;
-  if (auth !== \`Bearer \${process.env.OCTOBOOST_SECRET}\`) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+import { getOctoArticles } from "@/lib/octoboost";
 
-  // Test ping
-  if (req.body._test) {
-    return res.json({ success: true, url: "" });
-  }
+// In your existing blog page or data fetching:
+const octoArticles = await getOctoArticles();
 
-  const { title, slug, content, contentHtml, metaDescription, tags } = req.body;
+// Merge with your existing posts:
+const allPosts = [
+  ...yourExistingPosts,
+  ...octoArticles.map((a) => ({
+    title: a.title,
+    slug: a.slug,
+    description: a.metaDescription,
+    date: a.publishedAt,
+    source: "octoboost",
+  })),
+].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // ─── Adapt this to your stack ───
-  // Save to your database, write a file, etc.
+// For individual article pages (e.g. app/blog/[slug]/page.tsx):
+import { getOctoArticle } from "@/lib/octoboost";
 
-  const url = \`\${process.env.SITE_URL}/blog/\${slug}\`;
-  res.json({ success: true, url });
-});
-
-module.exports = router;`;
+const article = await getOctoArticle(slug);
+// If null → it's not from OctoBoost, use your normal logic
+// If found → render article.content (markdown) with your existing styles`;
 }

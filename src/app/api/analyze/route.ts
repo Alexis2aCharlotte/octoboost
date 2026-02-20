@@ -6,6 +6,7 @@ import {
   classifyKeywords,
   clusterKeywords,
 } from "@/lib/engine/llm-analyzer";
+import { generateApiKey } from "@/lib/custom-api";
 import {
   getKeywordVolumes,
   getKeywordSuggestions,
@@ -380,6 +381,7 @@ export async function POST(req: NextRequest) {
           name: crawlData.title,
           url: crawlData.url,
           slug,
+          api_key: generateApiKey(),
         })
         .select("id")
         .single();
