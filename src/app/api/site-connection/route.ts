@@ -5,7 +5,7 @@ import {
   generateSecret,
   type SiteConnection,
 } from "@/lib/custom-api";
-import { testGitHubConnection } from "@/lib/github";
+import { testGitHubConnection, getValidToken, type GitHubSiteConnection } from "@/lib/github";
 
 async function resolveProject(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -131,9 +131,20 @@ export async function PATCH(req: NextRequest) {
       if (!conn.github_token || !conn.repo_owner || !conn.repo_name)
         return NextResponse.json({ error: "GitHub repo not configured" }, { status: 400 });
 
-      const result = await testGitHubConnection(conn.github_token, conn.repo_owner, conn.repo_name);
-      const updated: SiteConnection = {
-        ...conn,
+      const ghConn = conn as unknown as GitHubSiteConnection;
+      const tokenResult = await getValidToken(ghConn);
+      if (!tokenResult) {
+        return NextResponse.json({ error: "GitHub token expired. Please reconnect." }, { status: 401 });
+      }
+
+      let updated: SiteConnection = { ...conn };
+      if (tokenResult.updated) {
+        updated = { ...updated, ...tokenResult.updated };
+      }
+
+      const result = await testGitHubConnection(tokenResult.token, conn.repo_owner!, conn.repo_name!);
+      updated = {
+        ...updated,
         status: result.valid ? "connected" : "error",
         last_tested_at: new Date().toISOString(),
         last_error: result.error,
@@ -168,8 +179,15 @@ export async function PATCH(req: NextRequest) {
     if (!conn || conn.type !== "github" || !conn.github_token)
       return NextResponse.json({ error: "GitHub not connected" }, { status: 400 });
 
+    const ghConn = conn as unknown as GitHubSiteConnection;
+    const tokenResult = await getValidToken(ghConn);
+    if (!tokenResult) {
+      return NextResponse.json({ error: "GitHub token expired. Please reconnect." }, { status: 401 });
+    }
+
     const updated: SiteConnection = {
       ...conn,
+      ...(tokenResult.updated ?? {}),
       repo_owner: repoOwner ?? conn.repo_owner,
       repo_name: repoName ?? conn.repo_name,
       branch: branch ?? conn.branch ?? "main",
@@ -179,7 +197,7 @@ export async function PATCH(req: NextRequest) {
     };
 
     const testResult = await testGitHubConnection(
-      conn.github_token,
+      tokenResult.token,
       updated.repo_owner!,
       updated.repo_name!
     );

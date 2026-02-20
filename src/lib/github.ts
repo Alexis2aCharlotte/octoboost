@@ -1,12 +1,15 @@
 /**
- * GitHub integration — Push articles as MD/MDX files to a user's repo.
- * Uses the GitHub Contents API (PUT /repos/:owner/:repo/contents/:path).
- * Classic OAuth App tokens don't expire → no refresh logic needed.
+ * GitHub App integration — Push articles as MD/MDX files to a user's repo.
+ * Uses GitHub App installation flow (user selects repos during install).
+ * Tokens expire → refresh via client_id/client_secret + refresh_token.
  */
 
 export interface GitHubSiteConnection {
   type: "github";
   github_token: string;
+  github_refresh_token?: string;
+  github_token_expires_at?: string;
+  installation_id?: number;
   repo_owner: string;
   repo_name: string;
   branch: string;
@@ -15,6 +18,61 @@ export interface GitHubSiteConnection {
   status: "connected" | "disconnected" | "error";
   last_error?: string;
   connected_at?: string;
+}
+
+/**
+ * Refresh an expired GitHub App user-to-server token.
+ */
+export async function refreshGitHubToken(refreshToken: string): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+} | null> {
+  const res = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data.error) return null;
+  return data;
+}
+
+/**
+ * Get a valid token, refreshing if expired. Returns null if refresh fails.
+ */
+export async function getValidToken(
+  conn: GitHubSiteConnection
+): Promise<{ token: string; updated?: Partial<GitHubSiteConnection> } | null> {
+  if (conn.github_token_expires_at) {
+    const expiresAt = new Date(conn.github_token_expires_at).getTime();
+    const now = Date.now();
+    if (now < expiresAt - 60_000) {
+      return { token: conn.github_token };
+    }
+  } else {
+    return { token: conn.github_token };
+  }
+
+  if (!conn.github_refresh_token) return null;
+
+  const refreshed = await refreshGitHubToken(conn.github_refresh_token);
+  if (!refreshed) return null;
+
+  return {
+    token: refreshed.access_token,
+    updated: {
+      github_token: refreshed.access_token,
+      github_refresh_token: refreshed.refresh_token,
+      github_token_expires_at: new Date(Date.now() + refreshed.expires_in * 1000).toISOString(),
+    },
+  };
 }
 
 export interface GitHubRepo {

@@ -20,6 +20,9 @@ export interface SiteConnection {
   last_error?: string;
   // GitHub-specific fields
   github_token?: string;
+  github_refresh_token?: string;
+  github_token_expires_at?: string;
+  installation_id?: number;
   repo_owner?: string;
   repo_name?: string;
   branch?: string;

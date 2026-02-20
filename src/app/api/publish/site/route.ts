@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { publishToSite, type SiteConnection } from "@/lib/custom-api";
-import { publishArticleToGitHub, type GitHubSiteConnection } from "@/lib/github";
+import { publishArticleToGitHub, getValidToken, type GitHubSiteConnection } from "@/lib/github";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -81,6 +81,17 @@ export async function POST(req: NextRequest) {
       if (!ghConn.github_token || !ghConn.repo_owner || !ghConn.repo_name) {
         return NextResponse.json({ error: "GitHub repo not configured" }, { status: 400 });
       }
+
+      const tokenResult = await getValidToken(ghConn);
+      if (!tokenResult) {
+        return NextResponse.json({ error: "GitHub token expired. Please reconnect." }, { status: 401 });
+      }
+      if (tokenResult.updated) {
+        const updatedConn = { ...conn, ...tokenResult.updated };
+        await supabase.from("projects").update({ site_connection: updatedConn }).eq("id", project.id);
+        ghConn.github_token = tokenResult.token;
+      }
+
       const result = await publishArticleToGitHub(ghConn, {
         title: article.title,
         slug,

@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const stateParam = searchParams.get("state");
+  const installationId = searchParams.get("installation_id");
   const error = searchParams.get("error");
 
   if (error) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (!code || !stateParam) {
+  if (!stateParam) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -47,39 +48,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID!;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
+  let accessToken: string;
+  let refreshToken: string | undefined;
+  let expiresIn: number | undefined;
 
-  const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-    }),
-  });
+  if (code) {
+    const clientId = process.env.GITHUB_CLIENT_ID!;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
 
-  if (!tokenRes.ok) {
-    console.error("[GitHub OAuth] Token exchange failed:", await tokenRes.text());
+    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      console.error("[GitHub OAuth] Token exchange failed:", await tokenRes.text());
+      return NextResponse.redirect(
+        new URL(`/dashboard/projects/${projectSlug}/publish?error=github_token_failed`, req.url)
+      );
+    }
+
+    const tokenData = await tokenRes.json();
+
+    if (tokenData.error) {
+      console.error("[GitHub OAuth] Token error:", tokenData.error_description);
+      return NextResponse.redirect(
+        new URL(`/dashboard/projects/${projectSlug}/publish?error=github_token_failed`, req.url)
+      );
+    }
+
+    accessToken = tokenData.access_token;
+    refreshToken = tokenData.refresh_token;
+    expiresIn = tokenData.expires_in;
+  } else {
     return NextResponse.redirect(
-      new URL(`/dashboard/projects/${projectSlug}/publish?error=github_token_failed`, req.url)
+      new URL(`/dashboard/projects/${projectSlug}/publish?error=no_code`, req.url)
     );
   }
-
-  const tokenData = await tokenRes.json();
-
-  if (tokenData.error) {
-    console.error("[GitHub OAuth] Token error:", tokenData.error_description);
-    return NextResponse.redirect(
-      new URL(`/dashboard/projects/${projectSlug}/publish?error=github_token_failed`, req.url)
-    );
-  }
-
-  const accessToken = tokenData.access_token;
 
   let ghUser: { login: string };
   try {
@@ -93,6 +103,11 @@ export async function GET(req: NextRequest) {
   const connection: GitHubSiteConnection = {
     type: "github",
     github_token: accessToken,
+    github_refresh_token: refreshToken,
+    github_token_expires_at: expiresIn
+      ? new Date(Date.now() + expiresIn * 1000).toISOString()
+      : undefined,
+    installation_id: installationId ? parseInt(installationId, 10) : undefined,
     repo_owner: ghUser.login,
     repo_name: "",
     branch: "main",
