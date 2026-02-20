@@ -41,7 +41,7 @@ import {
   generateSnippetExpress,
   type SiteConnection,
 } from "@/lib/custom-api";
-import type { GitHubRepo } from "@/lib/github";
+import type { GitHubRepo, DirectoryEntry } from "@/lib/github";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -137,7 +137,7 @@ export default function PublishPage() {
   const [ghRepos, setGhRepos] = useState<GitHubRepo[]>([]);
   const [ghLoadingRepos, setGhLoadingRepos] = useState(false);
   const [ghSelectedRepo, setGhSelectedRepo] = useState<string>("");
-  const [ghDirs, setGhDirs] = useState<string[]>([]);
+  const [ghDirs, setGhDirs] = useState<DirectoryEntry[]>([]);
   const [ghLoadingDirs, setGhLoadingDirs] = useState(false);
   const [ghSelectedDir, setGhSelectedDir] = useState<string>("");
   const [ghFileFormat, setGhFileFormat] = useState<"md" | "mdx">("mdx");
@@ -631,21 +631,36 @@ export default function PublishPage() {
                       <div className="flex items-center gap-2 py-3 text-xs text-muted">
                         <Loader2 className="h-4 w-4 animate-spin" /> Loading folders...
                       </div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={ghSelectedDir}
-                          onChange={(e) => setGhSelectedDir(e.target.value)}
-                          className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none"
-                        >
-                          <option value="">/ (root)</option>
-                          {ghDirs.filter((d) => d !== "/").map((d) => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                      </div>
-                    )}
+                    ) : (() => {
+                      const suggested = ghDirs.filter((d) => d.suggested);
+                      const others = ghDirs.filter((d) => !d.suggested);
+                      return (
+                        <div className="relative">
+                          <select
+                            value={ghSelectedDir}
+                            onChange={(e) => setGhSelectedDir(e.target.value)}
+                            className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm focus:border-accent/50 focus:outline-none"
+                          >
+                            <option value="">/ (root)</option>
+                            {suggested.length > 0 && (
+                              <optgroup label="Suggested (blog/content folders)">
+                                {suggested.map((d) => (
+                                  <option key={d.path} value={d.path}>{d.path}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {others.length > 0 && (
+                              <optgroup label={suggested.length > 0 ? "Other folders" : "All folders"}>
+                                {others.map((d) => (
+                                  <option key={d.path} value={d.path}>{d.path}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 

@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
     );
 
   try {
-    const directories = await listDirectories(conn.github_token, owner, repo, branch);
-    return NextResponse.json({ directories });
+    const entries = await listDirectories(conn.github_token, owner, repo, branch);
+    return NextResponse.json({ directories: entries });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to fetch tree" },

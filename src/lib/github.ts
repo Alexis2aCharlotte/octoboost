@@ -91,12 +91,31 @@ export async function listRepos(token: string): Promise<GitHubRepo[]> {
   return repos;
 }
 
+const IGNORED_DIR_PATTERNS = [
+  /^\./, /node_modules/, /\.next/, /\.git/, /\.vercel/, /\.turbo/,
+  /\bapi\b/, /\bauth\b/, /\bcomponents?/, /\bhooks?/, /\blib\b/, /\butils?\b/,
+  /\bstyles?\b/, /\btypes?\b/, /\bconfig/, /\bpublic\b/, /\b__/,
+  /\bactions?\b/, /\bcontexts?\b/, /\bproviders?\b/, /\bservices?\b/,
+  /\bmiddleware/, /\bschemas?\b/, /\bsupabase\b/, /\bdist\b/, /\bbuild\b/,
+];
+
+const SUGGESTED_DIR_PATTERNS = [
+  /blog/i, /posts?/i, /articles?/i, /content/i, /writing/i,
+  /pages.*blog/i, /data.*blog/i, /src\/content/i, /collections?/i,
+  /mdx?/i, /_posts/i,
+];
+
+export interface DirectoryEntry {
+  path: string;
+  suggested: boolean;
+}
+
 export async function listDirectories(
   token: string,
   owner: string,
   repo: string,
   branch: string
-): Promise<string[]> {
+): Promise<DirectoryEntry[]> {
   const res = await fetch(
     `${GITHUB_API}/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
     { headers: headers(token) }
@@ -104,13 +123,26 @@ export async function listDirectories(
   if (!res.ok) return [];
 
   const data = await res.json();
-  const dirs: string[] = ["/"];
+  const dirs: DirectoryEntry[] = [];
+
   for (const entry of data.tree ?? []) {
-    if (entry.type === "tree") {
-      dirs.push(entry.path);
-    }
+    if (entry.type !== "tree") continue;
+    const p = entry.path as string;
+
+    const ignored = IGNORED_DIR_PATTERNS.some((rx) => rx.test(p));
+    if (ignored) continue;
+
+    const suggested = SUGGESTED_DIR_PATTERNS.some((rx) => rx.test(p));
+    dirs.push({ path: p, suggested });
   }
-  return dirs.sort();
+
+  dirs.sort((a, b) => {
+    if (a.suggested && !b.suggested) return -1;
+    if (!a.suggested && b.suggested) return 1;
+    return a.path.localeCompare(b.path);
+  });
+
+  return dirs;
 }
 
 function generateFrontmatter(payload: ArticlePayload, format: "md" | "mdx"): string {
