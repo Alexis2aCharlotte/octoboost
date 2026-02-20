@@ -13,7 +13,11 @@ import {
   Trash2,
   Target,
   FileText,
+  Send,
   Layers,
+  Megaphone,
+  BarChart3,
+  Plug,
 } from "lucide-react";
 
 interface Project {
@@ -62,7 +66,9 @@ export default function DashboardPage() {
           (p: Project) => p.latestAnalysisId === data.analysisId
         );
         if (proj) {
-          router.push(`/dashboard/projects/${proj.slug || proj.id}/keywords`);
+          router.push(
+            `/dashboard/projects/${proj.slug || proj.id}/overview`
+          );
         } else {
           window.location.reload();
         }
@@ -90,15 +96,60 @@ export default function DashboardPage() {
     );
   }
 
+  const totalProjects = projects.length;
+  const withAnalysis = projects.filter((p) => p.latestAnalysisId).length;
+
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted">
-          Select a project to manage keywords, articles, and publishing.
-        </p>
+    <div className="mx-auto max-w-4xl space-y-8">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted">
+            {totalProjects === 0
+              ? "Start by adding your first site."
+              : `${totalProjects} project${totalProjects > 1 ? "s" : ""} · ${withAnalysis} analyzed`}
+          </p>
+        </div>
       </div>
 
+      {/* Global stats */}
+      {totalProjects > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-muted">Projects</span>
+              <Globe className="h-4 w-4 text-muted/40" />
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {totalProjects}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-muted">Analyzed</span>
+              <Search className="h-4 w-4 text-muted/40" />
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {withAnalysis}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-muted">Ready</span>
+              <BarChart3 className="h-4 w-4 text-muted/40" />
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {withAnalysis}
+              <span className="ml-1 text-sm font-normal text-muted">
+                / {totalProjects}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Add new site */}
       <form
         onSubmit={handleAnalyze}
         className="flex items-center gap-3 rounded-xl border border-border bg-card p-2.5"
@@ -134,6 +185,7 @@ export default function DashboardPage() {
         </button>
       </form>
 
+      {/* Projects list */}
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
@@ -149,53 +201,61 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-muted">
             Your projects ({projects.length})
           </h2>
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
-            >
-              <Link
-                href={`/dashboard/projects/${project.slug || project.id}/keywords`}
-                className="flex flex-1 items-center gap-3.5"
+          {projects.map((project) => {
+            const hasAnalysis = !!project.latestAnalysisId;
+            return (
+              <div
+                key={project.id}
+                className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                  <Globe className="h-5 w-5 text-accent-light" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {project.name || project.url}
-                  </p>
-                  <p className="text-xs text-muted">{project.url}</p>
-                </div>
-                {project.latestAnalysis && (
-                  <div className="flex items-center gap-3 text-xs text-muted/60">
-                    <span className="flex items-center gap-1">
-                      <Target className="h-3 w-3" />
-                      Keywords
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      Articles
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Layers className="h-3 w-3" />
-                      Clusters
-                    </span>
-                  </div>
-                )}
-              </Link>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleDelete(project.id)}
-                  className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
-                  title="Delete project"
+                <Link
+                  href={`/dashboard/projects/${project.slug || project.id}/overview`}
+                  className="flex flex-1 items-center gap-3.5"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-                <ChevronRight className="h-4 w-4 text-muted/40" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                    <Globe className="h-5 w-5 text-accent-light" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {project.name || project.url}
+                    </p>
+                    <p className="text-xs text-muted">{project.url}</p>
+                  </div>
+                  {hasAnalysis && (
+                    <div className="flex items-center gap-3 text-xs text-muted/60">
+                      <span className="flex items-center gap-1">
+                        <Target className="h-3 w-3" />
+                        Research
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        Articles
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Send className="h-3 w-3" />
+                        Publish
+                      </span>
+                    </div>
+                  )}
+                  {!hasAnalysis && (
+                    <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400">
+                      Not analyzed
+                    </span>
+                  )}
+                </Link>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleDelete(project.id)}
+                    className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                    title="Delete project"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                  <ChevronRight className="h-4 w-4 text-muted/40" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -2,17 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
-  Send,
   FileText,
   Search,
-  Calendar,
   BarChart3,
   Settings,
-  Target,
   ChevronRight,
   LayoutDashboard,
-  Megaphone,
+  Send,
+  Eye,
 } from "lucide-react";
 
 const globalNavItems = [
@@ -21,13 +20,20 @@ const globalNavItems = [
 ];
 
 const projectNavItems = [
-  { segment: "analyze", icon: Search, label: "Analyze" },
-  { segment: "keywords", icon: Target, label: "Keywords" },
+  { segment: "overview", icon: Eye, label: "Overview" },
+  { segment: "research", icon: Search, label: "Research" },
   { segment: "articles", icon: FileText, label: "Articles" },
-  { segment: "channels", icon: Megaphone, label: "Channels" },
-  { segment: "schedule", icon: Calendar, label: "Schedule" },
+  { segment: "publish", icon: Send, label: "Publish" },
   { segment: "analytics", icon: BarChart3, label: "Analytics" },
 ];
+
+const pageNames: Record<string, string> = {
+  overview: "Overview",
+  research: "Research",
+  articles: "Articles",
+  publish: "Publish",
+  analytics: "Analytics",
+};
 
 function useProjectId(): string | null {
   const pathname = usePathname();
@@ -40,13 +46,18 @@ function Sidebar() {
   const projectId = useProjectId();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-56 flex-col border-r border-border bg-[#0a0f1e]">
-      <div className="flex h-14 items-center gap-2.5 px-5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
-          <Send className="h-3.5 w-3.5 text-white" />
-        </div>
-        <span className="text-sm font-semibold tracking-tight">OctoBoost</span>
-      </div>
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-[#0a0f1e]">
+      <Link href="/dashboard" className="flex h-20 shrink-0 items-center gap-3 border-b border-border px-4 transition-opacity hover:opacity-90">
+        <Image
+          src="/Logo Octoboost.png"
+          alt="OctoBoost"
+          width={120}
+          height={120}
+          className="h-[44px] w-[44px] shrink-0 object-contain"
+          priority
+        />
+        <span className="text-lg font-bold tracking-tight">OctoBoost</span>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 pt-2">
         <div className="space-y-0.5">
@@ -116,15 +127,7 @@ function TopBar() {
   if (pathname === "/dashboard/settings") currentPage = "Settings";
   else if (projectId) {
     const segment = pathname.split("/").pop();
-    const names: Record<string, string> = {
-      analyze: "Analyze",
-      keywords: "Keywords",
-      articles: "Articles",
-      channels: "Channels",
-      schedule: "Schedule",
-      analytics: "Analytics",
-    };
-    currentPage = names[segment ?? ""] ?? "Project";
+    currentPage = pageNames[segment ?? ""] ?? "Project";
   }
 
   return (
@@ -162,7 +165,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-background text-foreground">
       <div className="grid-bg" />
       <Sidebar />
-      <div className="relative pl-56" style={{ zIndex: 1 }}>
+      <div className="relative pl-60" style={{ zIndex: 1 }}>
         <TopBar />
         <main className="px-8 py-6">{children}</main>
       </div>

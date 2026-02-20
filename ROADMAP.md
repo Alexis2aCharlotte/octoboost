@@ -19,10 +19,23 @@ SaaS de publication automatique d'articles SEO pour promouvoir des produits SaaS
 
 ### Dashboard & Navigation
 - [x] Navigation project-centric
-- [x] Sidebar global : Dashboard, Schedule, Settings
-- [x] Sidebar projet (visible quand projet sélectionné) : Analyze, Keywords, Articles, Channels, Analytics
+- [x] Sidebar global : Dashboard, Settings
+- [x] Sidebar projet : Overview, Research, Articles, Publish, Analytics
 - [x] URLs en slug (`/dashboard/projects/niches-hunter/articles`) au lieu d'UUID
 - [x] Breadcrumbs dans la top bar
+- [x] Dashboard global avec stats et liste projets
+- [x] Page Overview projet (stats, pipeline, quick actions, recent articles/publications)
+- [x] Page Research (fusion Analyze + Keywords avec tabs)
+- [x] Page Publish (fusion Site Connection + Channels + Schedule avec tabs)
+
+### Publication sur le site client (Custom API)
+- [x] Lib `custom-api.ts` : testConnection, publishToSite, generateSecret
+- [x] Snippets auto-generés (Next.js, Express) pour l'endpoint du client
+- [x] API `/api/site-connection` : CRUD + test connection + regenerate secret
+- [x] API `/api/publish/site` : publication de l'article maître sur le site du client
+- [x] UI "My Site" dans la page Publish : setup, test, secret management
+- [x] Migration DB : `site_connection` jsonb sur projects, `canonical_url` sur articles
+- [x] Pipeline status dans Overview (site connected, analysis, keywords, articles, channels, published)
 
 ### Moteur SEO
 - [x] Crawl de site (cheerio) : title, meta, structured text
@@ -78,32 +91,34 @@ SaaS de publication automatique d'articles SEO pour promouvoir des produits SaaS
 
 ## 🚧 À faire
 
-### Publication (priorité haute)
-- [ ] Connexion aux API : Medium, Dev.to
-- [ ] Publication manuelle (copy/paste) pour plateformes sans API
-- [ ] Statut : draft → ready → scheduled → published
-- [ ] Stockage de l'URL publiée et de la date
-- [ ] Stockage des credentials / API keys par channel (chiffré ou env)
+### Connecteurs site client (priorité haute)
+- [ ] Connecteur WordPress self-hosted (REST API + Application Passwords)
+- [ ] Connecteur GitHub-based (push .md/.mdx via GitHub API pour blogs statiques)
+- [ ] Connecteur Webflow CMS API
+- [ ] Bouton "Publish to my site" dans la preview article
 
-### Schedule (priorité moyenne)
-- [ ] Calendrier de publication
-- [ ] Planification des variantes
+### Syndication propre (priorité haute)
+- [ ] canonical_url systématique sur toutes les variantes (pointe vers le site client)
+- [ ] Logique de syndication par plateforme (résumé+lien vs full+canonical)
+
+### Schedule automation (priorité moyenne)
+- [ ] Cron ou Vercel Scheduled Functions pour auto-publish
 - [ ] Répartition dans le temps (éviter le burst)
-- [ ] Cron ou Vercel Scheduled Functions pour l'exécution
 
 ### Enrichissement des articles (priorité basse)
 - [ ] Extraction des outils du site à l'analyse (`keyTools`)
 - [ ] Injection des outils dans le product context pour les articles
-- [ ] Champ `key_tools` dans analyses ou projects
+- [ ] Maillage interne automatique (internal links)
+- [ ] Schema JSON-LD (SEO technique)
 
 ### Analytics (priorité basse)
-- [ ] Page Analytics : placeholder → métriques
-- [ ] Tracking des articles publiés
+- [ ] Page Analytics : métriques réelles
+- [ ] Tracking des articles publiés (clicks, impressions)
 - [ ] (Optionnel) Intégration Google Search Console
 
-### Settings (priorité basse)
-- [ ] Page Settings : profil, préférences
-- [ ] Gestion des API keys (DataForSEO, Anthropic) si multi-tenant
+### Nettoyage (priorité basse)
+- [ ] Supprimer les anciennes pages standalone (analyze, keywords, channels, schedule)
+- [ ] Unifier les redirections des anciennes URLs
 
 ---
 
@@ -111,10 +126,12 @@ SaaS de publication automatique d'articles SEO pour promouvoir des produits SaaS
 
 1. ~~**Channels** — config des plateformes~~ ✅
 2. ~~**Adaptation** — variantes par plateforme à partir de l'article maître~~ ✅
-3. **Publication** — au moins Medium / Dev.to en automatique
-4. **Schedule** — planification
-5. **Enrichissement** — keyTools dans les articles
-6. **Analytics** — métriques
+3. ~~**Custom API connector** — publication sur le site client~~ ✅
+4. ~~**Refonte navigation** — Overview, Research, Articles, Publish, Analytics~~ ✅
+5. **WordPress connector** — plus gros marché
+6. **Syndication propre** — canonical URLs systématiques
+7. **Schedule automation** — cron jobs
+8. **Analytics** — métriques
 
 ---
 

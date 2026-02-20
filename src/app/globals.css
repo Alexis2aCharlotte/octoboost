@@ -71,11 +71,11 @@ body {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 50%, rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.15) 100%);
-  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 50%, rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.15) 100%);
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 50%, black 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 90%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 50%, black 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 90%);
 }
 
 /* ── Deep ocean background ── */
@@ -86,9 +86,29 @@ body {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(15, 30, 80, 0.8) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(10, 40, 90, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 25% 15%, rgba(20, 50, 100, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(5, 15, 40, 0.9) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 55% at 50% 10%, rgba(15, 30, 80, 0.7) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 65% 25%, rgba(10, 40, 90, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 30% 20%, rgba(20, 50, 100, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 35% at 50% 95%, rgba(5, 15, 40, 0.8) 0%, transparent 50%),
     linear-gradient(180deg, #060d1f 0%, #080c18 55%, #080c18 100%);
+}
+
+/* ── Vignette overlay ── */
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0%,
+      transparent 18%,
+      rgba(8, 12, 24, 0.3) 35%,
+      rgba(8, 12, 24, 0.65) 50%,
+      rgba(8, 12, 24, 0.88) 65%,
+      rgba(8, 12, 24, 0.97) 80%,
+      rgb(8, 12, 24) 100%
+    );
 }

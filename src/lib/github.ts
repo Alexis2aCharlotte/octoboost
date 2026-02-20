@@ -1,0 +1,244 @@
+/**
+ * GitHub integration — Push articles as MD/MDX files to a user's repo.
+ * Uses the GitHub Contents API (PUT /repos/:owner/:repo/contents/:path).
+ * Classic OAuth App tokens don't expire → no refresh logic needed.
+ */
+
+export interface GitHubSiteConnection {
+  type: "github";
+  github_token: string;
+  repo_owner: string;
+  repo_name: string;
+  branch: string;
+  content_dir: string;
+  file_format: "md" | "mdx";
+  status: "connected" | "disconnected" | "error";
+  last_error?: string;
+  connected_at?: string;
+}
+
+export interface GitHubRepo {
+  id: number;
+  full_name: string;
+  name: string;
+  owner: string;
+  private: boolean;
+  default_branch: string;
+  description: string | null;
+  html_url: string;
+  pushed_at: string | null;
+}
+
+export interface GitHubTreeEntry {
+  path: string;
+  type: "blob" | "tree";
+}
+
+interface ArticlePayload {
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription?: string;
+  tags?: string[];
+  date?: string;
+}
+
+const GITHUB_API = "https://api.github.com";
+
+function headers(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+}
+
+export async function getGitHubUser(token: string): Promise<{ login: string; avatar_url: string }> {
+  const res = await fetch(`${GITHUB_API}/user`, { headers: headers(token) });
+  if (!res.ok) throw new Error(`GitHub user fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function listRepos(token: string): Promise<GitHubRepo[]> {
+  const repos: GitHubRepo[] = [];
+  let page = 1;
+
+  while (page <= 5) {
+    const res = await fetch(
+      `${GITHUB_API}/user/repos?sort=pushed&per_page=30&page=${page}&affiliation=owner,collaborator`,
+      { headers: headers(token) }
+    );
+    if (!res.ok) break;
+    const data = await res.json();
+    if (data.length === 0) break;
+
+    for (const r of data) {
+      repos.push({
+        id: r.id,
+        full_name: r.full_name,
+        name: r.name,
+        owner: r.owner.login,
+        private: r.private,
+        default_branch: r.default_branch,
+        description: r.description,
+        html_url: r.html_url,
+        pushed_at: r.pushed_at,
+      });
+    }
+    page++;
+  }
+
+  return repos;
+}
+
+export async function listDirectories(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string
+): Promise<string[]> {
+  const res = await fetch(
+    `${GITHUB_API}/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+    { headers: headers(token) }
+  );
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const dirs: string[] = ["/"];
+  for (const entry of data.tree ?? []) {
+    if (entry.type === "tree") {
+      dirs.push(entry.path);
+    }
+  }
+  return dirs.sort();
+}
+
+function generateFrontmatter(payload: ArticlePayload, format: "md" | "mdx"): string {
+  const date = payload.date ?? new Date().toISOString().split("T")[0];
+  const lines = [
+    "---",
+    `title: "${payload.title.replace(/"/g, '\\"')}"`,
+    `description: "${(payload.metaDescription ?? "").replace(/"/g, '\\"')}"`,
+    `date: "${date}"`,
+    `slug: "${payload.slug}"`,
+  ];
+
+  if (payload.tags && payload.tags.length > 0) {
+    lines.push(`tags: [${payload.tags.map((t) => `"${t}"`).join(", ")}]`);
+  }
+
+  if (format === "mdx") {
+    lines.push(`draft: false`);
+  }
+
+  lines.push("---");
+  return lines.join("\n");
+}
+
+export function buildFileContent(payload: ArticlePayload, format: "md" | "mdx"): string {
+  const frontmatter = generateFrontmatter(payload, format);
+  return `${frontmatter}\n\n${payload.content}\n`;
+}
+
+/**
+ * Push (create or update) a file to a GitHub repo via the Contents API.
+ * Returns the commit URL and the file's HTML URL.
+ */
+export async function pushFile(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  filePath: string,
+  content: string,
+  commitMessage: string
+): Promise<{ url: string; commitUrl: string }> {
+  const encodedContent = Buffer.from(content).toString("base64");
+
+  const existingRes = await fetch(
+    `${GITHUB_API}/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`,
+    { headers: headers(token) }
+  );
+
+  let sha: string | undefined;
+  if (existingRes.ok) {
+    const existing = await existingRes.json();
+    sha = existing.sha;
+  }
+
+  const body: Record<string, string> = {
+    message: commitMessage,
+    content: encodedContent,
+    branch,
+  };
+  if (sha) body.sha = sha;
+
+  const res = await fetch(
+    `${GITHUB_API}/repos/${owner}/${repo}/contents/${filePath}`,
+    {
+      method: "PUT",
+      headers: { ...headers(token), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => "");
+    throw new Error(`GitHub push failed (${res.status}): ${err.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  return {
+    url: data.content?.html_url ?? `https://github.com/${owner}/${repo}/blob/${branch}/${filePath}`,
+    commitUrl: data.commit?.html_url ?? "",
+  };
+}
+
+/**
+ * Publish an article to the user's GitHub repo.
+ * Builds the file with frontmatter, pushes it, returns the URL.
+ */
+export async function publishArticleToGitHub(
+  conn: GitHubSiteConnection,
+  payload: ArticlePayload
+): Promise<{ success: boolean; url: string }> {
+  const fileContent = buildFileContent(payload, conn.file_format);
+  const dir = conn.content_dir.replace(/^\/|\/$/g, "");
+  const filePath = dir ? `${dir}/${payload.slug}.${conn.file_format}` : `${payload.slug}.${conn.file_format}`;
+  const commitMessage = `feat(blog): add "${payload.title}"`;
+
+  const result = await pushFile(
+    conn.github_token,
+    conn.repo_owner,
+    conn.repo_name,
+    conn.branch,
+    filePath,
+    fileContent,
+    commitMessage
+  );
+
+  return { success: true, url: result.url };
+}
+
+/**
+ * Test the GitHub connection by checking repo access.
+ */
+export async function testGitHubConnection(
+  token: string,
+  owner: string,
+  repo: string
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+      headers: headers(token),
+    });
+
+    if (res.status === 404) return { valid: false, error: "Repository not found or no access" };
+    if (res.status === 401) return { valid: false, error: "GitHub token is invalid or expired" };
+    if (!res.ok) return { valid: false, error: `GitHub API error: ${res.status}` };
+
+    return { valid: true };
+  } catch (e) {
+    return { valid: false, error: e instanceof Error ? e.message : "Connection failed" };
+  }
+}
