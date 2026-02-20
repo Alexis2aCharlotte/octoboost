@@ -578,14 +578,20 @@ export default function PublishPage() {
             /* ── GitHub connected but repo not selected yet ── */
             <div className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                    <CheckCircle2 className="h-5 w-5 text-accent-light" />
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+                      <CheckCircle2 className="h-5 w-5 text-accent-light" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold">GitHub connected</h2>
+                      <p className="text-xs text-muted">Signed in as <strong>{connection.repo_owner}</strong>. Now pick your repository.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-semibold">GitHub connected</h2>
-                    <p className="text-xs text-muted">Signed in as <strong>{connection.repo_owner}</strong>. Now pick your repository.</p>
-                  </div>
+                  <button onClick={handleDisconnect} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-red-500/50 hover:text-red-400">
+                    <X className="h-3 w-3" />
+                    Disconnect
+                  </button>
                 </div>
               </div>
 
@@ -701,9 +707,6 @@ export default function PublishPage() {
                   </button>
                 )}
 
-                <button onClick={handleDisconnect} className="text-xs text-muted/60 transition hover:text-red-400">
-                  Disconnect GitHub
-                </button>
               </div>
             </div>
           ) : (
