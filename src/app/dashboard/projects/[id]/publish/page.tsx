@@ -126,6 +126,7 @@ export default function PublishPage() {
   
   const [snippetTab, setSnippetTab] = useState<"util" | "usage">("util");
   const [showSecret, setShowSecret] = useState(false);
+  const [showIntegration, setShowIntegration] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
 
@@ -416,7 +417,7 @@ export default function PublishPage() {
   const viewYear = viewDate.getFullYear();
   const viewMonth = viewDate.getMonth();
   const weeks = getMonthGrid(viewYear, viewMonth);
-  const monthLabel = viewDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const totalScheduled = variants.filter((v) => v.status === "scheduled").length;
   const totalPublished = variants.filter((v) => v.status === "published").length;
   const selectedVariants = selectedDay ? (variantsByDay.get(selectedDay) ?? []) : [];
@@ -438,8 +439,8 @@ export default function PublishPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Publish</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-3xl font-bold tracking-tight">Publish</h1>
+        <p className="mt-1 text-base text-muted">
           Connect your site, configure channels, and manage your publishing schedule.
         </p>
       </div>
@@ -454,7 +455,7 @@ export default function PublishPage() {
           <button
             key={tabId}
             onClick={() => setTab(tabId)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-[13px] transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm transition-colors ${
               tab === tabId ? "bg-accent/15 font-medium text-accent-light" : "text-muted hover:text-foreground"
             }`}
           >
@@ -475,117 +476,170 @@ export default function PublishPage() {
       {tab === "site" && (
         <div className="space-y-6">
 
-          {/* ── API Key Section (primary) ── */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-            <div>
-              <h2 className="text-lg font-semibold">Integrate OctoBoost on your site</h2>
-              <p className="mt-2 text-sm text-muted leading-relaxed">
-                Use your API key to fetch published articles directly from OctoBoost.
-                Copy the snippets below into your project — articles appear automatically
-                when you click &quot;Publish&quot;.
-              </p>
-            </div>
-
-            {/* API Key display */}
-            <div>
-              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
-                <Key className="h-4 w-4 text-accent-light" />
-                Your API Key
-              </label>
-              {apiKey ? (
+          {/* ── Connected status banner ── */}
+          {apiKey && (
+            <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-green-400">Site connected</p>
+                    <p className="text-sm text-muted">Your API key is active. Published articles are available on your site.</p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90 font-mono">
-                    {showSecret ? apiKey : `${apiKey.slice(0, 10)}${"•".repeat(24)}`}
+                  <code className="rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-green-400/80 font-mono">
+                    {apiKey.slice(0, 8)}{"•".repeat(16)}
                   </code>
-                  <button onClick={() => setShowSecret(!showSecret)} className="rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
-                    {showSecret ? "Hide" : "Show"}
-                  </button>
-                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
-                    {copiedApiKey ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copiedApiKey ? "Copied!" : "Copy"}
-                  </button>
-                  <button onClick={handleRegenerateApiKey} disabled={apiKeyLoading} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-50">
-                    {apiKeyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
+                    {copiedApiKey ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                   </button>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 py-2 text-xs text-muted">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading API key...
-                </div>
-              )}
-            </div>
+              </div>
 
-            {/* API Endpoints */}
-            <div className="rounded-lg border border-border bg-[#0d1117] p-4 space-y-2">
-              <p className="text-xs font-semibold text-muted/70 uppercase tracking-wider">Endpoints</p>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs">
+              {/* Compact endpoints */}
+              <div className="mt-4 flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 rounded-lg bg-[#0d1117] px-3 py-1.5 text-xs">
                   <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                  <code className="text-green-400/80">https://octoboost.app/api/public/articles?key=YOUR_KEY</code>
+                  <code className="text-muted">/api/public/articles</code>
                 </div>
-                <p className="pl-11 text-xs text-muted/50">Returns all published articles (title, slug, metaDescription, tags)</p>
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-2 rounded-lg bg-[#0d1117] px-3 py-1.5 text-xs">
                   <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                  <code className="text-green-400/80">https://octoboost.app/api/public/articles/[slug]?key=YOUR_KEY</code>
+                  <code className="text-muted">/api/public/articles/[slug]</code>
                 </div>
-                <p className="pl-11 text-xs text-muted/50">Returns a single article with full markdown content</p>
               </div>
             </div>
+          )}
 
-            {/* Snippet tabs */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Code2 className="h-4 w-4 text-accent-light" />
-                <span className="text-sm font-medium">Integration snippets</span>
-                <div className="ml-auto flex gap-1">
-                  {([
-                    { id: "util" as const, label: "lib/octoboost.ts" },
-                    { id: "usage" as const, label: "Usage example" },
-                  ]).map(({ id: tabId, label }) => (
+          {/* ── Setup section (expanded if no key, accordion if connected) ── */}
+          <div className="rounded-xl border border-border bg-card">
+            {apiKey ? (
+              <button
+                onClick={() => setShowIntegration(!showIntegration)}
+                className="flex w-full items-center justify-between p-5 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Code2 className="h-4 w-4 text-muted" />
+                  <div>
+                    <span className="text-sm font-medium text-muted">Integration details</span>
+                    <p className="text-xs text-muted/60">API key, code snippets, and setup instructions</p>
+                  </div>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-muted transition ${showIntegration ? "rotate-180" : ""}`} />
+              </button>
+            ) : (
+              <div className="p-6 pb-0">
+                <h2 className="text-xl font-semibold">Integrate OctoBoost on your site</h2>
+                <p className="mt-2 text-base text-muted leading-relaxed">
+                  Use your API key to fetch published articles directly from OctoBoost.
+                  Copy the snippets below into your project.
+                </p>
+              </div>
+            )}
+
+            {(!apiKey || showIntegration) && (
+              <div className={`space-y-5 ${apiKey ? "border-t border-border p-5" : "p-6 pt-5"}`}>
+                {/* API Key display */}
+                <div>
+                  <label className="mb-1.5 flex items-center gap-2 text-sm font-medium">
+                    <Key className="h-4 w-4 text-accent-light" />
+                    API Key
+                  </label>
+                  {apiKey ? (
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90 font-mono">
+                        {apiKey}
+                      </code>
+                      <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
+                        {copiedApiKey ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        {copiedApiKey ? "Copied!" : "Copy"}
+                      </button>
+                      <button onClick={handleRegenerateApiKey} disabled={apiKeyLoading} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-50">
+                        {apiKeyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 py-2 text-xs text-muted">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading API key...
+                    </div>
+                  )}
+                </div>
+
+                {/* API Endpoints */}
+                <div className="rounded-lg border border-border bg-[#0d1117] p-4 space-y-2">
+                  <p className="text-xs font-semibold text-muted/70 uppercase tracking-wider">Endpoints</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                      <code className="text-green-400/80">https://octoboost.app/api/public/articles?key=YOUR_KEY</code>
+                    </div>
+                    <p className="pl-11 text-xs text-muted/50">Returns all published articles (title, slug, metaDescription, tags)</p>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                      <code className="text-green-400/80">https://octoboost.app/api/public/articles/[slug]?key=YOUR_KEY</code>
+                    </div>
+                    <p className="pl-11 text-xs text-muted/50">Returns a single article with full markdown content</p>
+                  </div>
+                </div>
+
+                {/* Snippet tabs */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Code2 className="h-4 w-4 text-accent-light" />
+                    <span className="text-sm font-medium">Integration snippets</span>
+                    <div className="ml-auto flex gap-1">
+                      {([
+                        { id: "util" as const, label: "lib/octoboost.ts" },
+                        { id: "usage" as const, label: "Usage example" },
+                      ]).map(({ id: tabId, label }) => (
+                        <button
+                          key={tabId}
+                          onClick={() => setSnippetTab(tabId)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                            snippetTab === tabId ? "bg-accent/15 text-accent-light" : "text-muted hover:text-foreground"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <pre className="max-h-[350px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90">
+                      <code>{snippet}</code>
+                    </pre>
                     <button
-                      key={tabId}
-                      onClick={() => setSnippetTab(tabId)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                        snippetTab === tabId ? "bg-accent/15 text-accent-light" : "text-muted hover:text-foreground"
-                      }`}
+                      onClick={() => copyToClipboard(snippet, "snippet")}
+                      className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/20"
                     >
-                      {label}
+                      {copiedSnippet ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copiedSnippet ? "Copied!" : "Copy"}
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
-              <div className="relative">
-                <pre className="max-h-[350px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90">
-                  <code>{snippet}</code>
-                </pre>
-                <button
-                  onClick={() => copyToClipboard(snippet, "snippet")}
-                  className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/20"
-                >
-                  {copiedSnippet ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  {copiedSnippet ? "Copied!" : "Copy"}
-                </button>
-              </div>
-            </div>
 
-            {/* How it works */}
-            <div className="rounded-lg border border-border bg-white/[0.02] p-4">
-              <p className="mb-3 text-xs font-semibold text-muted/70 uppercase tracking-wider">How it works</p>
-              <div className="space-y-2 text-xs text-muted leading-relaxed">
-                <div className="flex items-start gap-2">
-                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
-                  Copy <code className="rounded bg-white/[0.06] px-1 py-0.5">lib/octoboost.ts</code> into your project — it&apos;s a simple fetch utility
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
-                  Import and merge OctoBoost articles with your existing blog posts
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>
-                  Click &quot;Publish&quot; on OctoBoost — articles appear on your site within 60s
+                {/* How it works */}
+                <div className="rounded-lg border border-border bg-white/[0.02] p-4">
+                  <p className="mb-3 text-xs font-semibold text-muted/70 uppercase tracking-wider">How it works</p>
+                  <div className="space-y-2 text-xs text-muted leading-relaxed">
+                    <div className="flex items-start gap-2">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
+                      Copy <code className="rounded bg-white/[0.06] px-1 py-0.5">lib/octoboost.ts</code> into your project
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
+                      Import and merge OctoBoost articles with your existing blog posts
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>
+                      Click &quot;Publish&quot; on OctoBoost and articles appear on your site
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* ── GitHub Push — accordion (advanced) ── */}
@@ -782,7 +836,7 @@ export default function PublishPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wider text-accent-light">Auto-publish</h2>
               <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs text-accent-light">API</span>
             </div>
-            <p className="text-xs text-muted">OctoBoost publishes directly to these platforms. One click, zero copy/paste.</p>
+            <p className="text-sm text-muted">OctoBoost publishes directly to these platforms. One click, zero copy/paste.</p>
 
             {autoChannels.length > 0 && (
               <div className="space-y-2">
@@ -797,7 +851,7 @@ export default function PublishPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">{channel.name}</p>
-                        <p className="text-xs text-muted">{meta?.description}</p>
+                        <p className="text-sm text-muted">{meta?.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {meta?.connectionType === "api_key" && (() => {
@@ -870,7 +924,7 @@ export default function PublishPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted/70">Copy / Paste</h2>
               <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs text-muted">Manual</span>
             </div>
-            <p className="text-xs text-muted">OctoBoost adapts the content for these platforms. You copy and paste it yourself.</p>
+            <p className="text-sm text-muted">OctoBoost adapts the content for these platforms. You copy and paste it yourself.</p>
 
             {manualChannels.length > 0 && (
               <div className="space-y-2">
@@ -884,7 +938,7 @@ export default function PublishPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">{channel.name}</p>
-                        <p className="text-xs text-muted">{meta?.description}</p>
+                        <p className="text-sm text-muted">{meta?.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs font-medium text-muted">Copy/Paste</span>
@@ -1002,7 +1056,7 @@ export default function PublishPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-accent" />
                     <span className="text-sm font-semibold">
-                      {selectedDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                      {selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                     </span>
                     <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
                       {selectedVariants.length} publication{selectedVariants.length > 1 ? "s" : ""}

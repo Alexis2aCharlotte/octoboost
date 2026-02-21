@@ -75,10 +75,10 @@ function LoginForm() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
             <Send className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold">
+          <h1 className="text-2xl font-bold">
             {isSignUp ? "Create your account" : "Welcome back"}
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-2 text-base text-muted">
             {isSignUp
               ? "Start growing your organic traffic"
               : "Sign in to your OctoBoost account"}

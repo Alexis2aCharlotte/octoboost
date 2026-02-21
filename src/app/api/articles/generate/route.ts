@@ -75,6 +75,13 @@ export async function POST(req: NextRequest) {
     .single();
 
   try {
+    // Fetch site pages for internal linking
+    const { data: sitePages } = await supabase
+      .from("site_pages")
+      .select("path, title, description")
+      .eq("project_id", projectId)
+      .order("path");
+
     const result = await generateArticle({
       cluster: {
         topic: cluster.topic,
@@ -91,6 +98,11 @@ export async function POST(req: NextRequest) {
         summary: analysis?.product_summary ?? "",
         targetAudience: analysis?.target_audience ?? "",
       },
+      sitePages: sitePages?.map((p) => ({
+        path: p.path,
+        title: p.title,
+        description: p.description,
+      })),
     });
 
     const slug = result.title

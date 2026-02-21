@@ -13,7 +13,7 @@ async function resolveProject(
 
   const query = supabase
     .from("projects")
-    .select("id, slug, name, url, site_connection, created_at")
+    .select("id, slug, name, url, site_connection, api_key, created_at")
     .eq("user_id", userId);
 
   if (isUuid) {
@@ -111,8 +111,14 @@ export async function GET(
     string,
     unknown
   > | null;
-  const siteConnected =
-    siteConnection?.status === "connected" && !!siteConnection?.endpoint_url;
+  const hasApiKey = !!project.api_key;
+  const hasGitHub =
+    siteConnection?.type === "github" &&
+    siteConnection?.status === "connected";
+  const hasCustomApi =
+    siteConnection?.status === "connected" &&
+    !!siteConnection?.endpoint_url;
+  const siteConnected = hasApiKey || hasGitHub || hasCustomApi;
 
   const pipeline = {
     siteConnected,

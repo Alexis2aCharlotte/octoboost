@@ -104,8 +104,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-base text-muted">
             {totalProjects === 0
               ? "Start by adding your first site."
               : `${totalProjects} project${totalProjects > 1 ? "s" : ""} · ${withAnalysis} analyzed`}
@@ -118,30 +118,30 @@ export default function DashboardPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-muted">Projects</span>
+              <span className="text-sm text-muted">Projects</span>
               <Globe className="h-4 w-4 text-muted/40" />
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">
+            <p className="mt-2 text-3xl font-semibold tabular-nums">
               {totalProjects}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-muted">Analyzed</span>
+              <span className="text-sm text-muted">Analyzed</span>
               <Search className="h-4 w-4 text-muted/40" />
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">
+            <p className="mt-2 text-3xl font-semibold tabular-nums">
               {withAnalysis}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-muted">Ready</span>
+              <span className="text-sm text-muted">Ready</span>
               <BarChart3 className="h-4 w-4 text-muted/40" />
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">
+            <p className="mt-2 text-3xl font-semibold tabular-nums">
               {withAnalysis}
-              <span className="ml-1 text-sm font-normal text-muted">
+              <span className="ml-1 text-base font-normal text-muted">
                 / {totalProjects}
               </span>
             </p>
@@ -191,14 +191,14 @@ export default function DashboardPage() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
             <Sparkles className="h-5 w-5 text-accent-light" />
           </div>
-          <h3 className="text-sm font-semibold">No projects yet</h3>
-          <p className="mt-1 max-w-sm text-center text-[13px] text-muted">
+          <h3 className="text-base font-semibold">No projects yet</h3>
+          <p className="mt-1 max-w-sm text-center text-sm text-muted">
             Enter your website URL above to run your first analysis.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-muted">
+          <h2 className="text-base font-medium text-muted">
             Your projects ({projects.length})
           </h2>
           {projects.map((project) => {
@@ -216,10 +216,10 @@ export default function DashboardPage() {
                     <Globe className="h-5 w-5 text-accent-light" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">
+                    <p className="text-base font-medium">
                       {project.name || project.url}
                     </p>
-                    <p className="text-xs text-muted">{project.url}</p>
+                    <p className="text-sm text-muted">{project.url}</p>
                   </div>
                   {hasAnalysis && (
                     <div className="flex items-center gap-3 text-xs text-muted/60">

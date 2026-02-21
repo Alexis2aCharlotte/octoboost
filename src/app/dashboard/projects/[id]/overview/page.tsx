@@ -18,6 +18,7 @@ import {
   Layers,
   Megaphone,
   Plug,
+  ChevronDown,
 } from "lucide-react";
 
 interface OverviewData {
@@ -75,6 +76,7 @@ export default function ProjectOverviewPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pipelineOpen, setPipelineOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -155,6 +157,7 @@ export default function ProjectOverviewPage() {
   ];
 
   const completedSteps = pipelineSteps.filter((s) => s.done).length;
+  const allDone = completedSteps === pipelineSteps.length;
   const nextStep = pipelineSteps.find((s) => !s.done);
 
   return (
@@ -162,14 +165,14 @@ export default function ProjectOverviewPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight">
             {project.name || project.url}
           </h1>
           <a
             href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 text-sm text-accent-light transition-colors hover:text-accent"
+            className="mt-1 inline-flex items-center gap-1.5 text-base text-accent-light transition-colors hover:text-accent"
           >
             {project.url}
             <ExternalLink className="h-3 w-3" />
@@ -178,7 +181,7 @@ export default function ProjectOverviewPage() {
         {nextStep && (
           <Link
             href={nextStep.href}
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-light"
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-base font-medium text-white transition-colors hover:bg-accent-light"
           >
             <nextStep.icon className="h-4 w-4" />
             {nextStep.label}
@@ -188,43 +191,61 @@ export default function ProjectOverviewPage() {
       </div>
 
       {/* Pipeline progress */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Setup Pipeline</h2>
-          <span className="text-xs text-muted">
-            {completedSteps}/{pipelineSteps.length} completed
-          </span>
-        </div>
-        <div className="mb-3 h-1.5 rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-accent transition-all duration-500"
-            style={{
-              width: `${(completedSteps / pipelineSteps.length) * 100}%`,
-            }}
-          />
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {pipelineSteps.map((step) => (
-            <Link
-              key={step.label}
-              href={step.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                step.done
-                  ? "text-muted/60"
-                  : "text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              {step.done ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />
-              ) : (
-                <Circle className="h-4 w-4 shrink-0 text-muted/30" />
-              )}
-              <span className={step.done ? "line-through" : ""}>
-                {step.label}
-              </span>
-            </Link>
-          ))}
-        </div>
+      <div className="rounded-xl border border-border bg-card">
+        <button
+          onClick={() => setPipelineOpen(!pipelineOpen)}
+          className="flex w-full items-center justify-between p-4 text-left"
+        >
+          <div className="flex items-center gap-3">
+            {allDone ? (
+              <CheckCircle2 className="h-4.5 w-4.5 text-green-400" />
+            ) : (
+              <div className="relative h-4.5 w-4.5">
+                <Circle className="h-4.5 w-4.5 text-muted/30" />
+              </div>
+            )}
+            <span className="text-base font-semibold">Setup Pipeline</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-medium ${allDone ? "text-green-400" : "text-muted"}`}>
+              {completedSteps}/{pipelineSteps.length} completed
+            </span>
+            {!allDone && (
+              <div className="h-1.5 w-24 rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500"
+                  style={{ width: `${(completedSteps / pipelineSteps.length) * 100}%` }}
+                />
+              </div>
+            )}
+            <ChevronDown className={`h-4 w-4 text-muted transition ${pipelineOpen ? "rotate-180" : ""}`} />
+          </div>
+        </button>
+
+        {pipelineOpen && (
+          <div className="border-t border-border px-4 pb-4 pt-3">
+            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+              {pipelineSteps.map((step) => (
+                <Link
+                  key={step.label}
+                  href={step.href}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    step.done
+                      ? "text-muted/70"
+                      : "text-foreground hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {step.done ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-400" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 shrink-0 text-muted/30" />
+                  )}
+                  {step.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats grid */}
@@ -292,16 +313,16 @@ export default function ProjectOverviewPage() {
         {/* Recent articles */}
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <h3 className="text-[13px] font-semibold">Recent Articles</h3>
+            <h3 className="text-sm font-semibold">Recent Articles</h3>
             <Link
               href={`/dashboard/projects/${id}/articles`}
-              className="text-xs text-accent-light hover:underline"
+              className="text-sm text-accent-light hover:underline"
             >
               View all
             </Link>
           </div>
           {recentArticles.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-muted/60">
+            <div className="px-5 py-8 text-center text-base text-muted/60">
               No articles yet
             </div>
           ) : (
@@ -313,8 +334,8 @@ export default function ProjectOverviewPage() {
                 >
                   <FileText className="h-4 w-4 shrink-0 text-muted/40" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{article.title}</p>
-                    <p className="text-xs text-muted/50">
+                    <p className="truncate text-base">{article.title}</p>
+                    <p className="text-sm text-muted/50">
                       {article.wordCount.toLocaleString()} words
                     </p>
                   </div>
@@ -328,16 +349,16 @@ export default function ProjectOverviewPage() {
         {/* Recent published */}
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <h3 className="text-[13px] font-semibold">Recent Publications</h3>
+            <h3 className="text-sm font-semibold">Recent Publications</h3>
             <Link
               href={`/dashboard/projects/${id}/publish`}
-              className="text-xs text-accent-light hover:underline"
+              className="text-sm text-accent-light hover:underline"
             >
               View all
             </Link>
           </div>
           {recentPublished.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-muted/60">
+            <div className="px-5 py-8 text-center text-base text-muted/60">
               No publications yet
             </div>
           ) : (
@@ -349,11 +370,11 @@ export default function ProjectOverviewPage() {
                 >
                   <Globe className="h-4 w-4 shrink-0 text-muted/40" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{pub.title}</p>
-                    <p className="text-xs text-muted/50">
+                    <p className="truncate text-base">{pub.title}</p>
+                    <p className="text-sm text-muted/50">
                       {platformLabels[pub.platform] ?? pub.platform}
                       {pub.publishedAt &&
-                        ` · ${new Date(pub.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`}
+                        ` · ${new Date(pub.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                     </p>
                   </div>
                   {pub.publishedUrl && (
@@ -395,11 +416,11 @@ function StatCard({
       className="group rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
     >
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-muted">{label}</span>
+        <span className="text-sm text-muted">{label}</span>
         <Icon className="h-4 w-4 text-muted/40" />
       </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted/50">{sub}</p>}
+      <p className="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
+      {sub && <p className="mt-0.5 text-sm text-muted/50">{sub}</p>}
     </Link>
   );
 }
@@ -425,10 +446,10 @@ function QuickAction({
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-1.5">
-          <p className="text-sm font-medium">{label}</p>
+          <p className="text-base font-medium">{label}</p>
           <ArrowRight className="h-3 w-3 text-muted/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted" />
         </div>
-        <p className="mt-0.5 text-xs text-muted/60">{description}</p>
+        <p className="mt-0.5 text-sm text-muted/60">{description}</p>
       </div>
     </Link>
   );
@@ -442,7 +463,7 @@ function StatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${colors[status] ?? colors.draft}`}
+      className={`rounded-md px-2 py-0.5 text-xs font-medium ${colors[status] ?? colors.draft}`}
     >
       {status}
     </span>

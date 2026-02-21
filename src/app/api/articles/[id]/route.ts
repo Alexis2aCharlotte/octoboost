@@ -79,7 +79,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const allowedFields = ["title", "content", "meta_description", "status"];
+  const allowedFields = ["title", "content", "meta_description", "status", "scheduled_at"];
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   for (const field of allowedFields) {

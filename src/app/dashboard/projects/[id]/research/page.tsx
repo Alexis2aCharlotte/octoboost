@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   Search,
   Target,
-  TrendingUp,
-  Sparkles,
+  PenTool,
   ArrowUpDown,
   Loader2,
-  Zap,
   Filter,
   Layers,
   FileText,
@@ -76,6 +74,8 @@ interface Project {
   url: string;
   latestAnalysisId: string | null;
   latestAnalysis: { id: string; site_title: string; created_at: string } | null;
+  analysesLast30d: number;
+  totalAnalyses: number;
 }
 
 type SortField =
@@ -95,11 +95,31 @@ const intentColors: Record<string, string> = {
   navigational: "bg-purple-500/15 text-purple-400",
 };
 
+const intentTooltips: Record<string, string> = {
+  informational: "User wants to learn or understand something. Best for blog posts and guides.",
+  commercial: "User is researching before buying. Great for comparison articles and reviews.",
+  transactional: "User is ready to take action (buy, sign up, download). High conversion potential.",
+  navigational: "User is looking for a specific site or page. Low content opportunity.",
+};
+
 const categoryColors: Record<string, string> = {
   broad: "bg-cyan-500/15 text-cyan-400",
   niche: "bg-pink-500/15 text-pink-400",
   question: "bg-emerald-500/15 text-emerald-400",
   comparison: "bg-orange-500/15 text-orange-400",
+};
+
+const categoryTooltips: Record<string, string> = {
+  broad: "Generic, high-level keyword with wide audience reach. Higher volume, more competition.",
+  niche: "Specific keyword targeting a narrow audience. Lower volume but easier to rank for.",
+  question: "Search query phrased as a question. Ideal for FAQ sections and how-to articles.",
+  comparison: "User comparing products or solutions. Perfect for \"vs\" and \"best of\" articles.",
+};
+
+const sourceTooltips: Record<string, string> = {
+  seed: "Discovered by AI analysis of your site content and structure.",
+  expanded: "Found via DataForSEO keyword suggestions based on your seed keywords.",
+  competitor: "Extracted from competitor sites during competitive analysis.",
 };
 
 const difficultyColors: Record<string, string> = {
@@ -222,8 +242,6 @@ export default function ResearchPage() {
 
   const withVolume = keywords.filter((k) => k.searchVolume > 0);
   const totalVolume = withVolume.reduce((s, k) => s + k.searchVolume, 0);
-  const avgVolume =
-    withVolume.length > 0 ? Math.round(totalVolume / withVolume.length) : 0;
   const goldenKeywords = keywords.filter((k) => k.opportunityScore >= 20).length;
   const fromCompetitors = keywords.filter((k) => k.source === "competitor").length;
 
@@ -305,7 +323,7 @@ export default function ResearchPage() {
             onClick={runAnalysis}
             className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light"
           >
-            <Sparkles className="h-4 w-4" />
+            <PenTool className="h-4 w-4" />
             Run Analysis
           </button>
         </div>
@@ -319,7 +337,7 @@ export default function ResearchPage() {
           />
           <StepCard
             step={2}
-            icon={Sparkles}
+            icon={Search}
             title="AI analysis"
             description="GPT identifies keywords, competitors, and content gaps"
           />
@@ -346,13 +364,11 @@ export default function ResearchPage() {
             {fromCompetitors} from competitors
           </p>
         </div>
-        <button
-          onClick={runAnalysis}
-          className="flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-[13px] text-muted transition-colors hover:text-foreground"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Re-analyze
-        </button>
+        <AnalysisSchedule
+          project={project}
+          analyzing={analyzing}
+          onReanalyze={runAnalysis}
+        />
       </div>
 
       {/* Main tabs: Keywords vs Analysis */}
@@ -387,27 +403,20 @@ export default function ResearchPage() {
           {/* Stats */}
           <div className="grid gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">Total</span>
-                <Target className="h-4 w-4 text-muted" />
-              </div>
+              <span className="text-sm text-muted">Keywords</span>
               <p className="mt-2 text-2xl font-bold">{keywords.length}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">With Volume</span>
-                <TrendingUp className="h-4 w-4 text-muted" />
-              </div>
-              <p className="mt-2 text-2xl font-bold">{withVolume.length}</p>
+              <span className="text-sm text-muted">Monthly Searches</span>
+              <p className="mt-2 text-2xl font-bold">
+                {totalVolume.toLocaleString()}
+              </p>
               <p className="mt-0.5 text-xs text-muted">
-                avg. {avgVolume.toLocaleString()}/mo
+                across {withVolume.length} keywords
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">Golden</span>
-                <Sparkles className="h-4 w-4 text-amber-400" />
-              </div>
+              <span className="text-sm text-muted">Golden</span>
               <p className="mt-2 text-2xl font-bold text-amber-400">
                 {goldenKeywords}
               </p>
@@ -416,10 +425,7 @@ export default function ResearchPage() {
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">Clusters</span>
-                <Layers className="h-4 w-4 text-muted" />
-              </div>
+              <span className="text-sm text-muted">Clusters</span>
               <p className="mt-2 text-2xl font-bold">{clusters.length}</p>
               <p className="mt-0.5 text-xs text-muted">article topics</p>
             </div>
@@ -507,14 +513,18 @@ export default function ResearchPage() {
                         <tr key={kw.id} className="border-b border-border transition hover:bg-card-hover">
                           <td className="px-4 py-3 font-medium">{kw.keyword}</td>
                           <td className="px-4 py-3">
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${categoryColors[kw.category] ?? "bg-card text-muted"}`}>
-                              {kw.category}
-                            </span>
+                            <Tooltip text={categoryTooltips[kw.category] ?? kw.category}>
+                              <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${categoryColors[kw.category] ?? "bg-card text-muted"}`}>
+                                {kw.category}
+                              </span>
+                            </Tooltip>
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${intentColors[kw.intent] ?? "bg-card text-muted"}`}>
-                              {kw.intent}
-                            </span>
+                            <Tooltip text={intentTooltips[kw.intent] ?? kw.intent}>
+                              <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${intentColors[kw.intent] ?? "bg-card text-muted"}`}>
+                                {kw.intent}
+                              </span>
+                            </Tooltip>
                           </td>
                           <td className="px-4 py-3">
                             <SourceBadge source={kw.source} />
@@ -661,7 +671,7 @@ export default function ResearchPage() {
             onClick={runAnalysis}
             className="mt-4 flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light"
           >
-            <Sparkles className="h-4 w-4" />
+            <PenTool className="h-4 w-4" />
             Run Analysis
           </button>
         </div>
@@ -737,6 +747,93 @@ function ClustersView({ clusters }: { clusters: Cluster[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ─── Analysis schedule ─────────────────────────────────── */
+
+function AnalysisSchedule({
+  project,
+  analyzing,
+  onReanalyze,
+}: {
+  project: Project | null;
+  analyzing: boolean;
+  onReanalyze: () => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  if (!project?.latestAnalysis) return null;
+
+  const lastDate = new Date(project.latestAnalysis.created_at);
+  const nextDate = new Date(lastDate);
+  nextDate.setMonth(nextDate.getMonth() + 1);
+
+  const maxPerPeriod = 2;
+  const used = project.analysesLast30d ?? 0;
+  const remaining = Math.max(0, maxPerPeriod - used);
+  const canReanalyze = remaining > 0;
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  function handleConfirm() {
+    setShowConfirm(false);
+    onReanalyze();
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="text-right">
+        <p className="text-xs text-muted">
+          Next analysis · <span className="text-foreground font-medium">{fmt(nextDate)}</span>
+        </p>
+        <p className="mt-0.5 text-xs text-muted/60">
+          {remaining > 0
+            ? `${remaining} re-analysis remaining this month`
+            : "Re-analysis limit reached this month"}
+        </p>
+      </div>
+      {canReanalyze && (
+        <button
+          onClick={() => setShowConfirm(true)}
+          disabled={analyzing}
+          className="flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-[13px] text-muted transition-colors hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${analyzing ? "animate-spin" : ""}`} />
+          Re-analyze
+        </button>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-[#0d1225] p-6 shadow-2xl">
+            <div className="mb-1 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+              <h3 className="text-sm font-semibold">Re-analyze this site?</h3>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              This will use your only re-analysis for this month.
+              Your current keywords and clusters will be replaced with fresh data.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-light"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -831,54 +928,109 @@ function SortHeader({
   );
 }
 
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  function show() {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 6, left: rect.left + rect.width / 2 });
+  }
+
+  return (
+    <span
+      ref={ref}
+      className="relative inline-flex"
+      onMouseEnter={show}
+      onMouseLeave={() => setPos(null)}
+    >
+      {children}
+      {pos && (
+        <span
+          className="fixed z-[9999] w-[220px] rounded-lg border border-border bg-[#0d1225] px-3 py-2 text-xs font-normal leading-relaxed text-muted shadow-lg"
+          style={{ top: pos.top, left: pos.left, transform: "translateX(-50%)" }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function SourceBadge({ source }: { source: string }) {
   const styles: Record<string, string> = {
     seed: "text-muted",
     expanded: "text-cyan-400",
     competitor: "text-orange-400",
   };
-  return (
+  const tip = sourceTooltips[source];
+  const badge = (
     <span className={`text-xs font-medium capitalize ${styles[source] ?? "text-muted"}`}>
       {source}
     </span>
   );
+  return tip ? <Tooltip text={tip}>{badge}</Tooltip> : badge;
 }
 
 function OpportunityBadge({ score }: { score: number }) {
   let color = "text-muted bg-card";
-  if (score >= 50) color = "text-green-400 bg-green-500/10";
-  else if (score >= 20) color = "text-amber-400 bg-amber-500/10";
-  else if (score > 0) color = "text-orange-400 bg-orange-500/10";
+  let tip = "No opportunity signal for this keyword.";
+  if (score >= 50) {
+    color = "text-green-400 bg-green-500/10";
+    tip = "Excellent opportunity. High volume and low competition make this a top target.";
+  } else if (score >= 20) {
+    color = "text-amber-400 bg-amber-500/10";
+    tip = "Good opportunity. Solid balance of search volume and achievable competition.";
+  } else if (score > 0) {
+    color = "text-orange-400 bg-orange-500/10";
+    tip = "Low opportunity. Either high competition or low volume limits the potential.";
+  }
   return (
-    <span className={`rounded-md px-2 py-0.5 font-mono text-xs font-medium ${color}`}>
-      {score}
-    </span>
+    <Tooltip text={tip}>
+      <span className={`rounded-md px-2 py-0.5 font-mono text-xs font-medium ${color}`}>
+        {score}
+      </span>
+    </Tooltip>
   );
 }
 
 function SerpBadge({ value }: { value: number }) {
   let color = "text-green-400 bg-green-500/10";
-  if (value >= 60) color = "text-red-400 bg-red-500/10";
-  else if (value >= 30) color = "text-amber-400 bg-amber-500/10";
+  let tip = "Low SERP difficulty. Few strong competitors in search results.";
+  if (value >= 60) {
+    color = "text-red-400 bg-red-500/10";
+    tip = "High SERP difficulty. Dominated by big brands and authority sites.";
+  } else if (value >= 30) {
+    color = "text-amber-400 bg-amber-500/10";
+    tip = "Moderate SERP difficulty. Some strong competitors but room to rank.";
+  }
   return (
-    <div className="flex items-center gap-1.5">
-      <Shield className="h-3 w-3" />
-      <span className={`rounded-md px-1.5 py-0.5 font-mono text-xs font-medium ${color}`}>
-        {value}
+    <Tooltip text={tip}>
+      <span className="flex items-center gap-1.5">
+        <Shield className="h-3 w-3" />
+        <span className={`rounded-md px-1.5 py-0.5 font-mono text-xs font-medium ${color}`}>
+          {value}
+        </span>
       </span>
-    </div>
+    </Tooltip>
   );
 }
 
 function CompetitionBar({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const color = pct < 30 ? "bg-green-500" : pct < 60 ? "bg-amber-500" : "bg-red-500";
+  let tip = "Low ad competition. Few advertisers bidding on this keyword.";
+  if (pct >= 60) tip = "High ad competition. Many advertisers are bidding, indicating commercial value.";
+  else if (pct >= 30) tip = "Moderate ad competition. Some advertisers find this keyword valuable.";
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="font-mono text-xs text-muted">{pct}%</span>
-    </div>
+    <Tooltip text={tip}>
+      <span className="flex items-center gap-2">
+        <span className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
+          <span className={`block h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+        </span>
+        <span className="font-mono text-xs text-muted">{pct}%</span>
+      </span>
+    </Tooltip>
   );
 }

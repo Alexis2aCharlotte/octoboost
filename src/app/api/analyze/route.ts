@@ -7,6 +7,7 @@ import {
   clusterKeywords,
 } from "@/lib/engine/llm-analyzer";
 import { generateApiKey } from "@/lib/custom-api";
+import { crawlSitePages } from "@/lib/engine/sitemap";
 import {
   getKeywordVolumes,
   getKeywordSuggestions,
@@ -477,6 +478,23 @@ export async function POST(req: NextRequest) {
         );
       if (clusterError) console.error("Clusters insert error:", clusterError);
     }
+
+    // Crawl sitemap in background (non-blocking)
+    crawlSitePages(crawlData.url).then(async (pages) => {
+      if (pages.length > 0) {
+        await supabase.from("site_pages").delete().eq("project_id", projectId);
+        await supabase.from("site_pages").insert(
+          pages.map((p) => ({
+            project_id: projectId,
+            url: p.url,
+            path: p.path,
+            title: p.title,
+            description: p.description,
+          }))
+        );
+        console.log(`[Sitemap] Crawled ${pages.length} pages for project ${projectId}`);
+      }
+    }).catch((e) => console.error("[Sitemap] crawl error:", e));
 
     return NextResponse.json({
       analysisId: newAnalysis.id,

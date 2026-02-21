@@ -1,138 +1,183 @@
 # OctoBoost — Roadmap
 
-SaaS de publication automatique d'articles SEO pour promouvoir des produits SaaS sur des blogs et plateformes communautaires.
+Automated SEO article publishing SaaS for promoting SaaS products on blogs and community platforms.
 
 ---
 
-## ✅ Fait
+## Done
 
 ### Infrastructure & Auth
-- [x] Next.js 15 (App Router) + React 19 + TypeScript
+- [x] Next.js 16 (App Router) + React 19 + TypeScript
 - [x] Tailwind CSS v4 + typography
-- [x] Supabase : auth (email/password), PostgreSQL, RLS
-- [x] Middleware de protection des routes dashboard
-- [x] Variables d'environnement (.env.local, .env.example)
+- [x] Supabase: auth (email/password), PostgreSQL, RLS
+- [x] Middleware route protection for dashboard
+- [x] Environment variables (.env.local, .env.example)
+- [x] Vercel deployment (fix Turbopack root, TypeScript errors, Suspense boundary)
+- [x] Vercel Analytics integration
 
 ### Landing & Onboarding
-- [x] Landing page avec input URL + CTA login
+- [x] Landing page with CTA "Get Started" (hidden URL input for public)
 - [x] Login / Signup via Supabase Auth
 
+### Design & UI
+- [x] Full design overhaul — blink.new / pro SaaS style
+- [x] Inter + JetBrains Mono fonts (replaced Geist)
+- [x] Ocean navy blue palette (bg `#080c18`, cards `#0d1225`, accent `#3b82f6`)
+- [x] CSS grid background with radial halo
+- [x] Ocean gradient on landing page
+- [x] Clean sidebar with subtle hovers (bg `#0a0f1e`)
+- [x] Compact topbar with breadcrumbs
+- [x] Opaque cards (no transparency through grid)
+- [x] Larger fonts (inspired by Niches Hunter): h1 text-3xl, descriptions text-base, stats text-3xl
+- [x] Pipeline progress as accordion (compact when all done)
+- [x] All UI text in English (no French)
+
 ### Dashboard & Navigation
-- [x] Navigation project-centric
-- [x] Sidebar global : Dashboard, Settings
-- [x] Sidebar projet : Overview, Research, Articles, Publish, Analytics
-- [x] URLs en slug (`/dashboard/projects/niches-hunter/articles`) au lieu d'UUID
-- [x] Breadcrumbs dans la top bar
-- [x] Dashboard global avec stats et liste projets
-- [x] Page Overview projet (stats, pipeline, quick actions, recent articles/publications)
-- [x] Page Research (fusion Analyze + Keywords avec tabs)
-- [x] Page Publish (fusion Site Connection + Channels + Schedule avec tabs)
+- [x] Project-centric navigation
+- [x] Global sidebar: Dashboard, Settings
+- [x] Project sidebar: Overview, Research, Articles, Publish, Analytics
+- [x] Slug-based URLs (`/dashboard/projects/niches-hunter/articles`) instead of UUIDs
+- [x] Breadcrumbs in top bar
+- [x] Overview page with pipeline, stats, quick actions, recent articles/publications
 
-### Publication sur le site client (Custom API)
-- [x] Lib `custom-api.ts` : testConnection, publishToSite, generateSecret
-- [x] Snippets auto-generés (Next.js, Express) pour l'endpoint du client
-- [x] API `/api/site-connection` : CRUD + test connection + regenerate secret
-- [x] API `/api/publish/site` : publication de l'article maître sur le site du client
-- [x] UI "My Site" dans la page Publish : setup, test, secret management
-- [x] Migration DB : `site_connection` jsonb sur projects, `canonical_url` sur articles
-- [x] Pipeline status dans Overview (site connected, analysis, keywords, articles, channels, published)
+### Page Research (ex-Analyze)
+- [x] Project hub with site summary, last analysis date, Re-analyze button
+- [x] Quick actions (Keywords, Articles, Channels) grid
+- [x] Visual onboarding when no analysis (3 steps: Crawl → AI → Keywords)
+- [x] Results view: stats, tabs keywords/competitors/ideas
+- [x] Tooltip explanations on hover for all badges (category, intent, source, opportunity, SERP, competition)
+- [x] Monthly re-analysis limit (max 1 re-analyze per month) with confirmation modal
+- [x] "Monthly Searches" stat box (total volume across keywords)
 
-### Moteur SEO
-- [x] Crawl de site (cheerio) : title, meta, structured text
-- [x] Analyse LLM (GPT-4o) : 50–80 seed keywords, 15–25 article ideas, 5–10 competitors
-- [x] DataForSEO : volumes, CPC, competition, suggestions
-- [x] Classification des keywords (GPT-4o-mini) : intent, relevance, category
-- [x] Competitor spy : crawl des concurrents + inférence de keywords
-- [x] SERP difficulty : score de compétition organique
-- [x] Clustering des keywords (GPT-4o) : topic clusters → articles à écrire
-- [x] Opportunity score avec volume, competition, CPC, SERP
-- [x] Persistance : projects, analyses, keywords, competitors, keyword_clusters
+### SEO Engine
+- [x] Site crawl (cheerio): title, meta, structured text
+- [x] LLM analysis (GPT-4o): 50–80 seed keywords, 15–25 article ideas, 5–10 competitors
+- [x] DataForSEO: volumes, CPC, competition, suggestions
+- [x] Keyword classification (GPT-4o-mini): intent, relevance, category
+- [x] Competitor spy: crawl competitors + keyword inference
+- [x] SERP difficulty: organic competition score
+- [x] Keyword clustering (GPT-4o): topic clusters → articles to write
+- [x] Opportunity score with volume, competition, CPC, SERP
+- [x] Persistence: projects, analyses, keywords, competitors, keyword_clusters
 
 ### Articles
-- [x] Génération d'articles maîtres (Claude Sonnet 4.6)
-- [x] 2 étapes : outline structuré → article complet (~2000 mots)
-- [x] Product context dynamique (name, url, summary, targetAudience)
-- [x] Table `articles` avec RLS
-- [x] API : generate, list, get, update, delete
-- [x] Page Articles : listes séparées « Generated » / « To Generate »
-- [x] Preview article avec typography propre (prose)
+- [x] Master article generation (Claude Sonnet 4.6)
+- [x] 2-step process: structured outline → full article (target 2000–2500 words)
+- [x] Em dash ban in generation
+- [x] Dynamic product context (name, url, summary, targetAudience)
+- [x] Internal links: site page injection in prompt for internal linking
+- [x] `articles` table with RLS
+- [x] API: generate, list, get, update, delete
+- [x] Articles page: separate "Generated" / "To Generate" lists
+- [x] Article preview with clean typography (prose)
 - [x] Copy Markdown
+- [x] In-place article editing (title + content) with save to Supabase
+- [x] "Published on your website" badge for published articles
+- [x] Publish / Schedule buttons for website publishing
 
-### Channels
-- [x] Table `channels` (project_id, platform_type, name, config, constraints) avec RLS
-- [x] API CRUD : /api/channels (GET list, POST), /api/channels/[id] (GET, PATCH, DELETE)
-- [x] Page Channels : ajout/suppression de plateformes (Medium, Dev.to, Reddit, LinkedIn, Hashnode, WordPress)
-- [x] Icônes et couleurs par plateforme
+### Channels & Adaptation
+- [x] `channels` table with RLS, CRUD API
+- [x] 11 platforms: Dev.to, Hashnode, Medium, Reddit, WordPress, Telegraph, Blogger, Indie Hackers, Hacker News, Quora, Substack
+- [x] Icons and colors per platform
+- [x] `article_variants` table with RLS, unique constraint article × channel
+- [x] Adaptation engine (Claude Sonnet 4.6): tone, length, format per platform
+- [x] Per-platform specs/prompts with detailed guidelines
+- [x] UI: channel selection from article preview → variant generation
+- [x] Variant preview with platform badge
+- [x] Separate Auto-publish vs Copy/Paste sections
 
-### Adaptation des articles par plateforme (sous-articles)
-- [x] Table `article_variants` (article_id, channel_id, title, content, format, word_count, status…) avec RLS
-- [x] Contrainte unique article × channel
-- [x] Engine d'adaptation (Claude Sonnet 4.6) : ton, longueur, format selon la plateforme
-- [x] Specs par plateforme : Medium, Dev.to, Reddit, LinkedIn, Hashnode, WordPress
-- [x] API : /api/articles/variants (list), /api/articles/variants/generate, /api/articles/variants/[id] (GET, PATCH, DELETE)
-- [x] UI : sélection des channels depuis le preview article → génération des variantes
-- [x] Preview de chaque variante avec badge plateforme
-- [x] Suppression de variantes
+### Publication
+- [x] API `/api/publish`: Dev.to, Hashnode, Telegraph, Blogger
+- [x] Extracted publish logic into reusable `publisher.ts`
+- [x] OAuth Reddit complete + `submitRedditPost` ready in `reddit.ts`
+- [x] OAuth Blogger + API publication
+- [x] canonical_url on articles (used for Dev.to, Hashnode)
+- [x] Publish dialog: "Publish Now" / "Keep Scheduled" / "Reschedule" with date picker
+- [x] Variant publish buttons wired with PublishDialog
+- [x] "Publish All" button for bulk variant publishing
+- [x] Real-time slot validation (max 2/day, 2 blog articles/week, 1/platform/day)
 
-### Schéma DB
-- [x] projects (id, user_id, name, slug, url)
+### Site Connection
+- [x] API key per project (auto-generated, regeneratable)
+- [x] Public API `/api/public/articles` and `/api/public/articles/[slug]`
+- [x] Auto-generated integration snippets (lib + usage)
+- [x] "My Site" UI in Publish: connection status, API key, accordion for details
+- [x] GitHub connector: OAuth, repo/folder selection, .md/.mdx push
+- [x] "Push to GitHub" accordion for static blogs (Astro, Hugo, Jekyll)
+
+### Schedule & Automation
+- [x] `scheduler.ts`: `computeNextSlot` with constraints (max 2/day, 2 blog articles/week, 1/platform/day)
+- [x] `validateSlot()` function for reschedule validation
+- [x] Auto-scheduling on variant generation
+- [x] API `/api/schedule`: scheduled variants + articles
+- [x] API `/api/variants/[id]/schedule`: reschedule with constraint validation
+- [x] Schedule page: heatmap calendar, day popup, platform badges
+- [x] Schedule page: main articles shown in calendar (Blog badge)
+- [x] Schedule page: "Publish Now" and "Move" buttons per publication
+- [x] Reschedule modal with date picker and real-time validation
+- [x] Cron endpoint `/api/cron/publish-scheduled` secured by CRON_SECRET
+- [x] pg_cron + pg_net: auto-publish every 10 minutes
+- [x] `scheduled_at` column on `articles` table + `scheduled` status
+- [x] Article scheduling: "Now" / "Schedule" options for website publishing
+
+### DB Schema
+- [x] projects (id, user_id, name, slug, url, api_key, site_connection)
 - [x] analyses (project_id, product_summary, target_audience, content_angles…)
 - [x] keywords (analysis_id, keyword, volumes, competition, serp_difficulty, category, source)
 - [x] keyword_clusters (analysis_id, topic, article_title, pillar_keyword, supporting_keywords…)
 - [x] competitors (analysis_id, name, url, reason)
-- [x] articles (cluster_id, project_id, title, content, outline, word_count, meta_description…)
+- [x] articles (cluster_id, project_id, title, content, outline, word_count, meta_description, canonical_url, scheduled_at…)
 - [x] channels (project_id, platform_type, name, config, constraints)
-- [x] article_variants (article_id, channel_id, title, content, format, word_count, status, published_url…)
+- [x] article_variants (article_id, channel_id, title, content, format, word_count, status, scheduled_at, published_url…)
 
-### Autres
-- [x] COST.md : suivi des coûts (DataForSEO, GPT, Anthropic)
-
----
-
-## 🚧 À faire
-
-### Connecteurs site client (priorité haute)
-- [ ] Connecteur WordPress self-hosted (REST API + Application Passwords)
-- [ ] Connecteur GitHub-based (push .md/.mdx via GitHub API pour blogs statiques)
-- [ ] Connecteur Webflow CMS API
-- [ ] Bouton "Publish to my site" dans la preview article
-
-### Syndication propre (priorité haute)
-- [ ] canonical_url systématique sur toutes les variantes (pointe vers le site client)
-- [ ] Logique de syndication par plateforme (résumé+lien vs full+canonical)
-
-### Schedule automation (priorité moyenne)
-- [ ] Cron ou Vercel Scheduled Functions pour auto-publish
-- [ ] Répartition dans le temps (éviter le burst)
-
-### Enrichissement des articles (priorité basse)
-- [ ] Extraction des outils du site à l'analyse (`keyTools`)
-- [ ] Injection des outils dans le product context pour les articles
-- [ ] Maillage interne automatique (internal links)
-- [ ] Schema JSON-LD (SEO technique)
-
-### Analytics (priorité basse)
-- [ ] Page Analytics : métriques réelles
-- [ ] Tracking des articles publiés (clicks, impressions)
-- [ ] (Optionnel) Intégration Google Search Console
-
-### Nettoyage (priorité basse)
-- [ ] Supprimer les anciennes pages standalone (analyze, keywords, channels, schedule)
-- [ ] Unifier les redirections des anciennes URLs
+### Other
+- [x] COST.md: cost tracking (DataForSEO, GPT, Anthropic)
+- [x] Fix Supabase joined relation types on publish, variants, generate
+- [x] Settings page: profile + password change
 
 ---
 
-## Ordre suggéré
+## To Do
 
-1. ~~**Channels** — config des plateformes~~ ✅
-2. ~~**Adaptation** — variantes par plateforme à partir de l'article maître~~ ✅
-3. ~~**Custom API connector** — publication sur le site client~~ ✅
-4. ~~**Refonte navigation** — Overview, Research, Articles, Publish, Analytics~~ ✅
-5. **WordPress connector** — plus gros marché
-6. **Syndication propre** — canonical URLs systématiques
-7. **Schedule automation** — cron jobs
-8. **Analytics** — métriques
+### Publication — wire remaining connectors (high priority)
+- [ ] Wire Reddit in `/api/publish` (OAuth + `submitRedditPost` already ready)
+- [ ] WordPress self-hosted connector (REST API + Application Passwords)
+- [ ] Medium API connector (OAuth + publication)
+- [ ] Webflow CMS API connector
+
+### Clean syndication (high priority)
+- [ ] Systematic canonical_url on all variants (points to client site)
+- [ ] Per-platform syndication logic (summary+link vs full+canonical)
+
+### Article enrichment (low priority)
+- [ ] Extract site tools at analysis time (`keyTools`)
+- [ ] Inject tools in product context for articles
+- [ ] JSON-LD schema (technical SEO)
+
+### Analytics (low priority)
+- [ ] Analytics page: real metrics
+- [ ] Published article tracking (clicks, impressions)
+- [ ] (Optional) Google Search Console integration
+
+### Design (low priority)
+- [ ] Mobile responsive
+- [ ] OctoBoost octopus logo
 
 ---
 
-*Dernière mise à jour : février 2026*
+## Suggested Order
+
+1. ~~**Channels** — platform config~~ ✅
+2. ~~**Adaptation** — per-platform variants from master article~~ ✅
+3. ~~**Custom API connector** — publish to client site~~ ✅
+4. ~~**GitHub connector** — push .md/.mdx for static blogs~~ ✅
+5. ~~**Design overhaul** — Inter, navy blue, grid, clean pages, larger fonts~~ ✅
+6. ~~**Schedule automation** — cron jobs for auto-publish~~ ✅
+7. **Wire Reddit** in /api/publish (quick win, code already ready)
+8. **WordPress connector** — largest market
+9. **Clean syndication** — systematic canonical URLs
+10. **Analytics** — metrics
+
+---
+
+*Last updated: February 21, 2026*

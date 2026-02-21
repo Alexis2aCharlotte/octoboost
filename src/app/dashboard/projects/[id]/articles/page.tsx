@@ -6,9 +6,7 @@ import Link from "next/link";
 import {
   FileText,
   Loader2,
-  Layers,
-  Sparkles,
-  TrendingUp,
+  PenTool,
   Send,
   Target,
   ChevronDown,
@@ -20,7 +18,6 @@ import {
   ArrowLeft,
   Copy,
   Trash2,
-  RotateCcw,
   Radio,
   BookOpen,
   Code2,
@@ -32,7 +29,9 @@ import {
   Zap,
   ClipboardCopy,
   ExternalLink,
+  CalendarClock,
 } from "lucide-react";
+import PublishDialog from "@/components/PublishDialog";
 
 interface Cluster {
   id: string;
@@ -84,6 +83,7 @@ interface Variant {
   status: string;
   platformType: string;
   channelName: string;
+  scheduledAt: string | null;
   createdAt: string;
 }
 
@@ -130,6 +130,7 @@ const intentColors: Record<string, string> = {
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   draft: { label: "Draft", color: "text-amber-400 bg-amber-500/10", icon: PenLine },
   ready: { label: "Ready", color: "text-blue-400 bg-blue-500/10", icon: CheckCircle2 },
+  scheduled: { label: "Scheduled", color: "text-blue-400 bg-blue-500/10", icon: CalendarClock },
   published: { label: "Published", color: "text-green-400 bg-green-500/10", icon: Send },
 };
 
@@ -154,6 +155,18 @@ export default function ArticlesPage() {
   const [showChannelPicker, setShowChannelPicker] = useState<false | "auto" | "manual">(false);
 
   const [publishingToSite, setPublishingToSite] = useState(false);
+
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [publishDialogVariant, setPublishDialogVariant] = useState<Variant | null>(null);
+  const [publishAllLoading, setPublishAllLoading] = useState(false);
+  const [publishAllProgress, setPublishAllProgress] = useState({ done: 0, total: 0 });
+  const [showSitePublishMenu, setShowSitePublishMenu] = useState(false);
+  const [schedulingSite, setSchedulingSite] = useState(false);
+  const [siteScheduleDate, setSiteScheduleDate] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -368,6 +381,122 @@ export default function ArticlesPage() {
     }
   }
 
+  function startEditing() {
+    if (!previewArticle) return;
+    setEditTitle(previewArticle.title);
+    setEditContent(previewArticle.content);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+    setEditContent("");
+    setEditTitle("");
+  }
+
+  async function handleSaveEdit() {
+    if (!previewArticle || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/articles/${previewArticle.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle, content: editContent }),
+      });
+      if (res.ok) {
+        const newWordCount = editContent.split(/\s+/).filter((w) => w.length > 0).length;
+        setPreviewArticle({ ...previewArticle, title: editTitle, content: editContent, wordCount: newWordCount });
+        setEditing(false);
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Save failed");
+      }
+    } catch {
+      alert("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublishVariantNow(variantId: string) {
+    const res = await fetch("/api/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variantId }),
+    });
+    if (res.ok) {
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, status: "published" } : v))
+      );
+    } else {
+      const data = await res.json();
+      alert(data.error ?? "Publication failed");
+      throw new Error(data.error);
+    }
+  }
+
+  async function handleRescheduleVariant(variantId: string, scheduledAt: string) {
+    const res = await fetch(`/api/variants/${variantId}/schedule`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scheduledAt }),
+    });
+    if (res.ok) {
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, scheduledAt, status: "scheduled" } : v))
+      );
+    } else {
+      const data = await res.json();
+      alert(data.error ?? "Reschedule failed");
+      throw new Error(data.error);
+    }
+  }
+
+  async function handleScheduleToSite(articleId: string, scheduledAt: string) {
+    setSchedulingSite(true);
+    try {
+      const res = await fetch(`/api/articles/${articleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "scheduled", scheduled_at: scheduledAt }),
+      });
+      if (res.ok) {
+        await loadData();
+        if (previewArticle) setPreviewArticle({ ...previewArticle, status: "scheduled" });
+        setShowSitePublishMenu(false);
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Schedule failed");
+      }
+    } catch {
+      alert("Something went wrong");
+    } finally {
+      setSchedulingSite(false);
+    }
+  }
+
+  async function handlePublishAll() {
+    const unpublished = variants.filter(
+      (v) => v.status !== "published" && platformMeta[v.platformType]?.connectionType !== "manual"
+    );
+    if (unpublished.length === 0) return;
+    if (!confirm(`Publish ${unpublished.length} variant(s) now?`)) return;
+
+    setPublishAllLoading(true);
+    setPublishAllProgress({ done: 0, total: unpublished.length });
+
+    for (const v of unpublished) {
+      try {
+        await handlePublishVariantNow(v.id);
+      } catch {
+        // continue with next
+      }
+      setPublishAllProgress((prev) => ({ ...prev, done: prev.done + 1 }));
+    }
+
+    setPublishAllLoading(false);
+  }
+
   const totalVolume = clusters.reduce((s, c) => s + c.totalVolume, 0);
   const easyCount = clusters.filter((c) => c.difficulty === "easy").length;
   const generatedCount = articles.length;
@@ -436,7 +565,7 @@ export default function ArticlesPage() {
                   {statusConfig[variantPreview.status]?.label ?? variantPreview.status}
                 </span>
               </div>
-              <h1 className="mt-3 text-xl font-bold leading-snug">
+              <h1 className="mt-3 text-2xl font-bold leading-snug">
                 {variantPreview.title}
               </h1>
               <p className="mt-2 text-xs text-muted">
@@ -483,41 +612,54 @@ export default function ArticlesPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => { setView("list"); setPreviewArticle(null); setVariants([]); }}
+            onClick={() => { setView("list"); setPreviewArticle(null); setVariants([]); cancelEditing(); }}
             className="flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to articles
           </button>
           <div className="flex items-center gap-2">
-            {previewArticle.status !== "published" ? (
-              <button
-                onClick={() => handlePublishToSite(previewArticle.id)}
-                disabled={publishingToSite}
-                className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-              >
-                {publishingToSite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {publishingToSite ? "Publishing..." : "Publish"}
-              </button>
+            {editing ? (
+              <>
+                <button
+                  onClick={cancelEditing}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={saving}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              </>
             ) : (
-              <span className="flex items-center gap-1.5 rounded-lg bg-green-500/10 px-3 py-2 text-sm font-medium text-green-400">
-                <CheckCircle2 className="h-4 w-4" />
-                Published
-              </span>
+              <>
+                <button
+                  onClick={startEditing}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-accent/50 hover:text-foreground"
+                >
+                  <PenLine className="h-4 w-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-accent/50 hover:text-foreground"
+                >
+                  {copied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copied!" : "Copy Markdown"}
+                </button>
+                <button
+                  onClick={() => handleDelete(previewArticle.id)}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
             )}
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-accent/50 hover:text-foreground"
-            >
-              {copied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied!" : "Copy Markdown"}
-            </button>
-            <button
-              onClick={() => handleDelete(previewArticle.id)}
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
           </div>
         </div>
 
@@ -525,12 +667,14 @@ export default function ArticlesPage() {
           <div className="flex items-start justify-between">
             <div>
               <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-medium ${statusConfig[previewArticle.status]?.color ?? "text-muted bg-card"}`}>
-                {statusConfig[previewArticle.status]?.label ?? previewArticle.status}
+                {previewArticle.status === "published"
+                  ? "Published on your website"
+                  : (statusConfig[previewArticle.status]?.label ?? previewArticle.status)}
               </span>
-              <h1 className="mt-3 text-xl font-bold leading-snug">
+              <h1 className="mt-3 text-2xl font-bold leading-snug">
                 {previewArticle.title}
               </h1>
-              <p className="mt-2 text-sm text-muted">
+              <p className="mt-2 text-base text-muted">
                 {previewArticle.metaDescription}
               </p>
             </div>
@@ -556,6 +700,85 @@ export default function ArticlesPage() {
         </div>
 
         {/* ─── Distribution Section ─────────────────────── */}
+
+        {/* Publish to website (draft/ready only) */}
+        {previewArticle.status !== "published" && previewArticle.status !== "scheduled" && (
+          <div className="relative rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                <Globe className="h-4 w-4 text-muted" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">Your website</p>
+                <p className="text-xs text-muted">Publish or schedule this article for your site</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePublishToSite(previewArticle.id)}
+                  disabled={publishingToSite}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                >
+                  {publishingToSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  Now
+                </button>
+                <button
+                  onClick={() => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setHours(10, 0, 0, 0);
+                    setSiteScheduleDate(tomorrow.toISOString().slice(0, 16));
+                    setShowSitePublishMenu(!showSitePublishMenu);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent/50 hover:text-foreground"
+                >
+                  <CalendarClock className="h-3 w-3" />
+                  Schedule
+                </button>
+              </div>
+            </div>
+            {showSitePublishMenu && (
+              <div className="mt-3 flex items-end gap-2 rounded-lg bg-card-hover p-3">
+                <div className="flex-1">
+                  <label className="mb-1 block text-[11px] font-medium text-muted">Publication date</label>
+                  <input
+                    type="datetime-local"
+                    value={siteScheduleDate}
+                    onChange={(e) => setSiteScheduleDate(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent"
+                  />
+                </div>
+                <button
+                  onClick={() => handleScheduleToSite(previewArticle.id, new Date(siteScheduleDate).toISOString())}
+                  disabled={schedulingSite || !siteScheduleDate}
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {schedulingSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarClock className="h-3 w-3" />}
+                  Confirm
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        {previewArticle.status === "scheduled" && (
+          <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+              <CalendarClock className="h-4 w-4 text-blue-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-blue-400">Scheduled for your website</p>
+              <p className="text-xs text-muted">Will be automatically published by the scheduler</p>
+            </div>
+            <button
+              onClick={() => handlePublishToSite(previewArticle.id)}
+              disabled={publishingToSite}
+              className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+            >
+              {publishingToSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              Publish Now
+            </button>
+          </div>
+        )}
+
         {channels.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
             <Radio className="mx-auto mb-3 h-6 w-6 text-muted" />
@@ -596,15 +819,36 @@ export default function ArticlesPage() {
                         Auto-publish ({autoVariants.length}/{autoChannelsList.length})
                       </h2>
                     </div>
-                    {availableAutoChannels.length > 0 && (
-                      <button
-                        onClick={() => setShowChannelPicker(showChannelPicker === "auto" ? false : "auto")}
-                        className="flex items-center gap-1.5 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent-light transition hover:bg-accent/20"
-                      >
-                        {showChannelPicker === "auto" ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                        {showChannelPicker === "auto" ? "Cancel" : "Generate"}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {autoVariants.filter((v) => v.status !== "published").length > 0 && (
+                        <button
+                          onClick={handlePublishAll}
+                          disabled={publishAllLoading}
+                          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                        >
+                          {publishAllLoading ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              {publishAllProgress.done}/{publishAllProgress.total}
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="h-3 w-3" />
+                              Publish All
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {availableAutoChannels.length > 0 && (
+                        <button
+                          onClick={() => setShowChannelPicker(showChannelPicker === "auto" ? false : "auto")}
+                          className="flex items-center gap-1.5 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent-light transition hover:bg-accent/20"
+                        >
+                          {showChannelPicker === "auto" ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                          {showChannelPicker === "auto" ? "Cancel" : "Generate"}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {showChannelPicker === "auto" && (
@@ -647,8 +891,19 @@ export default function ArticlesPage() {
                                   <ExternalLink className="h-3 w-3" />
                                   Published
                                 </span>
+                              ) : v.scheduledAt ? (
+                                <button
+                                  onClick={() => setPublishDialogVariant(v)}
+                                  className="flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20"
+                                >
+                                  <CalendarClock className="h-3 w-3" />
+                                  {new Date(v.scheduledAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </button>
                               ) : (
-                                <button className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light">
+                                <button
+                                  onClick={() => setPublishDialogVariant(v)}
+                                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light"
+                                >
                                   <Zap className="h-3 w-3" />
                                   Publish
                                 </button>
@@ -788,21 +1043,56 @@ export default function ArticlesPage() {
           </>
         )}
 
-        <div className="rounded-xl border border-border bg-card px-8 py-10 sm:px-12">
-          <div
-            className="prose prose-invert prose-lg max-w-none
-              prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
-              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border prose-h2:pb-3
-              prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-base
-              prose-p:text-[15px] prose-p:leading-[1.8] prose-p:text-muted
-              prose-li:text-[15px] prose-li:text-muted prose-li:leading-[1.7]
-              prose-ul:my-4 prose-ol:my-4
-              prose-strong:text-foreground prose-strong:font-semibold
-              prose-a:text-accent-light prose-a:no-underline hover:prose-a:underline
-              prose-blockquote:border-accent/50 prose-blockquote:text-muted/80"
-            dangerouslySetInnerHTML={{ __html: markdownToHtml(previewArticle.content) }}
+        {editing ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-accent/30 bg-card p-4">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted/60">Title</label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full rounded-lg border border-border bg-[#080c18] px-4 py-2.5 text-lg font-bold outline-none placeholder:text-muted/40 focus:border-accent/50"
+              />
+            </div>
+            <div className="rounded-xl border border-accent/30 bg-card p-4">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted/60">Content (Markdown)</label>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full rounded-lg border border-border bg-[#080c18] px-4 py-3 font-mono text-sm leading-relaxed text-muted outline-none placeholder:text-muted/40 focus:border-accent/50"
+                style={{ minHeight: "60vh" }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-card px-8 py-10 sm:px-12">
+            <div
+              className="prose prose-invert prose-lg max-w-none
+                prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
+                prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-xl prose-h2:border-b prose-h2:border-border prose-h2:pb-3
+                prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-base
+                prose-p:text-[15px] prose-p:leading-[1.8] prose-p:text-muted
+                prose-li:text-[15px] prose-li:text-muted prose-li:leading-[1.7]
+                prose-ul:my-4 prose-ol:my-4
+                prose-strong:text-foreground prose-strong:font-semibold
+                prose-a:text-accent-light prose-a:no-underline hover:prose-a:underline
+                prose-blockquote:border-accent/50 prose-blockquote:text-muted/80"
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(previewArticle.content) }}
+            />
+          </div>
+        )}
+
+        {publishDialogVariant && (
+          <PublishDialog
+            variantId={publishDialogVariant.id}
+            variantTitle={publishDialogVariant.title}
+            platform={platformMeta[publishDialogVariant.platformType]?.label ?? publishDialogVariant.platformType}
+            scheduledAt={publishDialogVariant.scheduledAt}
+            onPublishNow={handlePublishVariantNow}
+            onReschedule={handleRescheduleVariant}
+            onClose={() => setPublishDialogVariant(null)}
           />
-        </div>
+        )}
       </div>
     );
   }
@@ -813,8 +1103,8 @@ export default function ArticlesPage() {
     return (
       <div className="mx-auto max-w-5xl space-y-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Articles</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-3xl font-bold tracking-tight">Articles</h1>
+          <p className="mt-1 text-base text-muted">
             Articles are generated from keyword clusters.
           </p>
         </div>
@@ -822,8 +1112,8 @@ export default function ArticlesPage() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <FileText className="h-7 w-7 text-accent-light" />
           </div>
-          <h3 className="mb-1 text-lg font-semibold">No articles yet</h3>
-          <p className="mb-6 max-w-sm text-center text-sm text-muted">
+          <h3 className="mb-1 text-xl font-semibold">No articles yet</h3>
+          <p className="mb-6 max-w-sm text-center text-base text-muted">
             Run an analysis first to generate keyword clusters.
           </p>
           <Link
@@ -842,8 +1132,8 @@ export default function ArticlesPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Articles</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-3xl font-bold tracking-tight">Articles</h1>
+        <p className="mt-1 text-base text-muted">
           {clusters.length} article ideas · {generatedCount} generated ·{" "}
           {easyCount > 0 && (
             <span className="text-green-400">{easyCount} easy to rank</span>
@@ -852,41 +1142,22 @@ export default function ArticlesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Ideas</span>
-            <Layers className="h-4 w-4 text-muted" />
-          </div>
+          <span className="text-sm text-muted">Ideas</span>
           <p className="mt-2 text-2xl font-bold">{clusters.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Generated</span>
-            <FileText className="h-4 w-4 text-accent" />
-          </div>
+          <span className="text-sm text-muted">Generated</span>
           <p className="mt-2 text-2xl font-bold text-accent-light">{generatedCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Channels</span>
-            <Radio className="h-4 w-4 text-muted" />
-          </div>
-          <p className="mt-2 text-2xl font-bold">{channels.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Total Volume</span>
-            <TrendingUp className="h-4 w-4 text-muted" />
-          </div>
+          <span className="text-sm text-muted">Monthly Searches</span>
           <p className="mt-2 text-2xl font-bold">{totalVolume.toLocaleString()}</p>
-          <p className="mt-0.5 text-xs text-muted">combined searches/mo</p>
+          <p className="mt-0.5 text-xs text-muted">across {clusters.length} topics</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Easy Wins</span>
-            <Sparkles className="h-4 w-4 text-green-400" />
-          </div>
+          <span className="text-sm text-muted">Easy Wins</span>
           <p className="mt-2 text-2xl font-bold text-green-400">{easyCount}</p>
         </div>
       </div>
@@ -918,7 +1189,7 @@ export default function ArticlesPage() {
       {ideas.length > 0 && (
         <div className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted/60">
-            <Sparkles className="h-4 w-4" />
+            <PenTool className="h-4 w-4" />
             To Generate ({ideas.length})
           </h2>
           {ideas.map((cluster) => (
@@ -968,7 +1239,7 @@ function ArticleCard({
         className="flex w-full items-center gap-4 p-5 text-left"
       >
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-sm font-bold ${article ? "bg-accent/20 text-accent-light" : "bg-accent/10 text-accent-light"}`}>
-          {article ? <FileText className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+          {article ? <FileText className="h-5 w-5" /> : <PenTool className="h-5 w-5" />}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -1039,22 +1310,13 @@ function ArticleCard({
 
           <div className="mt-5 flex gap-3">
             {article ? (
-              <>
-                <button
-                  onClick={() => onPreview(article.id)}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light"
-                >
-                  <Eye className="h-4 w-4" />
-                  View Article
-                </button>
-                <button
-                  onClick={() => onDelete(article.id)}
-                  className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Regenerate
-                </button>
-              </>
+              <button
+                onClick={() => onPreview(article.id)}
+                className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light"
+              >
+                <Eye className="h-4 w-4" />
+                View Article
+              </button>
             ) : (
               <button
                 onClick={onGenerate}
@@ -1068,7 +1330,7 @@ function ArticleCard({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4" />
+                    <PenTool className="h-4 w-4" />
                     Generate Article
                   </>
                 )}

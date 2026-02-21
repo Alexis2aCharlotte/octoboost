@@ -39,14 +39,19 @@ export async function GET() {
     );
   }
 
-  const projectList = (projects ?? []).map((p: { analyses?: { id: string; site_title: string; created_at: string }[] } & Record<string, unknown>) => {
+  const projectList = (projects ?? []).map((p: { analyses?: { id: string; site_title: string; site_description: string; created_at: string }[] } & Record<string, unknown>) => {
     const analyses = Array.isArray(p.analyses) ? p.analyses : [];
-    const latest = analyses.length > 0
-      ? [...analyses].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )[0]
-      : null;
+    const sorted = [...analyses].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const latest = sorted[0] ?? null;
+
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const analysesLast30d = sorted.filter(
+      (a) => new Date(a.created_at).getTime() > thirtyDaysAgo
+    ).length;
+
     return {
       id: p.id,
       name: p.name,
@@ -57,6 +62,8 @@ export async function GET() {
       latestAnalysis: latest
         ? { id: latest.id, site_title: latest.site_title, created_at: latest.created_at }
         : null,
+      analysesLast30d,
+      totalAnalyses: analyses.length,
     };
   });
 

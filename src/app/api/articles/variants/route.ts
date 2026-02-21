@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   const { data: variants, error } = await supabase
     .from("article_variants")
     .select(
-      "id, article_id, channel_id, title, word_count, format, status, published_url, published_at, model_used, created_at, updated_at, channels!inner(platform_type, name)"
+      "id, article_id, channel_id, title, word_count, format, status, scheduled_at, published_url, published_at, model_used, created_at, updated_at, channels!inner(platform_type, name)"
     )
     .eq("article_id", articleId)
     .order("created_at", { ascending: true });
@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
         modelUsed: v.model_used,
         createdAt: v.created_at,
         updatedAt: v.updated_at,
+        scheduledAt: v.scheduled_at ?? null,
         platformType: ch?.platform_type ?? "",
         channelName: ch?.name ?? "",
       };

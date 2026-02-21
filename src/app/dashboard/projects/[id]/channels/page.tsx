@@ -469,7 +469,7 @@ export default function ProjectChannelsPage() {
                       const isConnected = !!cfg?.refreshToken;
                       return isConnected ? (
                         <span className="rounded-md bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
-                          Connecté
+                          Connected
                         </span>
                       ) : (
                         <button
