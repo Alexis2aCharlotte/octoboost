@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Zap, Calendar, Clock, Loader2, AlertCircle, Check } from "lucide-react";
+import DateTimePicker from "@/components/DateTimePicker";
 
 interface PublishDialogProps {
   variantId: string;
@@ -191,12 +192,7 @@ export default function PublishDialog({
                 <label className="mb-1.5 block text-xs font-medium text-muted">
                   Publication date & time
                 </label>
-                <input
-                  type="datetime-local"
-                  value={newDate}
-                  onChange={(e) => handleValidateDate(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
-                />
+                <DateTimePicker value={newDate} onChange={handleValidateDate} />
               </div>
 
               {validating && (

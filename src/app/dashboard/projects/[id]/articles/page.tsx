@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -32,6 +32,13 @@ import {
   CalendarClock,
 } from "lucide-react";
 import PublishDialog from "@/components/PublishDialog";
+import DateTimePicker from "@/components/DateTimePicker";
+
+interface GeneratingInfo {
+  clusterId: string;
+  startedAt: number;
+  estimatedSeconds: number;
+}
 
 interface Cluster {
   id: string;
@@ -168,6 +175,9 @@ export default function ArticlesPage() {
   const [schedulingSite, setSchedulingSite] = useState(false);
   const [siteScheduleDate, setSiteScheduleDate] = useState("");
 
+  const [persistentGenerating, setPersistentGenerating] = useState<GeneratingInfo | null>(null);
+  const initialLoadDone = useRef(false);
+
   const loadData = useCallback(async () => {
     try {
       const [kwRes, projRes] = await Promise.all([
@@ -209,11 +219,56 @@ export default function ArticlesPage() {
     loadData();
   }, [loadData]);
 
+  // Restore persistent generation state from localStorage
+  useEffect(() => {
+    if (loading || initialLoadDone.current) return;
+    initialLoadDone.current = true;
+    const key = `octoboost_gen_${id}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    try {
+      const data: GeneratingInfo = JSON.parse(raw);
+      const articleExists = articles.some((a) => a.clusterId === data.clusterId);
+      const elapsed = (Date.now() - data.startedAt) / 1000;
+      if (articleExists || elapsed > 300) {
+        localStorage.removeItem(key);
+      } else {
+        setPersistentGenerating(data);
+      }
+    } catch {
+      localStorage.removeItem(key);
+    }
+  }, [loading, id, articles]);
+
+  // Poll for article completion when there's a persistent generation and no active fetch
+  useEffect(() => {
+    if (!persistentGenerating || generatingId) return;
+    const interval = setInterval(async () => {
+      await loadData();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [persistentGenerating, generatingId, loadData]);
+
+  // Clear persistent generation when article appears
+  useEffect(() => {
+    if (!persistentGenerating) return;
+    const exists = articles.some((a) => a.clusterId === persistentGenerating.clusterId);
+    if (exists) {
+      localStorage.removeItem(`octoboost_gen_${id}`);
+      setPersistentGenerating(null);
+    }
+  }, [articles, persistentGenerating, id]);
+
   const articleByCluster = new Map(articles.map((a) => [a.clusterId, a]));
 
   async function handleGenerate(clusterId: string) {
     if (!realProjectId || generatingId) return;
     setGeneratingId(clusterId);
+
+    const estimatedSeconds = Math.floor(Math.random() * 61) + 120;
+    const genInfo: GeneratingInfo = { clusterId, startedAt: Date.now(), estimatedSeconds };
+    localStorage.setItem(`octoboost_gen_${id}`, JSON.stringify(genInfo));
+    setPersistentGenerating(genInfo);
 
     try {
       const res = await fetch("/api/articles/generate", {
@@ -237,10 +292,12 @@ export default function ArticlesPage() {
       }
 
       const data = await res.json();
+      localStorage.removeItem(`octoboost_gen_${id}`);
+      setPersistentGenerating(null);
       await loadData();
       await openPreview(data.articleId);
     } catch {
-      alert("Something went wrong");
+      // Don't clear localStorage on error — server may still be generating
     } finally {
       setGeneratingId(null);
     }
@@ -737,23 +794,16 @@ export default function ArticlesPage() {
               </div>
             </div>
             {showSitePublishMenu && (
-              <div className="mt-3 flex items-end gap-2 rounded-lg bg-card-hover p-3">
-                <div className="flex-1">
-                  <label className="mb-1 block text-[11px] font-medium text-muted">Publication date</label>
-                  <input
-                    type="datetime-local"
-                    value={siteScheduleDate}
-                    onChange={(e) => setSiteScheduleDate(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-accent"
-                  />
-                </div>
+              <div className="mt-3 space-y-3 rounded-lg bg-card-hover p-3">
+                <label className="block text-[11px] font-medium text-muted">Publication date & time</label>
+                <DateTimePicker value={siteScheduleDate} onChange={setSiteScheduleDate} />
                 <button
                   onClick={() => handleScheduleToSite(previewArticle.id, new Date(siteScheduleDate).toISOString())}
                   disabled={schedulingSite || !siteScheduleDate}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
                 >
                   {schedulingSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarClock className="h-3 w-3" />}
-                  Confirm
+                  Confirm Schedule
                 </button>
               </div>
             )}
@@ -1176,6 +1226,7 @@ export default function ArticlesPage() {
               article={articleByCluster.get(cluster.id)}
               isExpanded={expandedId === cluster.id}
               isGenerating={generatingId === cluster.id}
+              generatingInfo={null}
               onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
               onGenerate={() => handleGenerate(cluster.id)}
               onPreview={(aid) => openPreview(aid)}
@@ -1199,6 +1250,9 @@ export default function ArticlesPage() {
               article={undefined}
               isExpanded={expandedId === cluster.id}
               isGenerating={generatingId === cluster.id}
+              generatingInfo={
+                persistentGenerating?.clusterId === cluster.id ? persistentGenerating : null
+              }
               onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
               onGenerate={() => handleGenerate(cluster.id)}
               onPreview={() => {}}
@@ -1218,6 +1272,7 @@ function ArticleCard({
   article,
   isExpanded,
   isGenerating,
+  generatingInfo,
   onToggle,
   onGenerate,
   onPreview,
@@ -1227,19 +1282,66 @@ function ArticleCard({
   article: Article | undefined;
   isExpanded: boolean;
   isGenerating: boolean;
+  generatingInfo: GeneratingInfo | null;
   onToggle: () => void;
   onGenerate: () => void;
   onPreview: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const showGenerating = isGenerating || !!generatingInfo;
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!showGenerating) { setElapsed(0); return; }
+    const start = generatingInfo?.startedAt ?? Date.now();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [showGenerating, generatingInfo?.startedAt]);
+
+  const estimatedSeconds = generatingInfo?.estimatedSeconds ?? 150;
+  const progress = Math.min(elapsed / estimatedSeconds, 0.95);
+  const remainingSeconds = Math.max(estimatedSeconds - elapsed, 0);
+  const remainingMin = Math.floor(remainingSeconds / 60);
+  const remainingSec = remainingSeconds % 60;
+
   return (
-    <div className={`rounded-xl border bg-card transition hover:border-accent/20 ${article ? "border-accent/20" : "border-border"}`}>
+    <div className={`overflow-hidden rounded-xl border bg-card transition ${
+      showGenerating
+        ? "border-accent/40 ring-1 ring-accent/20"
+        : article
+          ? "border-accent/20 hover:border-accent/20"
+          : "border-border hover:border-accent/20"
+    }`}>
+      {showGenerating && (
+        <div className="relative h-1 bg-accent/10">
+          <div
+            className="absolute inset-y-0 left-0 bg-accent/60 transition-all duration-1000 ease-linear"
+            style={{ width: `${progress * 100}%` }}
+          />
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+        </div>
+      )}
+
       <button
         onClick={onToggle}
         className="flex w-full items-center gap-4 p-5 text-left"
       >
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-sm font-bold ${article ? "bg-accent/20 text-accent-light" : "bg-accent/10 text-accent-light"}`}>
-          {article ? <FileText className="h-5 w-5" /> : <PenTool className="h-5 w-5" />}
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-sm font-bold ${
+          showGenerating
+            ? "bg-accent/20"
+            : article
+              ? "bg-accent/20 text-accent-light"
+              : "bg-accent/10 text-accent-light"
+        }`}>
+          {showGenerating ? (
+            <Loader2 className="h-5 w-5 animate-spin text-accent-light" />
+          ) : article ? (
+            <FileText className="h-5 w-5" />
+          ) : (
+            <PenTool className="h-5 w-5" />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -1266,7 +1368,16 @@ function ArticleCard({
         </div>
 
         <div className="flex items-center gap-3">
-          {article ? (
+          {showGenerating ? (
+            <div className="text-right">
+              <p className="text-xs font-medium text-accent-light">Generating...</p>
+              <p className="text-[10px] text-muted">
+                {remainingSeconds > 0
+                  ? `~${remainingMin}m ${String(remainingSec).padStart(2, "0")}s left`
+                  : "Almost done..."}
+              </p>
+            </div>
+          ) : article ? (
             <span className={`rounded-md px-2.5 py-1 text-xs font-medium ${statusConfig[article.status]?.color ?? "text-muted bg-card-hover"}`}>
               {statusConfig[article.status]?.label ?? article.status}
             </span>
@@ -1317,23 +1428,24 @@ function ArticleCard({
                 <Eye className="h-4 w-4" />
                 View Article
               </button>
+            ) : showGenerating ? (
+              <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 px-4 py-2.5 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-accent-light" />
+                <div>
+                  <span className="font-medium text-accent-light">Writing article with AI...</span>
+                  <span className="ml-2 text-xs text-muted">
+                    {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")} elapsed
+                  </span>
+                </div>
+              </div>
             ) : (
               <button
                 onClick={onGenerate}
                 disabled={isGenerating}
                 className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <PenTool className="h-4 w-4" />
-                    Generate Article
-                  </>
-                )}
+                <PenTool className="h-4 w-4" />
+                Generate Article
               </button>
             )}
           </div>

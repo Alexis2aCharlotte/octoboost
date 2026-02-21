@@ -117,7 +117,7 @@ const manualPlatforms = ["indiehackers", "hackernews", "quora", "substack"];
 
 export default function PublishPage() {
   const { id } = useParams<{ id: string }>();
-  const [tab, setTab] = useState<PublishTab>("site");
+  const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -174,13 +174,18 @@ export default function PublishPage() {
         fetch(`/api/projects/${projData.projectId}/api-key`),
       ]);
 
+      let conn: SiteConnection | null = null;
+      let key: string | null = null;
+
       if (connRes.ok) {
         const connData = await connRes.json();
-        setConnection(connData.connection ?? null);
+        conn = connData.connection ?? null;
+        setConnection(conn);
       }
       if (keyRes.ok) {
         const keyData = await keyRes.json();
-        setApiKey(keyData.apiKey ?? null);
+        key = keyData.apiKey ?? null;
+        setApiKey(key);
       }
       if (chRes.ok) {
         const chData = await chRes.json();
@@ -190,6 +195,8 @@ export default function PublishPage() {
         const schedData = await schedRes.json();
         setVariants(schedData.variants ?? []);
       }
+
+      setTab((prev) => prev ?? ((conn?.status === "connected" || key) ? "schedule" : "site"));
     } finally {
       setLoading(false);
     }
@@ -454,7 +461,7 @@ export default function PublishPage() {
         ]).map(({ id: tabId, label, icon: Icon, badge }) => (
           <button
             key={tabId}
-            onClick={() => setTab(tabId)}
+            onClick={() => setTab(tabId as PublishTab)}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm transition-colors ${
               tab === tabId ? "bg-accent/15 font-medium text-accent-light" : "text-muted hover:text-foreground"
             }`}
@@ -473,7 +480,7 @@ export default function PublishPage() {
       </div>
 
       {/* ════════ MY SITE TAB ════════ */}
-      {tab === "site" && (
+      {tab !== null && tab === "site" && (
         <div className="space-y-6">
 
           {/* ── Connected status banner ── */}
