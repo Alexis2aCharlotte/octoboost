@@ -31,7 +31,7 @@ export function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   return (
-    <nav className="fixed top-0 right-0 left-0 z-50 flex h-16 items-center border-b border-border bg-background/80 px-6 backdrop-blur-xl md:px-8">
+    <nav className="fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-xl md:px-8">
       {/* Left — Logo */}
       <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
         <Image src="/Logo Octoboost.png" alt="OctoBoost" width={120} height={120} className="h-9 w-9 object-contain" priority />

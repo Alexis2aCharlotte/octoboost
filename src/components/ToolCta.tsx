@@ -43,7 +43,7 @@ export function ToolCta({ currentTool }: { currentTool: string }) {
           Analyze your site, generate SEO-optimized articles, and publish them across 11+ platforms — automatically.
         </p>
         <Link
-          href="/login"
+          href="/waitlist"
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-light"
         >
           Get Started Free
