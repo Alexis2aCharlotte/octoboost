@@ -41,6 +41,16 @@ const analysisSchema = z.object({
     .describe(
       "15-25 article title ideas optimized for SEO and AI discoverability"
     ),
+  keyTools: z
+    .array(
+      z.object({
+        name: z.string().describe("Tool or feature name as shown on the site"),
+        description: z.string().describe("One-sentence description of what it does"),
+      })
+    )
+    .describe(
+      "Key tools, features, or capabilities of the product extracted from the site content. Return empty array if no clear tools/features are found."
+    ),
 });
 
 export type SiteAnalysis = z.infer<typeof analysisSchema>;

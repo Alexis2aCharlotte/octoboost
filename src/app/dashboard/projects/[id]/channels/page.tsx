@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 import {
   Radio,
   Plus,
@@ -44,6 +46,7 @@ interface PlatformInfo {
   connectionType: ConnectionType;
   description: string;
   apiKeyUrl?: string;
+  profilePlaceholder?: string;
 }
 
 const platformMeta: Record<string, PlatformInfo> = {
@@ -70,16 +73,18 @@ const platformMeta: Record<string, PlatformInfo> = {
     icon: BookOpen,
     color: "text-green-400",
     bgColor: "bg-green-500/10",
-    connectionType: "oauth",
+    connectionType: "manual",
     description: "Large audience — dofollow backlinks, DA 95",
+    profilePlaceholder: "https://medium.com/@yourprofile",
   },
   reddit: {
     label: "Reddit",
     icon: MessageSquare,
     color: "text-orange-400",
     bgColor: "bg-orange-500/10",
-    connectionType: "oauth",
+    connectionType: "manual",
     description: "Communities — Google indexes posts, DA 99",
+    profilePlaceholder: "https://reddit.com/user/yourprofile",
   },
   wordpress: {
     label: "WordPress",
@@ -88,6 +93,7 @@ const platformMeta: Record<string, PlatformInfo> = {
     bgColor: "bg-cyan-500/10",
     connectionType: "api_key",
     description: "Your own blog — full control, SEO canonical",
+    apiKeyUrl: "https://developer.wordpress.org/advanced-administration/security/application-passwords/",
   },
   telegraph: {
     label: "Telegraph",
@@ -105,6 +111,7 @@ const platformMeta: Record<string, PlatformInfo> = {
     bgColor: "bg-amber-500/10",
     connectionType: "manual",
     description: "SaaS community — 23% conversion rate",
+    profilePlaceholder: "https://indiehackers.com/yourprofile",
   },
   hackernews: {
     label: "Hacker News",
@@ -113,6 +120,7 @@ const platformMeta: Record<string, PlatformInfo> = {
     bgColor: "bg-orange-500/10",
     connectionType: "manual",
     description: "Tech audience — traffic spikes, DA 90+",
+    profilePlaceholder: "https://news.ycombinator.com/user?id=yourprofile",
   },
   quora: {
     label: "Quora",
@@ -121,6 +129,7 @@ const platformMeta: Record<string, PlatformInfo> = {
     bgColor: "bg-red-500/10",
     connectionType: "manual",
     description: "Q&A — featured snippets in Google, DA 93",
+    profilePlaceholder: "https://quora.com/profile/yourprofile",
   },
   substack: {
     label: "Substack",
@@ -129,6 +138,7 @@ const platformMeta: Record<string, PlatformInfo> = {
     bgColor: "bg-orange-500/10",
     connectionType: "manual",
     description: "Newsletter — loyal audience, cross-posting",
+    profilePlaceholder: "https://yourprofile.substack.com",
   },
   blogger: {
     label: "Blogger",
@@ -140,11 +150,13 @@ const platformMeta: Record<string, PlatformInfo> = {
   },
 };
 
-const autoPublishPlatforms = ["devto", "hashnode", "medium", "reddit", "wordpress", "telegraph", "blogger"];
-const manualPlatforms = ["indiehackers", "hackernews", "quora", "substack"];
+const autoPublishPlatforms = ["devto", "hashnode", "wordpress", "telegraph", "blogger"];
+const manualPlatforms = ["medium", "reddit", "indiehackers", "hackernews", "quora", "substack"];
 
 export default function ProjectChannelsPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
@@ -152,6 +164,8 @@ export default function ProjectChannelsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState<{ platform: string; value: string; publicationHost?: string } | null>(null);
   const [bloggerBlogUrl, setBloggerBlogUrl] = useState<string | null>(null);
+  const [profileUrlInput, setProfileUrlInput] = useState<{ platform: string; value: string } | null>(null);
+  const [wpInput, setWpInput] = useState<{ siteUrl: string; username: string; appPassword: string } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -176,16 +190,19 @@ export default function ProjectChannelsPage() {
     loadData();
   }, [loadData]);
 
-  async function handleAdd(platformType: string, apiKey?: string, publicationHost?: string) {
+  async function handleAdd(platformType: string, opts?: { apiKey?: string; publicationHost?: string; profileUrl?: string }) {
     if (!realProjectId || adding) return;
     setAdding(platformType);
 
     const meta = platformMeta[platformType];
     try {
-      const config: Record<string, string> = apiKey ? { apiKey } : {};
-      if (platformType === "hashnode" && publicationHost) {
-        config.publicationHost = publicationHost.trim();
+      const config: Record<string, string> = {};
+      if (opts?.apiKey) config.apiKey = opts.apiKey;
+      if (platformType === "hashnode" && opts?.publicationHost) {
+        config.publicationHost = opts.publicationHost.trim();
       }
+      if (opts?.profileUrl) config.profileUrl = opts.profileUrl.trim();
+
       const res = await fetch("/api/channels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -200,9 +217,10 @@ export default function ProjectChannelsPage() {
       if (res.ok) {
         await loadData();
         setApiKeyInput(null);
+        setProfileUrlInput(null);
       } else {
         const err = await res.json();
-        alert(err.error ?? "Erreur");
+        toast(err.error ?? "Error");
       }
     } finally {
       setAdding(null);
@@ -210,7 +228,7 @@ export default function ProjectChannelsPage() {
   }
 
   async function handleDelete(channelId: string) {
-    if (!confirm("Remove this channel?")) return;
+    if (!(await confirm({ message: "Remove this channel?", destructive: true }))) return;
     setDeleting(channelId);
 
     try {
@@ -231,14 +249,46 @@ export default function ProjectChannelsPage() {
     const meta = platformMeta[platformType];
     if (!meta) return;
 
-    if (meta.connectionType === "api_key") {
+    if (platformType === "wordpress") {
+      setWpInput({ siteUrl: "", username: "", appPassword: "" });
+    } else if (meta.connectionType === "api_key") {
       setApiKeyInput({ platform: platformType, value: "" });
     } else if (platformType === "blogger") {
       setBloggerBlogUrl("");
-    } else if (platformType === "reddit") {
-      handleAdd(platformType);
+    } else if (meta.connectionType === "manual") {
+      setProfileUrlInput({ platform: platformType, value: "" });
     } else {
       handleAdd(platformType);
+    }
+  }
+
+  async function handleWordPressConnect() {
+    if (!realProjectId || !wpInput || !wpInput.siteUrl.trim() || !wpInput.username.trim() || !wpInput.appPassword.trim()) return;
+    setAdding("wordpress");
+    try {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: realProjectId,
+          platformType: "wordpress",
+          name: "WordPress",
+          config: {
+            siteUrl: wpInput.siteUrl.trim().replace(/\/+$/, ""),
+            username: wpInput.username.trim(),
+            apiKey: wpInput.appPassword.trim(),
+          },
+        }),
+      });
+      if (res.ok) {
+        await loadData();
+        setWpInput(null);
+      } else {
+        const err = await res.json();
+        toast(err.error ?? "Error");
+      }
+    } finally {
+      setAdding(null);
     }
   }
 
@@ -261,7 +311,7 @@ export default function ProjectChannelsPage() {
         if (data.id) {
           window.location.href = `/api/auth/blogger?channelId=${data.id}&projectSlug=${id}`;
         } else {
-          alert(data.error ?? "Erreur");
+          toast(data.error ?? "Error");
           setAdding(null);
         }
       })
@@ -314,7 +364,7 @@ export default function ProjectChannelsPage() {
           <div className="mt-4 flex gap-3">
             <input
               type="text"
-              placeholder="nicheshunter.blogspot.com"
+              placeholder="yourURL.example.com"
               value={bloggerBlogUrl}
               onChange={(e) => setBloggerBlogUrl(e.target.value)}
               className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
@@ -374,11 +424,10 @@ export default function ProjectChannelsPage() {
               </div>
               <button
                 onClick={() =>
-                  handleAdd(
-                    apiKeyInput.platform,
-                    apiKeyInput.value,
-                    apiKeyInput.platform === "hashnode" ? apiKeyInput.publicationHost : undefined
-                  )
+                  handleAdd(apiKeyInput.platform, {
+                    apiKey: apiKeyInput.value,
+                    publicationHost: apiKeyInput.platform === "hashnode" ? apiKeyInput.publicationHost : undefined,
+                  })
                 }
                 disabled={!apiKeyInput.value.trim() || adding !== null || (apiKeyInput.platform === "hashnode" && !apiKeyInput.publicationHost?.trim())}
                 className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
@@ -396,7 +445,7 @@ export default function ProjectChannelsPage() {
                 <label className="mb-1 block text-xs text-muted">Blog URL (publication host)</label>
                 <input
                   type="text"
-                  placeholder="niches-hunter.hashnode.dev"
+                  placeholder="yourURL.hashnode.dev"
                   value={apiKeyInput.publicationHost ?? ""}
                   onChange={(e) =>
                     setApiKeyInput({ ...apiKeyInput, publicationHost: e.target.value })
@@ -417,6 +466,109 @@ export default function ProjectChannelsPage() {
               Get your API key from {platformMeta[apiKeyInput.platform]?.label}
             </a>
           )}
+        </div>
+      )}
+
+      {/* Profile URL input for manual platforms */}
+      {profileUrlInput && (
+        <div className="rounded-xl border border-accent/30 bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            {(() => { const Icon = platformMeta[profileUrlInput.platform]?.icon ?? Radio; return <Icon className={`h-5 w-5 ${platformMeta[profileUrlInput.platform]?.color ?? ""}`} />; })()}
+            <span className="text-sm font-semibold">{platformMeta[profileUrlInput.platform]?.label}</span>
+            <button onClick={() => setProfileUrlInput(null)} className="ml-auto rounded-lg p-1 text-muted transition hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-muted">Paste your profile URL so you can access it directly from OctoBoost.</p>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/50" />
+              <input
+                type="url"
+                placeholder={platformMeta[profileUrlInput.platform]?.profilePlaceholder ?? "https://..."}
+                value={profileUrlInput.value}
+                onChange={(e) => setProfileUrlInput({ ...profileUrlInput, value: e.target.value })}
+                className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
+                autoFocus
+              />
+            </div>
+            <button
+              onClick={() => handleAdd(profileUrlInput.platform, { profileUrl: profileUrlInput.value })}
+              disabled={adding !== null}
+              className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+            >
+              {adding === profileUrlInput.platform ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Add
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* WordPress config input */}
+      {wpInput && (
+        <div className="rounded-xl border border-accent/30 bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Globe className={`h-5 w-5 ${platformMeta.wordpress?.color ?? ""}`} />
+            <span className="text-sm font-semibold">WordPress</span>
+            <button onClick={() => setWpInput(null)} className="ml-auto rounded-lg p-1 text-muted transition hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted">Site URL</label>
+              <input
+                type="url"
+                placeholder="https://yourblog.com"
+                value={wpInput.siteUrl}
+                onChange={(e) => setWpInput({ ...wpInput, siteUrl: e.target.value })}
+                className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">Username</label>
+              <input
+                type="text"
+                placeholder="admin"
+                value={wpInput.username}
+                onChange={(e) => setWpInput({ ...wpInput, username: e.target.value })}
+                className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">Application Password</label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/50" />
+                <input
+                  type="password"
+                  placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                  value={wpInput.appPassword}
+                  onChange={(e) => setWpInput({ ...wpInput, appPassword: e.target.value })}
+                  className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleWordPressConnect}
+                disabled={!wpInput.siteUrl.trim() || !wpInput.username.trim() || !wpInput.appPassword.trim() || adding !== null}
+                className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+              >
+                {adding === "wordpress" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Connect
+              </button>
+              <a
+                href="https://developer.wordpress.org/advanced-administration/security/application-passwords/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-accent-light hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                How to get an Application Password
+              </a>
+            </div>
+          </div>
         </div>
       )}
 
@@ -560,6 +712,8 @@ export default function ProjectChannelsPage() {
             {manualChannels.map((channel) => {
               const meta = platformMeta[channel.platformType];
               const Icon = meta?.icon ?? Radio;
+              const cfg = channel.config as Record<string, unknown>;
+              const profileUrl = cfg?.profileUrl as string | undefined;
               return (
                 <div
                   key={channel.id}
@@ -573,9 +727,21 @@ export default function ProjectChannelsPage() {
                     <p className="text-xs text-muted">{meta?.description}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs font-medium text-muted">
-                      Copy/Paste
-                    </span>
+                    {profileUrl ? (
+                      <a
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-light transition hover:bg-accent/20"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Open profile
+                      </a>
+                    ) : (
+                      <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs font-medium text-muted">
+                        Copy/Paste
+                      </span>
+                    )}
                     <button
                       onClick={() => handleDelete(channel.id)}
                       disabled={deleting === channel.id}
@@ -599,7 +765,7 @@ export default function ProjectChannelsPage() {
               return (
                 <button
                   key={p}
-                  onClick={() => handleAdd(p)}
+                  onClick={() => handlePlatformClick(p)}
                   disabled={adding !== null}
                   className={`flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm transition hover:border-accent/50 hover:bg-accent/5 disabled:opacity-50 ${meta.color}`}
                 >

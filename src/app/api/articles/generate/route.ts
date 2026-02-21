@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   // Fetch product context from latest analysis
   const { data: analysis } = await supabase
     .from("analyses")
-    .select("product_summary, target_audience, site_title")
+    .select("product_summary, target_audience, site_title, key_tools")
     .eq("id", cluster.analysis_id)
     .single();
 
@@ -81,6 +81,8 @@ export async function POST(req: NextRequest) {
       .select("path, title, description")
       .eq("project_id", projectId)
       .order("path");
+
+    const keyTools = (analysis?.key_tools as { name: string; description: string }[] | null) ?? [];
 
     const result = await generateArticle({
       cluster: {
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
         url: project.url,
         summary: analysis?.product_summary ?? "",
         targetAudience: analysis?.target_audience ?? "",
+        keyTools,
       },
       sitePages: sitePages?.map((p) => ({
         path: p.path,

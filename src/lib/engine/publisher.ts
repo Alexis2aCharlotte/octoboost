@@ -7,6 +7,7 @@ import {
   publishToBlogger,
   getBlogIdFromUrl,
 } from "@/lib/blogger";
+import { publishToWordPress } from "@/lib/wordpress";
 
 export interface PublishResult {
   success: boolean;
@@ -51,6 +52,12 @@ export async function publishVariant(
 
   const platform = pubChannels.platform_type;
   const config = pubChannels.config as Record<string, unknown>;
+  const canonicalUrl = pubArticles.canonical_url ?? undefined;
+
+  function withCanonicalFooter(content: string): string {
+    if (!canonicalUrl) return content;
+    return `${content}\n\n---\n\n*Originally published on [${pubArticles.title}](${canonicalUrl})*`;
+  }
 
   try {
     let publishedUrl: string;
@@ -68,7 +75,7 @@ export async function publishVariant(
         title: variant.title,
         bodyMarkdown: variant.content,
         tags,
-        canonicalUrl: pubArticles.canonical_url ?? undefined,
+        canonicalUrl,
         published: true,
       });
       publishedUrl = result.url;
@@ -89,7 +96,7 @@ export async function publishVariant(
         title: variant.title,
         bodyMarkdown: variant.content,
         tags,
-        canonicalUrl: pubArticles.canonical_url ?? undefined,
+        canonicalUrl,
       });
       publishedUrl = result.url;
     } else if (platform === "telegraph") {
@@ -98,9 +105,9 @@ export async function publishVariant(
 
       const result = await publishToTelegraph(accessToken, {
         title: variant.title,
-        bodyMarkdown: variant.content,
+        bodyMarkdown: withCanonicalFooter(variant.content),
         authorName: (config?.authorName as string) ?? undefined,
-        authorUrl: (config?.authorUrl as string) ?? undefined,
+        authorUrl: canonicalUrl ?? (config?.authorUrl as string) ?? undefined,
       });
       publishedUrl = result.url;
     } else if (platform === "blogger") {
@@ -135,8 +142,29 @@ export async function publishVariant(
 
       const result = await publishToBlogger(accessToken, resolvedBlogId, {
         title: variant.title,
-        bodyMarkdown: variant.content,
+        bodyMarkdown: withCanonicalFooter(variant.content),
         labels,
+      });
+      publishedUrl = result.url;
+    } else if (platform === "wordpress") {
+      const siteUrl = config?.siteUrl as string;
+      const username = config?.username as string;
+      const appPassword = config?.apiKey as string;
+      if (!siteUrl || !username || !appPassword) {
+        return { success: false, error: "WordPress not fully configured (site URL, username, app password)" };
+      }
+
+      const tags = (pubArticles.supporting_keywords ?? [])
+        .slice(0, 5)
+        .map((k: string) => k.replace(/[^a-zA-Z0-9\s]/g, "").trim())
+        .filter((t: string) => t.length > 0);
+
+      const result = await publishToWordPress(siteUrl, username, appPassword, {
+        title: variant.title,
+        bodyMarkdown: variant.content,
+        tags,
+        canonicalUrl,
+        status: "publish",
       });
       publishedUrl = result.url;
     } else {

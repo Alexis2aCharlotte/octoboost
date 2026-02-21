@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 import {
   FileText,
   Loader2,
@@ -109,8 +111,8 @@ interface VariantFull {
 const platformMeta: Record<string, { label: string; icon: typeof BookOpen; color: string; bgColor: string; connectionType: string }> = {
   devto: { label: "Dev.to", icon: Code2, color: "text-blue-400", bgColor: "bg-blue-500/10", connectionType: "api_key" },
   hashnode: { label: "Hashnode", icon: Hash, color: "text-indigo-400", bgColor: "bg-indigo-500/10", connectionType: "api_key" },
-  medium: { label: "Medium", icon: BookOpen, color: "text-green-400", bgColor: "bg-green-500/10", connectionType: "oauth" },
-  reddit: { label: "Reddit", icon: MessageSquare, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "oauth" },
+  medium: { label: "Medium", icon: BookOpen, color: "text-green-400", bgColor: "bg-green-500/10", connectionType: "manual" },
+  reddit: { label: "Reddit", icon: MessageSquare, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "manual" },
   wordpress: { label: "WordPress", icon: Globe, color: "text-cyan-400", bgColor: "bg-cyan-500/10", connectionType: "api_key" },
   telegraph: { label: "Telegraph", icon: FileText, color: "text-sky-400", bgColor: "bg-sky-500/10", connectionType: "api_key" },
   blogger: { label: "Blogger", icon: BookOpen, color: "text-orange-500", bgColor: "bg-orange-500/10", connectionType: "oauth" },
@@ -143,6 +145,8 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 
 export default function ArticlesPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -287,7 +291,7 @@ export default function ArticlesPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Generation failed");
+        toast(data.error || "Generation failed");
         return;
       }
 
@@ -322,7 +326,7 @@ export default function ArticlesPage() {
   }
 
   async function handleDelete(articleId: string) {
-    if (!confirm("Delete this article?")) return;
+    if (!(await confirm({ message: "Delete this article?", destructive: true }))) return;
     const res = await fetch(`/api/articles/${articleId}`, { method: "DELETE" });
     if (res.ok) {
       setArticles((prev) => prev.filter((a) => a.id !== articleId));
@@ -366,7 +370,7 @@ export default function ArticlesPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Variant generation failed");
+        toast(data.error || "Variant generation failed");
         return;
       }
 
@@ -374,7 +378,7 @@ export default function ArticlesPage() {
       await loadVariants(articleId);
       await openVariantPreview(data.variantId);
     } catch {
-      alert("Something went wrong");
+      toast("Something went wrong");
     } finally {
       setGeneratingVariant(null);
       setShowChannelPicker(false as const);
@@ -395,7 +399,7 @@ export default function ArticlesPage() {
   }
 
   async function handleDeleteVariant(variantId: string) {
-    if (!confirm("Delete this variant?")) return;
+    if (!(await confirm({ message: "Delete this variant?", destructive: true }))) return;
     const res = await fetch(`/api/articles/variants/${variantId}`, { method: "DELETE" });
     if (res.ok) {
       setVariants((prev) => prev.filter((v) => v.id !== variantId));
@@ -429,10 +433,10 @@ export default function ArticlesPage() {
         if (previewArticle) setPreviewArticle({ ...previewArticle, status: "published" });
       } else {
         const data = await res.json();
-        alert(data.error ?? "Publication failed");
+        toast(data.error ?? "Publication failed");
       }
     } catch {
-      alert("Something went wrong");
+      toast("Something went wrong");
     } finally {
       setPublishingToSite(false);
     }
@@ -466,10 +470,10 @@ export default function ArticlesPage() {
         setEditing(false);
       } else {
         const data = await res.json();
-        alert(data.error ?? "Save failed");
+        toast(data.error ?? "Save failed");
       }
     } catch {
-      alert("Something went wrong");
+      toast("Something went wrong");
     } finally {
       setSaving(false);
     }
@@ -487,7 +491,7 @@ export default function ArticlesPage() {
       );
     } else {
       const data = await res.json();
-      alert(data.error ?? "Publication failed");
+      toast(data.error ?? "Publication failed");
       throw new Error(data.error);
     }
   }
@@ -504,7 +508,7 @@ export default function ArticlesPage() {
       );
     } else {
       const data = await res.json();
-      alert(data.error ?? "Reschedule failed");
+      toast(data.error ?? "Reschedule failed");
       throw new Error(data.error);
     }
   }
@@ -523,10 +527,10 @@ export default function ArticlesPage() {
         setShowSitePublishMenu(false);
       } else {
         const data = await res.json();
-        alert(data.error ?? "Schedule failed");
+        toast(data.error ?? "Schedule failed");
       }
     } catch {
-      alert("Something went wrong");
+      toast("Something went wrong");
     } finally {
       setSchedulingSite(false);
     }
@@ -537,7 +541,7 @@ export default function ArticlesPage() {
       (v) => v.status !== "published" && platformMeta[v.platformType]?.connectionType !== "manual"
     );
     if (unpublished.length === 0) return;
-    if (!confirm(`Publish ${unpublished.length} variant(s) now?`)) return;
+    if (!(await confirm({ message: `Publish ${unpublished.length} variant(s) now?` }))) return;
 
     setPublishAllLoading(true);
     setPublishAllProgress({ done: 0, total: unpublished.length });

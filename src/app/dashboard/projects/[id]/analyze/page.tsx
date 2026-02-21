@@ -299,7 +299,7 @@ function AnalyzeContent() {
                     type="url"
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder={project?.url || "https://yoursite.com"}
+                    placeholder={project?.url || "https://yourURL.example.com"}
                     className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none placeholder:text-muted/30"
                   />
                 </div>
@@ -323,7 +323,7 @@ function AnalyzeContent() {
                   type="url"
                   value={newUrl}
                   onChange={(e) => setNewUrl(e.target.value)}
-                  placeholder={project?.url || "https://yoursite.com"}
+                  placeholder={project?.url || "https://yourURL.example.com"}
                   className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none placeholder:text-muted/30"
                 />
               </div>

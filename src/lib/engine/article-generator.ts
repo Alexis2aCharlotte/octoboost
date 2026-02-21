@@ -23,6 +23,7 @@ export interface ArticleInput {
     url: string;
     summary: string;
     targetAudience: string;
+    keyTools?: { name: string; description: string }[];
   };
   sitePages?: SitePageRef[];
 }
@@ -63,6 +64,11 @@ export async function generateArticle(
 ${sitePages.map((p) => `- [${p.title}](${p.path}) — ${p.description}`).join("\n")}`
     : "";
 
+  const keyToolsBlock = productContext.keyTools && productContext.keyTools.length > 0
+    ? `\n\nKey tools/features of the product (mention these naturally where relevant):
+${productContext.keyTools.map((t) => `- **${t.name}**: ${t.description}`).join("\n")}`
+    : "";
+
   // Step 1: Generate structured outline
   const { object: outline } = await generateObject({
     model: anthropic("claude-sonnet-4-6"),
@@ -91,7 +97,7 @@ Product context (to mention naturally, not as an ad):
 - What it does: ${productContext.summary}
 - Audience: ${productContext.targetAudience}
 
-The article should naturally reference the product where relevant, but the primary goal is to provide genuine value to the reader.${internalLinksBlock}`,
+The article should naturally reference the product where relevant, but the primary goal is to provide genuine value to the reader.${keyToolsBlock}${internalLinksBlock}`,
   });
 
   // Step 2: Generate full article from outline
@@ -135,7 +141,7 @@ Pillar keyword: ${cluster.pillarKeyword}
 All target keywords: ${allKeywords.join(", ")}
 
 Product to mention naturally:
-- ${productContext.name} (${productContext.url}): ${productContext.summary}
+- ${productContext.name} (${productContext.url}): ${productContext.summary}${keyToolsBlock}
 
 Outline:
 ${sectionPrompts}

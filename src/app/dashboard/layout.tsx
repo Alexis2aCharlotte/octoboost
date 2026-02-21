@@ -13,6 +13,8 @@ import {
   Send,
   Eye,
 } from "lucide-react";
+import { ToastProvider } from "@/components/Toast";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 
 const globalNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -162,13 +164,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="grid-bg" />
-      <Sidebar />
-      <div className="relative pl-60" style={{ zIndex: 1 }}>
-        <TopBar />
-        <main className="px-8 py-6">{children}</main>
-      </div>
-    </div>
+    <ToastProvider>
+      <ConfirmProvider>
+        <div className="min-h-screen bg-background text-foreground">
+          <div className="grid-bg" />
+          <Sidebar />
+          <div className="relative pl-60" style={{ zIndex: 1 }}>
+            <TopBar />
+            <main className="px-8 py-6">{children}</main>
+          </div>
+        </div>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }

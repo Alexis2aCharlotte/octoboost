@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 import {
   Plug,
   Radio,
@@ -24,8 +26,6 @@ import {
   Check,
   FileText,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Clock,
   CheckCircle2,
@@ -78,6 +78,7 @@ interface PlatformInfo {
   connectionType: ConnectionType;
   description: string;
   apiKeyUrl?: string;
+  profilePlaceholder?: string;
 }
 
 /* ─── Platform metadata ──────────────────────────────────── */
@@ -85,22 +86,22 @@ interface PlatformInfo {
 const platformMeta: Record<string, PlatformInfo> = {
   devto: { label: "Dev.to", icon: Code2, color: "text-blue-400", bgColor: "bg-blue-500/10", connectionType: "api_key", description: "Developer community — dofollow backlinks, DA 85+", apiKeyUrl: "https://dev.to/settings/extensions" },
   hashnode: { label: "Hashnode", icon: Hash, color: "text-indigo-400", bgColor: "bg-indigo-500/10", connectionType: "api_key", description: "Developer blogging — dofollow backlinks, DA 80+", apiKeyUrl: "https://hashnode.com/settings/developer" },
-  medium: { label: "Medium", icon: BookOpen, color: "text-green-400", bgColor: "bg-green-500/10", connectionType: "oauth", description: "Large audience — dofollow backlinks, DA 95" },
-  reddit: { label: "Reddit", icon: MessageSquare, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "oauth", description: "Communities — Google indexes posts, DA 99" },
-  wordpress: { label: "WordPress", icon: Globe, color: "text-cyan-400", bgColor: "bg-cyan-500/10", connectionType: "api_key", description: "Your own blog — full control, SEO canonical" },
+  medium: { label: "Medium", icon: BookOpen, color: "text-green-400", bgColor: "bg-green-500/10", connectionType: "manual", description: "Large audience — dofollow backlinks, DA 95", profilePlaceholder: "https://medium.com/@yourprofile" },
+  reddit: { label: "Reddit", icon: MessageSquare, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "manual", description: "Communities — Google indexes posts, DA 99", profilePlaceholder: "https://reddit.com/user/yourprofile" },
+  wordpress: { label: "WordPress", icon: Globe, color: "text-cyan-400", bgColor: "bg-cyan-500/10", connectionType: "api_key", description: "Your own blog — full control, SEO canonical", apiKeyUrl: "https://developer.wordpress.org/advanced-administration/security/application-passwords/" },
   telegraph: { label: "Telegraph", icon: FileText, color: "text-sky-400", bgColor: "bg-sky-500/10", connectionType: "api_key", description: "Instant publishing — dofollow, DA 83", apiKeyUrl: "https://api.telegra.ph/createAccount?short_name=OctoBoost&author_name=YourName" },
-  indiehackers: { label: "Indie Hackers", icon: Flame, color: "text-amber-400", bgColor: "bg-amber-500/10", connectionType: "manual", description: "SaaS community — 23% conversion rate" },
-  hackernews: { label: "Hacker News", icon: Code2, color: "text-orange-300", bgColor: "bg-orange-500/10", connectionType: "manual", description: "Tech audience — traffic spikes, DA 90+" },
-  quora: { label: "Quora", icon: HelpCircle, color: "text-red-400", bgColor: "bg-red-500/10", connectionType: "manual", description: "Q&A — featured snippets in Google, DA 93" },
-  substack: { label: "Substack", icon: Mail, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "manual", description: "Newsletter — loyal audience, cross-posting" },
+  indiehackers: { label: "Indie Hackers", icon: Flame, color: "text-amber-400", bgColor: "bg-amber-500/10", connectionType: "manual", description: "SaaS community — 23% conversion rate", profilePlaceholder: "https://indiehackers.com/yourprofile" },
+  hackernews: { label: "Hacker News", icon: Code2, color: "text-orange-300", bgColor: "bg-orange-500/10", connectionType: "manual", description: "Tech audience — traffic spikes, DA 90+", profilePlaceholder: "https://news.ycombinator.com/user?id=yourprofile" },
+  quora: { label: "Quora", icon: HelpCircle, color: "text-red-400", bgColor: "bg-red-500/10", connectionType: "manual", description: "Q&A — featured snippets in Google, DA 93", profilePlaceholder: "https://quora.com/profile/yourprofile" },
+  substack: { label: "Substack", icon: Mail, color: "text-orange-400", bgColor: "bg-orange-500/10", connectionType: "manual", description: "Newsletter — loyal audience, cross-posting", profilePlaceholder: "https://yourprofile.substack.com" },
   blogger: { label: "Blogger", icon: BookOpen, color: "text-orange-500", bgColor: "bg-orange-500/10", connectionType: "oauth", description: "Google Blogspot — DA 89, gratuit" },
 };
 
 const schedulePlatformMeta: Record<string, { label: string; color: string; icon: string; connectionType: string }> = {
   devto: { label: "Dev.to", color: "#3B49DF", icon: "🔷", connectionType: "api_key" },
   hashnode: { label: "Hashnode", color: "#2962FF", icon: "📘", connectionType: "api_key" },
-  medium: { label: "Medium", color: "#00AB6C", icon: "📝", connectionType: "oauth" },
-  reddit: { label: "Reddit", color: "#FF4500", icon: "🔶", connectionType: "oauth" },
+  medium: { label: "Medium", color: "#00AB6C", icon: "📝", connectionType: "manual" },
+  reddit: { label: "Reddit", color: "#FF4500", icon: "🔶", connectionType: "manual" },
   wordpress: { label: "WordPress", color: "#21759B", icon: "🌐", connectionType: "api_key" },
   telegraph: { label: "Telegraph", color: "#0088CC", icon: "📄", connectionType: "api_key" },
   blogger: { label: "Blogger", color: "#F57C00", icon: "📝", connectionType: "oauth" },
@@ -110,13 +111,15 @@ const schedulePlatformMeta: Record<string, { label: string; color: string; icon:
   substack: { label: "Substack", color: "#FF6719", icon: "📧", connectionType: "manual" },
 };
 
-const autoPublishPlatforms = ["devto", "hashnode", "medium", "reddit", "wordpress", "telegraph", "blogger"];
-const manualPlatforms = ["indiehackers", "hackernews", "quora", "substack"];
+const autoPublishPlatforms = ["devto", "hashnode", "wordpress", "telegraph", "blogger"];
+const manualPlatforms = ["medium", "reddit", "indiehackers", "hackernews", "quora", "substack"];
 
 /* ─── Main page ──────────────────────────────────────────── */
 
 export default function PublishPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,13 +155,12 @@ export default function PublishPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState<{ platform: string; value: string; publicationHost?: string } | null>(null);
   const [bloggerBlogUrl, setBloggerBlogUrl] = useState<string | null>(null);
+  const [profileUrlInput, setProfileUrlInput] = useState<{ platform: string; value: string } | null>(null);
+  const [wpInput, setWpInput] = useState<{ siteUrl: string; username: string; appPassword: string } | null>(null);
 
   // Schedule state
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
-  const [monthOffset, setMonthOffset] = useState(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -204,15 +206,6 @@ export default function PublishPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) setSelectedDay(null);
-    }
-    if (selectedDay) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [selectedDay]);
 
   /* ── Site connection handlers ── */
 
@@ -296,7 +289,7 @@ export default function PublishPage() {
   }, [connection]);
 
   async function handleDisconnect() {
-    if (!realProjectId || !confirm("Disconnect your site?")) return;
+    if (!realProjectId || !(await confirm({ message: "Disconnect your site?", destructive: true }))) return;
     const res = await fetch("/api/site-connection", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -316,7 +309,7 @@ export default function PublishPage() {
   }
 
   async function handleRegenerateApiKey() {
-    if (!realProjectId || !confirm("Regenerate API key? The old key will stop working.")) return;
+    if (!realProjectId || !(await confirm({ message: "Regenerate API key? The old key will stop working.", destructive: true }))) return;
     setApiKeyLoading(true);
     try {
       const res = await fetch(`/api/projects/${realProjectId}/api-key`, { method: "POST" });
@@ -331,25 +324,27 @@ export default function PublishPage() {
 
   /* ── Channel handlers ── */
 
-  async function handleAddChannel(platformType: string, apiKey?: string, publicationHost?: string) {
+  async function handleAddChannel(platformType: string, opts?: { apiKey?: string; publicationHost?: string; profileUrl?: string }) {
     if (!realProjectId || adding) return;
     setAdding(platformType);
     const meta = platformMeta[platformType];
     try {
-      const config: Record<string, string> = apiKey ? { apiKey } : {};
-      if (platformType === "hashnode" && publicationHost) config.publicationHost = publicationHost.trim();
+      const config: Record<string, string> = {};
+      if (opts?.apiKey) config.apiKey = opts.apiKey;
+      if (platformType === "hashnode" && opts?.publicationHost) config.publicationHost = opts.publicationHost.trim();
+      if (opts?.profileUrl) config.profileUrl = opts.profileUrl.trim();
       const res = await fetch("/api/channels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: realProjectId, platformType, name: meta?.label ?? platformType, config }),
       });
-      if (res.ok) { await loadData(); setApiKeyInput(null); }
-      else { const err = await res.json(); alert(err.error ?? "Erreur"); }
+      if (res.ok) { await loadData(); setApiKeyInput(null); setProfileUrlInput(null); }
+      else { const err = await res.json(); toast(err.error ?? "Error"); }
     } finally { setAdding(null); }
   }
 
   async function handleDeleteChannel(channelId: string) {
-    if (!confirm("Remove this channel?")) return;
+    if (!(await confirm({ message: "Remove this channel?", destructive: true }))) return;
     setDeleting(channelId);
     try {
       const res = await fetch(`/api/channels/${channelId}`, { method: "DELETE" });
@@ -364,9 +359,41 @@ export default function PublishPage() {
   function handlePlatformClick(platformType: string) {
     const meta = platformMeta[platformType];
     if (!meta) return;
-    if (meta.connectionType === "api_key") setApiKeyInput({ platform: platformType, value: "" });
+    if (platformType === "wordpress") setWpInput({ siteUrl: "", username: "", appPassword: "" });
+    else if (meta.connectionType === "api_key") setApiKeyInput({ platform: platformType, value: "" });
     else if (platformType === "blogger") setBloggerBlogUrl("");
+    else if (meta.connectionType === "manual") setProfileUrlInput({ platform: platformType, value: "" });
     else handleAddChannel(platformType);
+  }
+
+  async function handleWordPressConnect() {
+    if (!realProjectId || !wpInput || !wpInput.siteUrl.trim() || !wpInput.username.trim() || !wpInput.appPassword.trim()) return;
+    setAdding("wordpress");
+    try {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: realProjectId,
+          platformType: "wordpress",
+          name: "WordPress",
+          config: {
+            siteUrl: wpInput.siteUrl.trim().replace(/\/+$/, ""),
+            username: wpInput.username.trim(),
+            apiKey: wpInput.appPassword.trim(),
+          },
+        }),
+      });
+      if (res.ok) {
+        await loadData();
+        setWpInput(null);
+      } else {
+        const err = await res.json();
+        toast(err.error ?? "Error");
+      }
+    } finally {
+      setAdding(null);
+    }
   }
 
   function handleBloggerConnect() {
@@ -381,7 +408,7 @@ export default function PublishPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.id) window.location.href = `/api/auth/blogger?channelId=${data.id}&projectSlug=${id}`;
-        else { alert(data.error ?? "Erreur"); setAdding(null); }
+        else { toast(data.error ?? "Error"); setAdding(null); }
       })
       .catch(() => setAdding(null));
   }
@@ -408,27 +435,17 @@ export default function PublishPage() {
   const availableAuto = autoPublishPlatforms.filter((p) => !usedPlatforms.has(p));
   const availableManual = manualPlatforms.filter((p) => !usedPlatforms.has(p));
 
-  const countByDay = new Map<string, number>();
   const variantsByDay = new Map<string, ScheduledVariant[]>();
   for (const v of variants) {
     if (!v.scheduled_at) continue;
     const key = v.scheduled_at.slice(0, 10);
-    countByDay.set(key, (countByDay.get(key) ?? 0) + 1);
     const arr = variantsByDay.get(key) ?? [];
     arr.push(v);
     variantsByDay.set(key, arr);
   }
-
-  const now = new Date();
-  const viewDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-  const viewYear = viewDate.getFullYear();
-  const viewMonth = viewDate.getMonth();
-  const weeks = getMonthGrid(viewYear, viewMonth);
-  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const sortedDays = [...variantsByDay.keys()].sort();
   const totalScheduled = variants.filter((v) => v.status === "scheduled").length;
   const totalPublished = variants.filter((v) => v.status === "published").length;
-  const selectedVariants = selectedDay ? (variantsByDay.get(selectedDay) ?? []) : [];
-  const selectedDate = selectedDay ? new Date(selectedDay + "T00:00:00") : null;
 
   const snippet = snippetTab === "util"
     ? generateSnippetFetchUtil(apiKey ?? "YOUR_API_KEY")
@@ -775,7 +792,7 @@ export default function PublishPage() {
                 <button onClick={() => setBloggerBlogUrl(null)} className="text-muted hover:text-foreground"><X className="h-4 w-4" /></button>
               </div>
               <div className="mt-4 flex gap-3">
-                <input type="text" placeholder="nicheshunter.blogspot.com" value={bloggerBlogUrl} onChange={(e) => setBloggerBlogUrl(e.target.value)} className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" autoFocus />
+                <input type="text" placeholder="yourURL.example.com" value={bloggerBlogUrl} onChange={(e) => setBloggerBlogUrl(e.target.value)} className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" autoFocus />
                 <button onClick={handleBloggerConnect} disabled={!bloggerBlogUrl?.trim() || adding !== null} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50">
                   {adding === "blogger" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Connect Google
@@ -812,7 +829,7 @@ export default function PublishPage() {
                     <input type="password" placeholder="Paste your API key..." value={apiKeyInput.value} onChange={(e) => setApiKeyInput({ ...apiKeyInput, value: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" autoFocus />
                   </div>
                   <button
-                    onClick={() => handleAddChannel(apiKeyInput.platform, apiKeyInput.value, apiKeyInput.platform === "hashnode" ? apiKeyInput.publicationHost : undefined)}
+                    onClick={() => handleAddChannel(apiKeyInput.platform, { apiKey: apiKeyInput.value, publicationHost: apiKeyInput.platform === "hashnode" ? apiKeyInput.publicationHost : undefined })}
                     disabled={!apiKeyInput.value.trim() || adding !== null || (apiKeyInput.platform === "hashnode" && !apiKeyInput.publicationHost?.trim())}
                     className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
                   >
@@ -823,7 +840,7 @@ export default function PublishPage() {
                 {apiKeyInput.platform === "hashnode" && (
                   <div>
                     <label className="mb-1 block text-xs text-muted">Blog URL (publication host)</label>
-                    <input type="text" placeholder="niches-hunter.hashnode.dev" value={apiKeyInput.publicationHost ?? ""} onChange={(e) => setApiKeyInput({ ...apiKeyInput, publicationHost: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" />
+                    <input type="text" placeholder="yourURL.hashnode.dev" value={apiKeyInput.publicationHost ?? ""} onChange={(e) => setApiKeyInput({ ...apiKeyInput, publicationHost: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" />
                   </div>
                 )}
               </div>
@@ -833,6 +850,81 @@ export default function PublishPage() {
                   Get your API key from {platformMeta[apiKeyInput.platform]?.label}
                 </a>
               )}
+            </div>
+          )}
+
+          {/* Profile URL input for manual platforms */}
+          {profileUrlInput && (
+            <div className="rounded-xl border border-accent/30 bg-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                {(() => { const Icon = platformMeta[profileUrlInput.platform]?.icon ?? Radio; return <Icon className={`h-5 w-5 ${platformMeta[profileUrlInput.platform]?.color ?? ""}`} />; })()}
+                <span className="text-sm font-semibold">{platformMeta[profileUrlInput.platform]?.label}</span>
+                <button onClick={() => setProfileUrlInput(null)} className="ml-auto rounded-lg p-1 text-muted transition hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-muted">Paste your profile URL so you can access it directly from OctoBoost.</p>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/50" />
+                  <input
+                    type="url"
+                    placeholder={platformMeta[profileUrlInput.platform]?.profilePlaceholder ?? "https://..."}
+                    value={profileUrlInput.value}
+                    onChange={(e) => setProfileUrlInput({ ...profileUrlInput, value: e.target.value })}
+                    className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  onClick={() => handleAddChannel(profileUrlInput.platform, { profileUrl: profileUrlInput.value })}
+                  disabled={adding !== null}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                >
+                  {adding === profileUrlInput.platform ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  Add
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* WordPress config input */}
+          {wpInput && (
+            <div className="rounded-xl border border-accent/30 bg-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Globe className={`h-5 w-5 ${platformMeta.wordpress?.color ?? ""}`} />
+                <span className="text-sm font-semibold">WordPress</span>
+                <button onClick={() => setWpInput(null)} className="ml-auto rounded-lg p-1 text-muted transition hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs text-muted">Site URL</label>
+                  <input type="url" placeholder="https://yourblog.com" value={wpInput.siteUrl} onChange={(e) => setWpInput({ ...wpInput, siteUrl: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" autoFocus />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted">Username</label>
+                  <input type="text" placeholder="admin" value={wpInput.username} onChange={(e) => setWpInput({ ...wpInput, username: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 px-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted">Application Password</label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/50" />
+                    <input type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" value={wpInput.appPassword} onChange={(e) => setWpInput({ ...wpInput, appPassword: e.target.value })} className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted/50 focus:border-accent/50 focus:outline-none" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleWordPressConnect} disabled={!wpInput.siteUrl.trim() || !wpInput.username.trim() || !wpInput.appPassword.trim() || adding !== null} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50">
+                    {adding === "wordpress" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    Connect
+                  </button>
+                  <a href="https://developer.wordpress.org/advanced-administration/security/application-passwords/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-accent-light hover:underline">
+                    <ExternalLink className="h-3 w-3" />
+                    How to get an Application Password
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 
@@ -938,6 +1030,8 @@ export default function PublishPage() {
                 {manualChannels.map((channel) => {
                   const meta = platformMeta[channel.platformType];
                   const Icon = meta?.icon ?? Radio;
+                  const cfg = channel.config as Record<string, unknown>;
+                  const profileUrl = cfg?.profileUrl as string | undefined;
                   return (
                     <div key={channel.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-accent/20">
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta?.bgColor ?? "bg-accent/10"}`}>
@@ -948,7 +1042,14 @@ export default function PublishPage() {
                         <p className="text-sm text-muted">{meta?.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs font-medium text-muted">Copy/Paste</span>
+                        {profileUrl ? (
+                          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-light transition hover:bg-accent/20">
+                            <ExternalLink className="h-3 w-3" />
+                            Open profile
+                          </a>
+                        ) : (
+                          <span className="rounded-md bg-card-hover px-2 py-0.5 text-xs font-medium text-muted">Copy/Paste</span>
+                        )}
                         <button onClick={() => handleDeleteChannel(channel.id)} disabled={deleting === channel.id} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-50">
                           {deleting === channel.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                         </button>
@@ -966,7 +1067,7 @@ export default function PublishPage() {
                   if (!meta) return null;
                   const Icon = meta.icon;
                   return (
-                    <button key={p} onClick={() => handleAddChannel(p)} disabled={adding !== null} className={`flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm transition hover:border-accent/50 hover:bg-accent/5 disabled:opacity-50 ${meta.color}`}>
+                    <button key={p} onClick={() => handlePlatformClick(p)} disabled={adding !== null} className={`flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm transition hover:border-accent/50 hover:bg-accent/5 disabled:opacity-50 ${meta.color}`}>
                       {adding === p ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
                       <Plus className="h-3 w-3 text-muted" />
                       {meta.label}
@@ -993,142 +1094,81 @@ export default function PublishPage() {
             </div>
           </div>
 
-          {/* Month nav */}
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-3">
-            <button onClick={() => setMonthOffset((m) => m - 1)} className="rounded-lg p-2 text-muted transition hover:bg-card-hover hover:text-foreground">
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-accent" />
-              <span className="text-sm font-semibold capitalize">{monthLabel}</span>
-              {monthOffset !== 0 && (
-                <button onClick={() => setMonthOffset(0)} className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs text-accent transition hover:bg-accent/20">
-                  Today
-                </button>
-              )}
-            </div>
-            <button onClick={() => setMonthOffset((m) => m + 1)} className="rounded-lg p-2 text-muted transition hover:bg-card-hover hover:text-foreground">
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Calendar heatmap */}
-          <div className="relative rounded-xl border border-border bg-card p-6">
-            <div className="mb-2 grid grid-cols-7 gap-2">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                <div key={d} className="text-center text-[11px] font-medium uppercase tracking-wider text-muted/60">{d}</div>
-              ))}
-            </div>
-            <div className="space-y-2">
-              {weeks.map((week, wi) => (
-                <div key={wi} className="grid grid-cols-7 gap-2">
-                  {week.map((day, di) => {
-                    if (!day) return <div key={`empty-${di}`} className="aspect-square rounded-md" />;
-                    const key = toDateKey(day);
-                    const count = countByDay.get(key) ?? 0;
-                    const today = isToday(day);
-                    const isSelected = selectedDay === key;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => setSelectedDay(isSelected ? null : key)}
-                        className={`group relative aspect-square rounded-md transition-all ${getCellColor(count)} ${today ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""} ${isSelected ? "ring-2 ring-white/50 ring-offset-1 ring-offset-background" : ""} ${count > 0 ? "cursor-pointer hover:scale-105 hover:brightness-125" : "cursor-default"}`}
-                      >
-                        <span className={`absolute inset-0 flex items-center justify-center text-xs ${count > 0 ? "font-medium text-white" : "text-muted/30"}`}>
-                          {day.getDate()}
-                        </span>
-                        {count > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white opacity-0 transition group-hover:opacity-100">
-                            {count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-end gap-1.5 text-[11px] text-muted/60">
-              <span>Less</span>
-              {[0, 1, 2, 3, 4].map((level) => (
-                <div key={level} className={`h-3 w-3 rounded-sm ${getCellColor(level)}`} />
-              ))}
-              <span>More</span>
-            </div>
-
-            {/* Day popup */}
-            {selectedDay && selectedDate && (
-              <div ref={popupRef} className="absolute left-1/2 top-1/2 z-50 w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card shadow-2xl shadow-black/40">
-                <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-accent" />
-                    <span className="text-sm font-semibold">
-                      {selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                    </span>
-                    <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-                      {selectedVariants.length} publication{selectedVariants.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <button onClick={() => setSelectedDay(null)} className="rounded-lg p-1 text-muted transition hover:bg-card-hover hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="max-h-[320px] overflow-y-auto p-4">
-                  {selectedVariants.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted/60">No publications this day</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedVariants.map((variant) => {
-                        const platform = schedulePlatformMeta[variant.channels.platform_type];
-                        const isManual = platform?.connectionType === "manual";
-                        const isPublished = variant.status === "published";
-                        return (
-                          <div key={variant.id} className="rounded-xl border border-border bg-background/60 p-3.5 transition hover:border-border/80">
-                            <div className="mb-2 flex items-center gap-2">
-                              <span className="text-sm">{platform?.icon ?? "📄"}</span>
-                              <span className="rounded-md px-2 py-0.5 text-[11px] font-medium text-white" style={{ backgroundColor: platform?.color ?? "#666" }}>
-                                {platform?.label ?? variant.channels.platform_type}
-                              </span>
-                              {isPublished && <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-green-400" />}
-                              {!isPublished && !isManual && (
-                                <div className="ml-auto flex items-center gap-1 text-[10px] text-blue-400">
-                                  <Radio className="h-3 w-3" />Auto
-                                </div>
-                              )}
-                            </div>
-                            <p className="mb-1 text-sm font-medium leading-snug text-foreground/90">{variant.title}</p>
-                            <p className="mb-3 text-xs text-muted/50">Article: {variant.articles.title}</p>
-                            <div className="flex items-center gap-2">
-                              {isPublished && variant.published_url ? (
-                                <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-lg bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20">
-                                  <ExternalLink className="h-3 w-3" />View
-                                </a>
-                              ) : isManual ? (
-                                <button onClick={() => handleCopyVariant(variant)} className="flex items-center gap-1 rounded-lg bg-card-hover px-3 py-1.5 text-xs font-medium text-muted transition hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                  {copiedId === variant.id ? "Copied!" : "Copy content"}
-                                </button>
-                              ) : (
-                                <span className="rounded-lg bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400">Auto-publish scheduled</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {variants.length === 0 && (
+          {/* Timeline */}
+          {variants.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
               <Calendar className="mx-auto h-10 w-10 text-muted/30" />
               <p className="mt-3 text-sm text-muted">No variants scheduled</p>
               <p className="mt-1 text-xs text-muted/60">
                 Generate variants from an article — they will be automatically scheduled here.
               </p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {sortedDays.map((dayKey) => {
+                const dayVariants = variantsByDay.get(dayKey) ?? [];
+                return (
+                  <div key={dayKey}>
+                    <div className="flex items-center gap-3 py-3">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15">
+                        <div className="h-2 w-2 rounded-full bg-accent" />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground">
+                        {timelineLabel(dayKey)}
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="rounded-md bg-card-hover px-2 py-0.5 text-[10px] font-medium text-muted">
+                        {dayVariants.length}
+                      </span>
+                    </div>
+                    <div className="ml-2.5 border-l border-border pb-2 pl-5">
+                      <div className="space-y-2">
+                        {dayVariants.map((variant) => {
+                          const platform = schedulePlatformMeta[variant.channels.platform_type];
+                          const isManual = platform?.connectionType === "manual";
+                          const isPublished = variant.status === "published";
+                          const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                          return (
+                            <div key={variant.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20">
+                              <span
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
+                                style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
+                              >
+                                {platform?.icon ?? "📄"}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{variant.title}</p>
+                                <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
+                              </div>
+                              <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                              {isPublished ? (
+                                variant.published_url ? (
+                                  <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                    <ExternalLink className="h-3 w-3" />View
+                                  </a>
+                                ) : (
+                                  <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                    <CheckCircle2 className="h-3 w-3" />Done
+                                  </span>
+                                )
+                              ) : isManual ? (
+                                <button onClick={() => handleCopyVariant(variant)} className="flex items-center gap-1 rounded-md bg-card-hover px-2 py-1 text-[11px] font-medium text-muted transition hover:text-foreground">
+                                  <Copy className="h-3 w-3" />
+                                  {copiedId === variant.id ? "Copied!" : "Copy"}
+                                </button>
+                              ) : (
+                                <span className="flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-1 text-[11px] font-medium text-blue-400">
+                                  <Radio className="h-3 w-3" />Auto
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1137,39 +1177,15 @@ export default function PublishPage() {
   );
 }
 
-/* ─── Calendar helpers ───────────────────────────────────── */
+/* ─── Timeline helpers ────────────────────────────────────── */
 
-function getMonthGrid(year: number, month: number): (Date | null)[][] {
-  const first = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  let startDow = first.getDay();
-  startDow = startDow === 0 ? 6 : startDow - 1;
-  const weeks: (Date | null)[][] = [];
-  let currentWeek: (Date | null)[] = Array(startDow).fill(null);
-  for (let d = 1; d <= lastDay; d++) {
-    currentWeek.push(new Date(year, month, d));
-    if (currentWeek.length === 7) { weeks.push(currentWeek); currentWeek = []; }
-  }
-  if (currentWeek.length > 0) {
-    while (currentWeek.length < 7) currentWeek.push(null);
-    weeks.push(currentWeek);
-  }
-  return weeks;
-}
-
-function toDateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function isToday(d: Date): boolean {
+function timelineLabel(dateKey: string): string {
+  const d = new Date(dateKey + "T00:00:00");
   const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-}
-
-function getCellColor(count: number): string {
-  if (count === 0) return "bg-[#1a1a2e]";
-  if (count === 1) return "bg-emerald-900/60";
-  if (count === 2) return "bg-emerald-700/70";
-  if (count === 3) return "bg-emerald-500/80";
-  return "bg-emerald-400";
+  now.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (d.getTime() === now.getTime()) return "Today";
+  if (d.getTime() === tomorrow.getTime()) return "Tomorrow";
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }

@@ -401,6 +401,7 @@ export async function POST(req: NextRequest) {
         product_summary: analysis.productSummary,
         target_audience: analysis.targetAudience,
         content_angles: analysis.contentAngles,
+        key_tools: analysis.keyTools ?? [],
       })
       .select("id")
       .single();

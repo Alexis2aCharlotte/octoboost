@@ -91,6 +91,7 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 - [x] Extracted publish logic into reusable `publisher.ts`
 - [x] OAuth Reddit complete + `submitRedditPost` ready in `reddit.ts`
 - [x] OAuth Blogger + API publication
+- [x] WordPress self-hosted connector (REST API + Application Passwords + tag resolution)
 - [x] canonical_url on articles (used for Dev.to, Hashnode)
 - [x] Publish dialog: "Publish Now" / "Keep Scheduled" / "Reschedule" with date picker
 - [x] Variant publish buttons wired with PublishDialog
@@ -139,25 +140,28 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 
 ## To Do
 
-### Publication — wire remaining connectors (high priority)
-- [ ] Wire Reddit in `/api/publish` (OAuth + `submitRedditPost` already ready)
-- [ ] WordPress self-hosted connector (REST API + Application Passwords)
-- [ ] Medium API connector (OAuth + publication)
-- [ ] Webflow CMS API connector
+### Publication — wire remaining connectors (done)
+- [x] WordPress self-hosted connector (REST API + Application Passwords)
+- [x] Medium moved to manual/copy-paste (API deprecated since 2023)
 
-### Clean syndication (high priority)
-- [ ] Systematic canonical_url on all variants (points to client site)
-- [ ] Per-platform syndication logic (summary+link vs full+canonical)
+### Clean syndication (done)
+- [x] Reddit moved to manual/copy-paste (like Indie Hackers, Hacker News)
+- [x] Systematic canonical_url on all variants (Dev.to, Hashnode native; Telegraph, Blogger via footer)
+- [x] Hashnode: fixed GraphQL mutation to pass `originalArticleURL`
+- [x] Per-platform syndication type: `full_canonical` (Dev.to, Hashnode, Medium, WordPress, Telegraph, Blogger, Substack) vs `summary_link` (Reddit, Indie Hackers, Hacker News, Quora)
+- [x] Variant adapter prompt adapts based on syndication type (full article vs summary+link)
 
-### Article enrichment (low priority)
-- [ ] Extract site tools at analysis time (`keyTools`)
-- [ ] Inject tools in product context for articles
-- [ ] JSON-LD schema (technical SEO)
+### Article enrichment
+- [x] Extract site tools/features at analysis time (`keyTools` in LLM analysis schema)
+- [x] Store `key_tools` in analyses table (JSONB)
+- [x] Inject tools in product context for article generation prompts
+- [ ] JSON-LD schema (technical SEO, low priority)
 
-### Analytics (low priority)
-- [ ] Analytics page: real metrics
-- [ ] Published article tracking (clicks, impressions)
-- [ ] (Optional) Google Search Console integration
+### Analytics
+- [x] Analytics API: pull live stats from Dev.to (views, reactions, comments) and Hashnode (views, reactions, comments)
+- [x] Analytics page: real performance data per platform, per article
+- [x] Engagement rate calculation (reactions+comments / views)
+- [ ] (Optional) Google Search Console integration for client site impressions
 
 ### Design (low priority)
 - [ ] Mobile responsive
@@ -173,10 +177,9 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 4. ~~**GitHub connector** — push .md/.mdx for static blogs~~ ✅
 5. ~~**Design overhaul** — Inter, navy blue, grid, clean pages, larger fonts~~ ✅
 6. ~~**Schedule automation** — cron jobs for auto-publish~~ ✅
-7. **Wire Reddit** in /api/publish (quick win, code already ready)
-8. **WordPress connector** — largest market
-9. **Clean syndication** — systematic canonical URLs
-10. **Analytics** — metrics
+7. ~~**Clean syndication** — systematic canonical URLs + per-platform logic~~ ✅
+8. ~~**WordPress connector** — largest market~~ ✅
+9. ~~**Analytics** — live stats from Dev.to + Hashnode~~ ✅
 
 ---
 

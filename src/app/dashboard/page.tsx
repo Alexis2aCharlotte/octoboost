@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/components/ConfirmDialog";
 import Link from "next/link";
 import {
   Search,
@@ -35,6 +36,7 @@ interface Project {
 }
 
 export default function DashboardPage() {
+  const { confirm } = useConfirm();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
@@ -81,7 +83,7 @@ export default function DashboardPage() {
   }
 
   async function handleDelete(projectId: string) {
-    if (!confirm("Delete this project and all its data?")) return;
+    if (!(await confirm({ message: "Delete this project and all its data?", destructive: true }))) return;
     const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
     if (res.ok) {
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
@@ -161,7 +163,7 @@ export default function DashboardPage() {
           type="url"
           value={newUrl}
           onChange={(e) => setNewUrl(e.target.value)}
-          placeholder="Add a new site — https://yoursite.com"
+          placeholder="Add a new site — https://yourURL.example.com"
           required
           disabled={analyzing}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/40 disabled:opacity-50"

@@ -2,6 +2,7 @@ import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 
 export type ConnectionType = "api_key" | "oauth" | "manual";
+export type SyndicationType = "full_canonical" | "summary_link";
 
 export interface PlatformSpec {
   name: string;
@@ -10,6 +11,7 @@ export interface PlatformSpec {
   minWords: number;
   format: "markdown" | "html" | "plain";
   connectionType: ConnectionType;
+  syndication: SyndicationType;
   guidelines: string;
 }
 
@@ -21,6 +23,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 600,
     format: "markdown",
     connectionType: "api_key",
+    syndication: "full_canonical",
     guidelines: `- Start with a brief TL;DR or summary
 - Include code snippets or technical examples when relevant
 - Use markdown features: code blocks, tables, callouts
@@ -36,6 +39,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 800,
     format: "markdown",
     connectionType: "api_key",
+    syndication: "full_canonical",
     guidelines: `- Structure as a technical guide or tutorial
 - Include code examples and explanations
 - Use markdown: headers, code blocks, images, tables
@@ -50,7 +54,8 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     maxWords: 1800,
     minWords: 800,
     format: "markdown",
-    connectionType: "oauth",
+    connectionType: "manual",
+    syndication: "full_canonical",
     guidelines: `- Use a compelling hook in the first paragraph
 - Break content into scannable sections with H2/H3
 - Include personal insights or anecdotes where relevant
@@ -65,7 +70,8 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     maxWords: 800,
     minWords: 200,
     format: "markdown",
-    connectionType: "oauth",
+    connectionType: "manual",
+    syndication: "summary_link",
     guidelines: `- Write as a genuine community member sharing knowledge
 - NO self-promotion feel — Reddit will downvote it to oblivion
 - Start with the value/insight, not a product pitch
@@ -82,6 +88,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 800,
     format: "markdown",
     connectionType: "api_key",
+    syndication: "full_canonical",
     guidelines: `- Classic blog post structure with clear H2/H3 hierarchy
 - Include an engaging introduction with the main keyword
 - Use bullet points and numbered lists for scannability
@@ -97,6 +104,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 400,
     format: "markdown",
     connectionType: "api_key",
+    syndication: "full_canonical",
     guidelines: `- Use clear H2/H3 for sections — Telegraph displays them well
 - Keep paragraphs short (2-3 sentences max)
 - Use bullet lists for scannability
@@ -112,6 +120,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 600,
     format: "markdown",
     connectionType: "oauth",
+    syndication: "full_canonical",
     guidelines: `- Classic blog structure with clear H2/H3 hierarchy
 - Engaging introduction with main keyword
 - Use bullet points and numbered lists for scannability
@@ -127,6 +136,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 300,
     format: "markdown",
     connectionType: "manual",
+    syndication: "summary_link",
     guidelines: `- Write as a fellow founder sharing real experience
 - Be transparent about challenges, not just wins
 - Share specific numbers/metrics when possible
@@ -143,6 +153,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 150,
     format: "plain",
     connectionType: "manual",
+    syndication: "summary_link",
     guidelines: `- Lead with the most interesting technical insight
 - Be extremely concise — HN readers have zero tolerance for fluff
 - Focus on technical depth over breadth
@@ -159,6 +170,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 200,
     format: "plain",
     connectionType: "manual",
+    syndication: "summary_link",
     guidelines: `- Structure as a direct answer to a specific question
 - Start with a concise 1-2 sentence answer, then elaborate
 - Use personal expertise and experience to add credibility
@@ -175,6 +187,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     minWords: 500,
     format: "markdown",
     connectionType: "manual",
+    syndication: "full_canonical",
     guidelines: `- Write as if emailing a smart friend about an interesting topic
 - Start with a personal hook or observation
 - Mix analysis with personal experience
@@ -225,6 +238,20 @@ export async function adaptArticle(
     throw new Error(`Unknown platform: ${input.platform}`);
   }
 
+  const isSummaryLink = spec.syndication === "summary_link";
+
+  const syndicationRules = isSummaryLink
+    ? `- This is a SUMMARY that drives readers to the full article
+- Extract the 2-3 most compelling insights from the original
+- Keep it concise and engaging — just enough to hook the reader
+- Naturally include a link to the full article: ${input.productContext.url}
+- The link should feel organic, not forced (e.g. "I wrote more about this here" or "Full breakdown:")
+- The product mention should feel like genuine community sharing`
+    : `- This is a full, standalone piece adapted for the platform
+- Preserve the core insights and value from the original
+- Adapt the structure, tone, and length for the platform's audience
+- The product mention should feel natural for the platform's culture`;
+
   const { text: adapted } = await generateText({
     model: anthropic("claude-sonnet-4-6"),
     system: `You are an expert content adapter who transforms SEO articles into platform-optimized versions. You understand the culture, expectations, and best practices of each publishing platform.
@@ -238,11 +265,10 @@ Format: ${spec.format}
 Platform-specific guidelines:
 ${spec.guidelines}
 
+Syndication strategy:
+${syndicationRules}
+
 CRITICAL RULES:
-- This is NOT a summary — it's a full, standalone piece adapted for the platform
-- Preserve the core insights and value from the original
-- Adapt the structure, tone, and length for the platform's audience
-- The product mention should feel natural for the platform's culture
 - Output ONLY the adapted content, no meta-commentary
 - Start with the title on the first line, then a blank line, then the content`,
     prompt: `Adapt this master article for ${spec.name}:

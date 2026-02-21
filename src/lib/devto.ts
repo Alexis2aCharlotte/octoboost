@@ -1,5 +1,51 @@
 const DEVTO_API = "https://dev.to/api";
 
+export interface DevtoArticleStats {
+  id: number;
+  title: string;
+  url: string;
+  publishedAt: string;
+  views: number;
+  reactions: number;
+  comments: number;
+}
+
+export async function fetchDevtoArticleStats(
+  apiKey: string
+): Promise<DevtoArticleStats[]> {
+  const articles: DevtoArticleStats[] = [];
+  let page = 1;
+  const perPage = 30;
+
+  while (page <= 5) {
+    const res = await fetch(
+      `${DEVTO_API}/articles/me/published?page=${page}&per_page=${perPage}`,
+      { headers: { "api-key": apiKey } }
+    );
+    if (!res.ok) break;
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) break;
+
+    for (const a of data) {
+      articles.push({
+        id: a.id,
+        title: a.title,
+        url: a.url,
+        publishedAt: a.published_at,
+        views: a.page_views_count ?? 0,
+        reactions: a.positive_reactions_count ?? 0,
+        comments: a.comments_count ?? 0,
+      });
+    }
+
+    if (data.length < perPage) break;
+    page++;
+  }
+
+  return articles;
+}
+
 export async function verifyDevtoKey(apiKey: string): Promise<{
   valid: boolean;
   username?: string;

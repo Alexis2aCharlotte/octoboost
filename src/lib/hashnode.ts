@@ -1,5 +1,66 @@
 const HASHNODE_GQL = "https://gql.hashnode.com";
 
+export interface HashnodePostStats {
+  id: string;
+  title: string;
+  url: string;
+  publishedAt: string;
+  views: number;
+  reactions: number;
+  comments: number;
+}
+
+export async function fetchHashnodePostStats(
+  apiKey: string,
+  publicationHost: string
+): Promise<HashnodePostStats[]> {
+  const host = publicationHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+  const res = await fetch(HASHNODE_GQL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: apiKey,
+    },
+    body: JSON.stringify({
+      query: `
+        query PostsByPublication($host: String!, $first: Int!) {
+          publication(host: $host) {
+            posts(first: $first) {
+              edges {
+                node {
+                  id
+                  title
+                  url
+                  publishedAt
+                  views
+                  reactionCount
+                  responseCount
+                }
+              }
+            }
+          }
+        }
+      `,
+      variables: { host, first: 50 },
+    }),
+  });
+
+  const data = await res.json();
+  const edges = data?.data?.publication?.posts?.edges;
+  if (!Array.isArray(edges)) return [];
+
+  return edges.map((edge: { node: Record<string, unknown> }) => ({
+    id: (edge.node.id as string) ?? "",
+    title: (edge.node.title as string) ?? "",
+    url: (edge.node.url as string) ?? "",
+    publishedAt: (edge.node.publishedAt as string) ?? "",
+    views: (edge.node.views as number) ?? 0,
+    reactions: (edge.node.reactionCount as number) ?? 0,
+    comments: (edge.node.responseCount as number) ?? 0,
+  }));
+}
+
 export async function verifyHashnodeKey(
   apiKey: string,
   publicationHost?: string
@@ -125,6 +186,7 @@ export async function publishToHashnode(
           contentMarkdown: article.bodyMarkdown,
           publicationId,
           tags: tagObjects.length > 0 ? tagObjects : undefined,
+          ...(article.canonicalUrl ? { originalArticleURL: article.canonicalUrl } : {}),
         },
       },
     }),
