@@ -57,7 +57,7 @@ export function WaitlistForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-light disabled:opacity-50"
+          className="btn-glow flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
         >
           {loading ? "..." : "Join the waitlist"}
           {!loading && <ArrowRight className="h-3.5 w-3.5" />}

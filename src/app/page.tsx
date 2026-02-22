@@ -61,7 +61,7 @@ const features = [
     icon: FileText,
     title: "AI-Powered Articles",
     description:
-      "Claude (Anthropic) writes long-form articles optimized for Google page 1 and AI citations. Internal links included.",
+      "Our model writes long-form articles optimized for Google page 1 and AI citations. Internal links included.",
   },
   {
     icon: Calendar,
@@ -184,14 +184,12 @@ export default function Home() {
       <section className="relative flex min-h-[70vh] flex-col items-center justify-center px-6 pt-16">
         <div className="grid-bg" />
 
-        <div className="relative z-10 mx-auto w-full max-w-2xl text-center">
-          <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight sm:text-5xl md:text-7xl">
+        <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+          <h1 className="text-5xl font-bold leading-[1.08] tracking-tighter sm:text-6xl md:text-8xl">
             Turn your SaaS into a{" "}
             <span className="gradient-text">content machine</span>
           </h1>
-          <p className="mx-auto mt-5 mb-8 max-w-md text-base text-muted sm:text-lg md:text-xl">
-            We analyze your site, generate SEO articles, and publish them on your blog + 11 platforms. Backlinks and traffic on autopilot.
-          </p>
+          <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Automated SEO articles published across multiple platforms.<br />Backlinks, traffic, and authority without writing a single word.</p>
           <WaitlistForm />
           <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted/60">
             <span className="flex items-center gap-1.5">
@@ -208,18 +206,14 @@ export default function Home() {
       {/* ── How it works ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-2 text-center text-xs font-medium uppercase tracking-widest text-accent-light">How it works</p>
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">From zero to published in 3 steps</h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">From zero to published <span className="gradient-text">in 3 steps</span></h2>
+          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
             Paste your URL. We handle keyword research, article writing, and cross-platform publishing.
           </p>
           <div className="grid gap-5 md:grid-cols-3">
             {steps.map((s, i) => (
               <div key={s.title} className="glow-card p-6">
-                <div className="mb-3 flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/10 text-[11px] font-bold text-accent-light">{i + 1}</span>
-                  <s.icon className="h-4 w-4 text-accent-light" />
-                </div>
+                <s.icon className="mb-3 h-5 w-5 text-accent-light" />
                 <h3 className="mb-1.5 text-base font-semibold">{s.title}</h3>
                 <p className="text-sm leading-relaxed text-muted">{s.description}</p>
               </div>
@@ -231,9 +225,8 @@ export default function Home() {
       {/* ── Features ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-2 text-center text-xs font-medium uppercase tracking-widest text-accent-light">Features</p>
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">A full SEO pipeline, not just an AI writer</h2>
-          <p className="mx-auto mb-10 max-w-lg text-center text-sm text-muted">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">A full <span className="gradient-text">SEO pipeline</span><br />not just an AI writer</h2>
+          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
             Keyword research, competitor analysis, topic clustering, article generation, and automated publishing with canonical backlinks.
           </p>
           <div className="grid gap-5 sm:grid-cols-2">
@@ -251,12 +244,11 @@ export default function Home() {
       {/* ── Platforms ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-2 text-center text-xs font-medium uppercase tracking-widest text-accent-light">Distribution</p>
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">
             Your site + 11 platforms.{" "}
             <span className="gradient-text">One dashboard.</span>
           </h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">
+          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
             Publish to your own blog first, then distribute across the web. Every variant adapted with canonical URLs.
           </p>
 
@@ -280,7 +272,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex flex-col rounded-xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Zap className="h-4 w-4 text-accent-light" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-accent-light">Auto-publish</span>
@@ -294,10 +286,10 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-muted">Published via API. Zero manual work.</p>
+              <p className="mt-auto pt-3 text-xs text-muted">Published via API. Zero manual work.</p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex flex-col rounded-xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center gap-2">
                 <ClipboardCopy className="h-4 w-4 text-muted/60" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted/60">Adapted content</span>
@@ -317,26 +309,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Numbers ── */}
-      <section className="relative z-10 px-6 py-14 md:py-16">
-        <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="glow-card p-5 text-center">
-                <p className="text-3xl font-bold tracking-tight">{s.value}</p>
-                <p className="mt-1 text-xs text-muted">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Free Tools ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-2 text-center text-xs font-medium uppercase tracking-widest text-accent-light">Free tools</p>
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">SEO toolkit included</h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl"><span className="gradient-text">SEO toolkit</span> included</h2>
+          <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
             Free tools to help you research, validate, and optimize your content strategy.
           </p>
           <div className="grid gap-5 sm:grid-cols-2">
@@ -361,46 +339,47 @@ export default function Home() {
       {/* ── Pricing ── */}
       <section id="pricing" className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-2 text-center text-xs font-medium uppercase tracking-widest text-accent-light">Pricing</p>
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">Start free, scale when ready</h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">Full analysis included. No credit card required.</p>
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">Simple <span className="gradient-text">pricing</span></h2>
+          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">One plan, everything included. No hidden fees.</p>
 
-          <div className="mx-auto grid max-w-2xl gap-5 md:grid-cols-2">
-            <div className="glow-card p-6">
-              <h3 className="text-lg font-semibold">Free</h3>
-              <p className="mt-0.5 text-xs text-muted">Perfect to get started</p>
-              <p className="mt-4 text-3xl font-bold">$0<span className="text-sm font-normal text-muted">/forever</span></p>
-              <Link href="/waitlist" className="mt-5 flex w-full items-center justify-center rounded-lg border border-border py-2.5 text-sm font-medium transition hover:border-accent/50 hover:text-accent-light">
-                Join the waitlist
-              </Link>
-              <ul className="mt-5 space-y-2 text-sm text-muted">
-                {["Full site analysis", "Keyword research & clusters", "5 AI articles", "3 platform channels", "Free SEO tools"].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-light" />
+          <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
+            <div className="flex flex-col glow-card p-8 md:p-10">
+              <h3 className="text-2xl font-bold">Monthly</h3>
+              <p className="mt-1 text-sm text-muted">Full access, cancel anytime</p>
+              <p className="mt-6 text-5xl font-bold">$29<span className="text-lg font-normal text-muted">/mo</span></p>
+              <p className="mt-1 text-sm text-muted invisible">placeholder</p>
+              <ul className="mt-8 space-y-3 text-sm text-muted">
+                {["Unlimited AI articles", "All 11 platform channels", "Auto-scheduling & cron publish", "Analytics dashboard", "Priority support"].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-light" />
                     {item}
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="glow-card p-6 !border-accent/30">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Pro</h3>
-                <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-light">Coming soon</span>
-              </div>
-              <p className="mt-0.5 text-xs text-muted">Unlimited content engine</p>
-              <p className="mt-4 text-3xl font-bold">$29<span className="text-sm font-normal text-muted">/mo</span></p>
-              <button disabled className="mt-5 flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-accent/50 py-2.5 text-sm font-medium text-white/60">
+              <button disabled className="mt-10 w-full cursor-not-allowed rounded-lg bg-accent/50 py-3 text-center text-sm font-semibold text-white/60">
                 Coming Soon
               </button>
-              <ul className="mt-5 space-y-2 text-sm text-muted">
-                {["Everything in Free", "Unlimited AI articles", "All 11 platform channels", "Auto-scheduling & cron publish", "Analytics dashboard", "Priority support"].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-light" />
+            </div>
+
+            <div className="flex flex-col glow-card p-8 md:p-10 !border-accent/30">
+              <div className="flex items-center gap-3">
+                <h3 className="text-2xl font-bold">Yearly</h3>
+                <span className="rounded-md bg-accent/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light">Save 34%</span>
+              </div>
+              <p className="mt-1 text-sm text-muted">Best value - billed annually</p>
+              <p className="mt-6 text-5xl font-bold">$19<span className="text-lg font-normal text-muted">/mo</span> <span className="text-lg font-normal text-muted line-through">$29</span></p>
+              <p className="mt-1 text-sm text-muted">$229 billed yearly</p>
+              <ul className="mt-8 space-y-3 text-sm text-muted">
+                {["Unlimited AI articles", "All 11 platform channels", "Auto-scheduling & cron publish", "Analytics dashboard", "Priority support"].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-light" />
                     {item}
                   </li>
                 ))}
               </ul>
+              <button disabled className="mt-10 w-full cursor-not-allowed rounded-lg bg-accent/50 py-3 text-center text-sm font-semibold text-white/60">
+                Coming Soon
+              </button>
             </div>
           </div>
         </div>
@@ -409,7 +388,7 @@ export default function Home() {
       {/* ── FAQ ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-2xl">
-          <h2 className="mb-3 text-center text-2xl font-semibold tracking-tight md:text-3xl">Frequently Asked Questions</h2>
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">Frequently Asked <span className="gradient-text">Questions</span></h2>
           <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">Everything you need to know about OctoBoost</p>
           <div className="space-y-3">
             {faqs.map((faq) => (
@@ -428,7 +407,7 @@ export default function Home() {
       {/* ── Final CTA ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">Start growing your traffic today</h2>
+          <h2 className="text-3xl font-bold tracking-tighter md:text-5xl">Start growing your traffic <span className="gradient-text">today</span></h2>
           <p className="mx-auto mt-3 mb-6 max-w-md text-sm text-muted">
             Paste your URL and let OctoBoost handle the rest. SEO articles, backlinks, and organic traffic on autopilot.
           </p>
