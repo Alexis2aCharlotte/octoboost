@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         await sendWelcomeEmail(normalizedEmail);
         console.log(`✅ Welcome email sent to ${normalizedEmail}`);
 
-        await notifyTelegram(`🚀 OctoBoost — New waitlist signup! 📧`);
+        await notifyTelegram(`New waitlist signup! 📧`);
         console.log(`✅ Telegram notification sent`);
       } catch (err) {
         console.error(`Error processing waitlist entry:`, err);
