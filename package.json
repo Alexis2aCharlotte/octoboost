@@ -20,13 +20,16 @@
     "lucide-react": "^0.574.0",
     "marked": "^17.0.3",
     "next": "16.1.6",
+    "node-telegram-bot-api": "^0.67.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "resend": "^6.9.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^20",
+    "@types/node-telegram-bot-api": "^0.64.13",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

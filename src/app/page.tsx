@@ -25,6 +25,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { WaitlistForm } from "@/components/WaitlistForm";
 
 /* ─── Data ──────────────────────────────────────────────── */
 
@@ -191,10 +192,7 @@ export default function Home() {
           <p className="mx-auto mt-5 mb-8 max-w-md text-base text-muted sm:text-lg md:text-xl">
             We analyze your site, generate SEO articles, and publish them on your blog + 11 platforms. Backlinks and traffic on autopilot.
           </p>
-          <Link href="/waitlist" className="group inline-flex items-center gap-2 rounded-lg bg-accent px-7 py-3 text-base font-medium text-white transition-colors hover:bg-accent-light">
-            Get Started
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          <WaitlistForm />
           <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted/60">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
@@ -205,9 +203,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="absolute bottom-8 z-10 animate-bounce text-muted/30">
-          <ChevronDown className="h-5 w-5" />
-        </div>
       </section>
 
       {/* ── How it works ── */}
@@ -376,7 +371,7 @@ export default function Home() {
               <p className="mt-0.5 text-xs text-muted">Perfect to get started</p>
               <p className="mt-4 text-3xl font-bold">$0<span className="text-sm font-normal text-muted">/forever</span></p>
               <Link href="/waitlist" className="mt-5 flex w-full items-center justify-center rounded-lg border border-border py-2.5 text-sm font-medium transition hover:border-accent/50 hover:text-accent-light">
-                Get Started
+                Join the waitlist
               </Link>
               <ul className="mt-5 space-y-2 text-sm text-muted">
                 {["Full site analysis", "Keyword research & clusters", "5 AI articles", "3 platform channels", "Free SEO tools"].map((item) => (
@@ -437,11 +432,8 @@ export default function Home() {
           <p className="mx-auto mt-3 mb-6 max-w-md text-sm text-muted">
             Paste your URL and let OctoBoost handle the rest. SEO articles, backlinks, and organic traffic on autopilot.
           </p>
-          <Link href="/waitlist" className="group inline-flex items-center gap-2 rounded-lg bg-accent px-7 py-3 text-base font-medium text-white transition-colors hover:bg-accent-light">
-            Get Started Free
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <p className="mt-4 text-xs text-muted/50">Free analysis · No credit card required</p>
+          <WaitlistForm />
+          <p className="mt-4 text-xs text-muted/50">No spam · We'll notify you at launch</p>
         </div>
       </section>
 
