@@ -322,9 +322,7 @@ export default function SchedulePage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted" />
-        </div>
+        <ScheduleSkeleton />
       ) : sortedDays.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
           <Calendar className="mx-auto h-10 w-10 text-muted/30" />
@@ -546,6 +544,40 @@ export default function SchedulePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className ?? ""}`} />;
+}
+
+function ScheduleSkeleton() {
+  return (
+    <div className="space-y-0">
+      {Array.from({ length: 4 }).map((_, dayIdx) => (
+        <div key={dayIdx}>
+          <div className="flex items-center gap-3 py-3">
+            <Shimmer className="h-5 w-5 rounded-full" />
+            <Shimmer className="h-4 w-28" />
+            <div className="h-px flex-1 bg-border" />
+            <Shimmer className="h-5 w-6 rounded-md" />
+          </div>
+          <div className="ml-2.5 border-l border-border pb-2 pl-5 space-y-2">
+            {Array.from({ length: 3 - dayIdx % 2 }).map((_, itemIdx) => (
+              <div key={itemIdx} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                <Shimmer className="h-7 w-7 rounded-md" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Shimmer className="h-4 w-3/4" />
+                  <Shimmer className="h-3 w-1/2" />
+                </div>
+                <Shimmer className="h-4 w-12" />
+                <Shimmer className="h-7 w-16 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

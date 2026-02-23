@@ -110,11 +110,7 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const totalProjects = projects.length;
@@ -290,6 +286,49 @@ export default function DashboardPage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className ?? ""}`} />;
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="mx-auto max-w-4xl space-y-8">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <Shimmer className="h-8 w-40" />
+          <Shimmer className="mt-2 h-5 w-56" />
+        </div>
+        <Shimmer className="h-10 w-36 rounded-lg" />
+      </div>
+
+      {/* Project cards */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Shimmer className="h-5 w-40" />
+                <Shimmer className="h-4 w-48" />
+              </div>
+              <Shimmer className="h-8 w-8 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div key={j} className="rounded-lg border border-border bg-card-hover p-2.5">
+                  <Shimmer className="h-3 w-16" />
+                  <Shimmer className="mt-1.5 h-5 w-10" />
+                </div>
+              ))}
+            </div>
+            <Shimmer className="h-9 w-full rounded-lg" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -287,13 +287,9 @@ export default function ResearchPage() {
 
   const hasAnalysis = !!analysisResult;
 
-  /* ─── Loading ── */
+  /* ─── Loading skeleton ── */
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
-      </div>
-    );
+    return <ResearchSkeleton />;
   }
 
   /* ─── Analyzing ── */
@@ -1073,5 +1069,86 @@ function CompetitionBar({ value }: { value: number }) {
         <span className="font-mono text-xs text-muted">{pct}%</span>
       </span>
     </Tooltip>
+  );
+}
+
+/* ─── Skeleton loader ─────────────────────────────────── */
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className ?? ""}`} />;
+}
+
+function ResearchSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <Shimmer className="h-7 w-40" />
+          <Shimmer className="mt-2 h-4 w-64" />
+        </div>
+        <Shimmer className="h-9 w-28 rounded-lg" />
+      </div>
+
+      {/* Main tabs */}
+      <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+        <Shimmer className="h-9 w-44 rounded-md" />
+        <Shimmer className="h-9 w-36 rounded-md" />
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-border bg-card p-4">
+            <Shimmer className="h-4 w-24" />
+            <Shimmer className="mt-3 h-7 w-16" />
+            <Shimmer className="mt-2 h-3 w-20" />
+          </div>
+        ))}
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+        <Shimmer className="h-9 w-36 rounded-md" />
+        <Shimmer className="h-9 w-40 rounded-md" />
+      </div>
+
+      {/* Search + filters */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <Shimmer className="h-10 flex-1 rounded-lg" />
+          <Shimmer className="h-10 w-28 rounded-lg" />
+        </div>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Shimmer key={i} className="h-7 w-16 rounded-md" />
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <div className="flex gap-4">
+            {["w-32", "w-16", "w-20", "w-16", "w-12", "w-16", "w-16", "w-12", "w-12"].map((w, i) => (
+              <Shimmer key={i} className={`h-4 ${w}`} />
+            ))}
+          </div>
+        </div>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-border px-4 py-3.5">
+            <Shimmer className="h-4 w-36" />
+            <Shimmer className="h-5 w-14 rounded-md" />
+            <Shimmer className="h-5 w-20 rounded-md" />
+            <Shimmer className="h-4 w-16" />
+            <Shimmer className="h-5 w-10 rounded-md" />
+            <Shimmer className="h-4 w-14" />
+            <Shimmer className="h-2 w-16 rounded-full" />
+            <Shimmer className="h-4 w-10" />
+            <Shimmer className="h-4 w-12" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

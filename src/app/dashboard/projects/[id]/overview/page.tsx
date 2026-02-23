@@ -102,11 +102,7 @@ export default function ProjectOverviewPage() {
   }, [load]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
-      </div>
-    );
+    return <OverviewSkeleton />;
   }
 
   if (!data) {
@@ -478,5 +474,87 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className ?? ""}`} />;
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-8">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <Shimmer className="h-8 w-48" />
+          <Shimmer className="mt-2 h-5 w-56" />
+        </div>
+        <Shimmer className="h-10 w-40 rounded-lg" />
+      </div>
+
+      {/* Pipeline */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shimmer className="h-5 w-5 rounded-full" />
+            <Shimmer className="h-5 w-32" />
+          </div>
+          <div className="flex items-center gap-3">
+            <Shimmer className="h-4 w-24" />
+            <Shimmer className="h-2 w-24 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <Shimmer className="h-4 w-20" />
+              <Shimmer className="h-4 w-4" />
+            </div>
+            <Shimmer className="mt-3 h-8 w-12" />
+            <Shimmer className="mt-1 h-3 w-24" />
+          </div>
+        ))}
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+            <Shimmer className="h-9 w-9 rounded-lg" />
+            <div className="flex-1">
+              <Shimmer className="h-4 w-24" />
+              <Shimmer className="mt-1.5 h-3 w-40" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent content */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <Shimmer className="h-4 w-32" />
+              <Shimmer className="h-4 w-16" />
+            </div>
+            {Array.from({ length: 4 }).map((_, j) => (
+              <div key={j} className="flex items-center gap-3 border-b border-border px-5 py-3">
+                <Shimmer className="h-4 w-4" />
+                <div className="flex-1">
+                  <Shimmer className="h-4 w-3/4" />
+                  <Shimmer className="mt-1 h-3 w-1/3" />
+                </div>
+                <Shimmer className="h-5 w-16 rounded-md" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

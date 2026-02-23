@@ -469,11 +469,7 @@ export default function PublishPage() {
     : generateSnippetUsageExample(apiKey ?? "YOUR_API_KEY");
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
-      </div>
-    );
+    return <PublishSkeleton />;
   }
 
   return (
@@ -1205,4 +1201,59 @@ function timelineLabel(dateKey: string): string {
   if (d.getTime() === now.getTime()) return "Today";
   if (d.getTime() === tomorrow.getTime()) return "Tomorrow";
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+}
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className ?? ""}`} />;
+}
+
+function PublishSkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      {/* Header */}
+      <div>
+        <Shimmer className="h-7 w-32" />
+        <Shimmer className="mt-2 h-4 w-64" />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+        <Shimmer className="h-9 w-28 rounded-md" />
+        <Shimmer className="h-9 w-32 rounded-md" />
+        <Shimmer className="h-9 w-32 rounded-md" />
+      </div>
+
+      {/* Site connection card */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <Shimmer className="h-5 w-40" />
+          <Shimmer className="h-8 w-24 rounded-lg" />
+        </div>
+        <Shimmer className="h-4 w-3/4" />
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <Shimmer className="h-4 w-48" />
+          <Shimmer className="h-10 w-full rounded-lg" />
+          <Shimmer className="h-10 w-full rounded-lg" />
+        </div>
+      </div>
+
+      {/* Channels */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Shimmer className="h-5 w-36" />
+          <Shimmer className="h-9 w-32 rounded-lg" />
+        </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+            <Shimmer className="h-10 w-10 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Shimmer className="h-4 w-32" />
+              <Shimmer className="h-3 w-48" />
+            </div>
+            <Shimmer className="h-5 w-20 rounded-md" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
