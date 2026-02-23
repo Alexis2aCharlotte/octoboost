@@ -28,7 +28,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Include code snippets or technical examples when relevant
 - Use markdown features: code blocks, tables, callouts
 - Add a front matter section (title, description, tags) as a YAML comment
-- Be practical — devs want actionable content
+- Be practical, devs want actionable content
 - Mention tools/libraries with links
 - Keep paragraphs short (2-3 sentences)`,
   },
@@ -44,7 +44,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Include code examples and explanations
 - Use markdown: headers, code blocks, images, tables
 - Add a table of contents for longer articles
-- Be thorough — Hashnode readers expect depth
+- Be thorough, Hashnode readers expect depth
 - Include prerequisites or requirements section if applicable
 - End with next steps or further reading`,
   },
@@ -59,8 +59,10 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     guidelines: `- Use a compelling hook in the first paragraph
 - Break content into scannable sections with H2/H3
 - Include personal insights or anecdotes where relevant
+- Weave the product into the narrative as a real-world example or case study
+- Frame product mentions as "here's what I used" or "here's how I solved this"
 - End with a clear takeaway or call-to-action
-- Avoid overly promotional language — Medium readers detect it instantly
+- Avoid overly promotional language, Medium readers detect it instantly
 - Use bold for emphasis, not ALL CAPS
 - Include 3-5 relevant tags at the end as a comment`,
   },
@@ -73,12 +75,13 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     connectionType: "manual",
     syndication: "summary_link",
     guidelines: `- Write as a genuine community member sharing knowledge
-- NO self-promotion feel — Reddit will downvote it to oblivion
+- NO self-promotion feel, Reddit will downvote it to oblivion
 - Start with the value/insight, not a product pitch
 - Use casual language, contractions are fine
 - Format with line breaks for readability
-- If mentioning a tool, present it as "I found this" or "there's this tool"
-- Keep it concise — Reddit favors brevity
+- Mention the product once as a natural recommendation: "I've been using X" or "I found X which does this well"
+- Position it as a personal discovery, not a sales pitch
+- Keep it concise, Reddit favors brevity
 - Include a question at the end to spark discussion`,
   },
   wordpress: {
@@ -99,18 +102,18 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
   },
   telegraph: {
     name: "Telegraph",
-    tone: "Concise, scannable. Minimalist format — Telegraph favors clean structure.",
+    tone: "Concise, scannable. Minimalist format, Telegraph favors clean structure.",
     maxWords: 1200,
     minWords: 400,
     format: "markdown",
     connectionType: "api_key",
     syndication: "full_canonical",
-    guidelines: `- Use clear H2/H3 for sections — Telegraph displays them well
+    guidelines: `- Use clear H2/H3 for sections, Telegraph displays them well
 - Keep paragraphs short (2-3 sentences max)
 - Use bullet lists for scannability
 - Bold key terms for emphasis
-- Include [links](url) where relevant — dofollow backlinks
-- No complex formatting — Telegraph has limited markup support
+- Include [links](url) where relevant (dofollow backlinks)
+- No complex formatting, Telegraph has limited markup support
 - End with a brief takeaway or call-to-action`,
   },
   blogger: {
@@ -127,7 +130,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Include relevant internal links where appropriate
 - Optimize opening paragraph for meta description
 - End with conclusion and call-to-action
-- Blogger supports labels (tags) — use 3-5 relevant labels`,
+- Blogger supports labels (tags), use 3-5 relevant labels`,
   },
   indiehackers: {
     name: "Indie Hackers",
@@ -141,7 +144,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Be transparent about challenges, not just wins
 - Share specific numbers/metrics when possible
 - Frame insights as lessons learned, not advice
-- Keep it conversational — IH is a community, not a publication
+- Keep it conversational, IH is a community, not a publication
 - Ask for feedback or share your thought process
 - Mention your product naturally as part of your story, never as a pitch
 - End with a question to invite discussion`,
@@ -155,9 +158,9 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
     connectionType: "manual",
     syndication: "summary_link",
     guidelines: `- Lead with the most interesting technical insight
-- Be extremely concise — HN readers have zero tolerance for fluff
+- Be extremely concise, HN readers have zero tolerance for fluff
 - Focus on technical depth over breadth
-- NO promotional language whatsoever — it will get flagged instantly
+- NO promotional language whatsoever, it will get flagged instantly
 - Present as a technical discussion or interesting finding
 - Use plain text, minimal formatting
 - If linking to a product, frame it as "Show HN" with technical details
@@ -176,9 +179,10 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Use personal expertise and experience to add credibility
 - Include specific examples and data
 - Break into numbered steps or bullet points when relevant
-- Mention tools/products only when directly answering the question
+- Mention the product as part of your expert answer: "One tool I recommend for this is X because..."
+- Frame the product as your go-to solution based on experience, not as an ad
 - End with a brief additional insight or related tip
-- Write with authority — Quora rewards expert voices`,
+- Write with authority, Quora rewards expert voices`,
   },
   substack: {
     name: "Substack",
@@ -195,7 +199,7 @@ export const PLATFORM_SPECS: Record<string, PlatformSpec> = {
 - Include "why this matters" framing
 - Break complex ideas into digestible sections
 - End with a clear takeaway or prediction
-- Feel free to express opinions — newsletter readers want a point of view`,
+- Feel free to express opinions, newsletter readers want a point of view`,
   },
 };
 
@@ -243,14 +247,16 @@ export async function adaptArticle(
   const syndicationRules = isSummaryLink
     ? `- This is a SUMMARY that drives readers to the full article
 - Extract the 2-3 most compelling insights from the original
-- Keep it concise and engaging — just enough to hook the reader
+- Keep it concise and engaging, just enough to hook the reader
 - Naturally include a link to the full article: ${input.productContext.url}
 - The link should feel organic, not forced (e.g. "I wrote more about this here" or "Full breakdown:")
-- The product mention should feel like genuine community sharing`
+- The product mention should feel like genuine community sharing
+- IMPORTANT: Always mention the product name at least once with its URL, positioned as a helpful recommendation`
     : `- This is a full, standalone piece adapted for the platform
 - Preserve the core insights and value from the original
 - Adapt the structure, tone, and length for the platform's audience
-- The product mention should feel natural for the platform's culture`;
+- The product mention should feel natural for the platform's culture
+- IMPORTANT: Include at least 1-2 natural mentions of the product, positioned as a solution or recommendation relevant to the topic`;
 
   const { text: adapted } = await generateText({
     model: anthropic("claude-sonnet-4-6"),
@@ -270,7 +276,8 @@ ${syndicationRules}
 
 CRITICAL RULES:
 - Output ONLY the adapted content, no meta-commentary
-- Start with the title on the first line, then a blank line, then the content`,
+- Start with the title on the first line, then a blank line, then the content
+- NEVER use em dashes (—). Use commas, colons, hyphens, parentheses, or split into separate sentences instead.`,
     prompt: `Adapt this master article for ${spec.name}:
 
 MASTER ARTICLE:

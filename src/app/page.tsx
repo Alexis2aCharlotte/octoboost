@@ -20,12 +20,12 @@ import {
   Calendar,
   Link2,
   ChevronDown,
-  Check,
   Type,
   GitBranch,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import { PricingSection } from "@/components/PricingSection";
 
 /* ─── Data ──────────────────────────────────────────────── */
 
@@ -40,13 +40,13 @@ const steps = [
     icon: PenTool,
     title: "AI writes your articles",
     description:
-      "2000+ word SEO articles with H1/H2/H3 structure, internal links, and natural product mentions.",
+      "Long-form articles with FAQ schemas, structured data, and content formats optimized for Google rankings and AI citations.",
   },
   {
     icon: Send,
     title: "Publish everywhere",
     description:
-      "Push to your own site (API or GitHub), then auto-distribute across 11 platforms with adapted variants.",
+      "Publish on your blog and distribute across 11 platforms. More sources mean more chances Google and AI tools reference you.",
   },
 ];
 
@@ -55,13 +55,13 @@ const features = [
     icon: Target,
     title: "SEO Engine",
     description:
-      "50-80 seed keywords, SERP difficulty, competitor spy, opportunity scores. AI-powered + DataForSEO.",
+      "50-80 seed keywords, SERP difficulty, competitor analysis, and opportunity scores. We find what your audience searches for.",
   },
   {
     icon: FileText,
-    title: "AI-Powered Articles",
+    title: "GEO-Optimized Articles",
     description:
-      "Our model writes long-form articles optimized for Google page 1 and AI citations. Internal links included.",
+      "Listicles, comparisons, how-tos, and FAQ-rich articles with structured data. Built to rank on Google and get cited by AI tools.",
   },
   {
     icon: Calendar,
@@ -71,9 +71,9 @@ const features = [
   },
   {
     icon: Link2,
-    title: "Canonical Backlinks",
+    title: "Multi-Source Authority",
     description:
-      "Every variant carries a canonical URL to your site. Dofollow backlinks from DA 80-99 platforms.",
+      "Your content published across 11 platforms with canonical backlinks. More sources referencing you means more trust from Google and AI.",
   },
 ];
 
@@ -108,11 +108,11 @@ const freeTools = [
     cta: "Analyze a headline",
   },
   {
-    icon: BookOpen,
-    title: "Readability Checker",
-    description: "Get word count, reading time, and Flesch readability score for any text. Optimize for your audience.",
-    href: "/tools/readability-checker",
-    cta: "Check readability",
+    icon: Search,
+    title: "AI Content Scorer",
+    description: "Analyze your article for AI-readability: FAQ section, structured headings, content type. Get a GEO score.",
+    href: "/tools/ai-content-scorer",
+    cta: "Score your content",
   },
   {
     icon: Search,
@@ -185,18 +185,18 @@ export default function Home() {
         <div className="grid-bg" />
 
         <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
-          <h1 className="text-5xl font-bold leading-[1.08] tracking-tighter sm:text-6xl md:text-8xl">
-            Turn your SaaS into a{" "}
-            <span className="gradient-text">content machine</span>
+          <h1 className="text-4xl font-bold leading-[1.08] tracking-tighter sm:text-5xl md:text-7xl">
+            <span className="gradient-text">Get discovered</span> on Google<br />
+            and cited <span className="gradient-text">by AI</span>
           </h1>
-          <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Automated SEO articles published across multiple platforms.<br />Backlinks, traffic, and authority without writing a single word.</p>
+          <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Automated SEO articles optimized for search engines and AI citations. Zero writing.</p>
           <WaitlistForm />
           <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted/60">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
-              11 platforms
+              Google + AI optimized
             </span>
-            <span>Free analysis</span>
+            <span>11 platforms</span>
             <span>No credit card</span>
           </div>
         </div>
@@ -208,7 +208,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">From zero to published <span className="gradient-text">in 3 steps</span></h2>
           <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
-            Paste your URL. We handle keyword research, article writing, and cross-platform publishing.
+            Paste your URL. We handle from keyword research to AI-optimized articles published everywhere.
           </p>
           <div className="grid gap-5 md:grid-cols-3">
             {steps.map((s, i) => (
@@ -245,11 +245,10 @@ export default function Home() {
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">
-            Your site + 11 platforms.{" "}
-            <span className="gradient-text">One dashboard.</span>
+            Be everywhere <span className="gradient-text">Google and AI</span> look
           </h2>
           <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
-            Publish to your own blog first, then distribute across the web. Every variant adapted with canonical URLs.
+            Publish on your blog, then distribute across the web. Every platform adds a source that Google and AI engines trust.
           </p>
 
           {/* Your site */}
@@ -313,7 +312,7 @@ export default function Home() {
       {/* ── Free Tools ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl"><span className="gradient-text">SEO toolkit</span> included</h2>
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">Test our <span className="gradient-text">Toolkit</span></h2>
           <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
             Free tools to help you research, validate, and optimize your content strategy.
           </p>
@@ -337,53 +336,7 @@ export default function Home() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="relative z-10 px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">Simple <span className="gradient-text">pricing</span></h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-muted">One plan, everything included. No hidden fees.</p>
-
-          <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
-            <div className="flex flex-col glow-card p-8 md:p-10">
-              <h3 className="text-2xl font-bold">Monthly</h3>
-              <p className="mt-1 text-sm text-muted">Full access, cancel anytime</p>
-              <p className="mt-6 text-5xl font-bold">$29<span className="text-lg font-normal text-muted">/mo</span></p>
-              <p className="mt-1 text-sm text-muted invisible">placeholder</p>
-              <ul className="mt-8 space-y-3 text-sm text-muted">
-                {["Unlimited AI articles", "All 11 platform channels", "Auto-scheduling & cron publish", "Analytics dashboard", "Priority support"].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-light" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <button disabled className="mt-10 w-full cursor-not-allowed rounded-lg bg-accent/50 py-3 text-center text-sm font-semibold text-white/60">
-                Coming Soon
-              </button>
-            </div>
-
-            <div className="flex flex-col glow-card p-8 md:p-10 !border-accent/30">
-              <div className="flex items-center gap-3">
-                <h3 className="text-2xl font-bold">Yearly</h3>
-                <span className="rounded-md bg-accent/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-accent-light">Save 34%</span>
-              </div>
-              <p className="mt-1 text-sm text-muted">Best value - billed annually</p>
-              <p className="mt-6 text-5xl font-bold">$19<span className="text-lg font-normal text-muted">/mo</span> <span className="text-lg font-normal text-muted line-through">$29</span></p>
-              <p className="mt-1 text-sm text-muted">$229 billed yearly</p>
-              <ul className="mt-8 space-y-3 text-sm text-muted">
-                {["Unlimited AI articles", "All 11 platform channels", "Auto-scheduling & cron publish", "Analytics dashboard", "Priority support"].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-light" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <button disabled className="mt-10 w-full cursor-not-allowed rounded-lg bg-accent/50 py-3 text-center text-sm font-semibold text-white/60">
-                Coming Soon
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ── FAQ ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">

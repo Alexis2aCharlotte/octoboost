@@ -10,8 +10,8 @@ const navLinks = [
     label: "SEO Toolkit",
     href: "#",
     children: [
+      { label: "AI Content Scorer", href: "/tools/ai-content-scorer" },
       { label: "Headline Analyzer", href: "/tools/headline-analyzer" },
-      { label: "Readability Checker", href: "/tools/readability-checker" },
       { label: "Keyword Density", href: "/tools/keyword-density" },
       { label: "SERP Preview", href: "/tools/serp-preview" },
     ],

@@ -22,13 +22,16 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 ### Design & UI
 - [x] Full design overhaul — blink.new / pro SaaS style
 - [x] Inter + JetBrains Mono fonts (replaced Geist)
-- [x] Ocean navy blue palette (bg `#080c18`, cards `#0d1225`, accent `#3b82f6`)
+- [x] Ocean navy blue palette (bg `#080c18`, cards `#0d1225`, accent `#3b82f6`) → updated to neon blue (`#030712`, `#0077FF`)
 - [x] CSS grid background with radial halo
 - [x] Ocean gradient on landing page
 - [x] Clean sidebar with subtle hovers (bg `#0a0f1e`)
 - [x] Compact topbar with breadcrumbs
 - [x] Opaque cards (no transparency through grid)
-- [x] Larger fonts (inspired by Niches Hunter): h1 text-3xl, descriptions text-base, stats text-3xl
+- [x] Larger fonts (inspired by Niches Hunter): h1 text-8xl, h2 text-5xl, font-bold, tracking-tighter
+- [x] Neon glow effects: gradient-text with text-shadow, CTA buttons with multi-layer box-shadow
+- [x] Blue-tinted grid background + ambient radial gradients
+- [x] Glow cards with stronger hover effects (border glow, translateY, multi-layer shadows)
 - [x] Pipeline progress as accordion (compact when all done)
 - [x] All UI text in English (no French)
 
@@ -155,13 +158,30 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 - [x] Extract site tools/features at analysis time (`keyTools` in LLM analysis schema)
 - [x] Store `key_tools` in analyses table (JSONB)
 - [x] Inject tools in product context for article generation prompts
-- [ ] JSON-LD schema (technical SEO, low priority)
+- [x] JSON-LD schema (Article + FAQPage structured data for SEO & AI citations)
+
+### GEO — Generative Engine Optimization (AI visibility)
+- [x] GEO content angles in `llm-analyzer.ts` - comparison, listicle, FAQ-style, "best X for Y" article types optimized for AI citations
+- [x] FAQ section in `article-generator.ts` - auto-generate 3-5 FAQ Q&A at the end of each article
+- [x] Em dash ban enforced across all prompts (analyzer, generator, variant adapter)
+- [x] FAQ schema JSON-LD - inject `FAQPage` structured data so AI engines can parse and cite answers
+- [x] Listicle/comparison/how-to article templates in `article-generator.ts` with type-specific prompts for outline and writing
+- [x] Reinforced product mentions in `variant-adapter.ts` - stronger natural mentions for Reddit, Quora, Medium + syndication rules
+- [x] Article schema JSON-LD - `Article` structured data with author, datePublished for AI crawlers
+- [ ] (Optional) AI citation monitoring — track if ChatGPT/Perplexity/Claude cite the product
 
 ### Analytics
 - [x] Analytics API: pull live stats from Dev.to (views, reactions, comments) and Hashnode (views, reactions, comments)
 - [x] Analytics page: real performance data per platform, per article
 - [x] Engagement rate calculation (reactions+comments / views)
 - [ ] (Optional) Google Search Console integration for client site impressions
+
+### Billing & Usage Limits
+- [ ] Stripe integration (subscriptions, webhooks, customer portal)
+- [ ] Plan-based article generation quotas tied to Stripe subscription (Explore: 8 master articles/mo, Pro: 15/mo per site)
+- [ ] Monthly generation counter per project (reset on billing cycle via Stripe webhook)
+- [ ] Block generation when quota reached (UI warning + API guard)
+- [ ] Schedule window limit - publications only within current billing period
 
 ### Design (low priority)
 - [ ] Mobile responsive
@@ -183,4 +203,4 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 
 ---
 
-*Last updated: February 21, 2026*
+*Last updated: February 23, 2026*

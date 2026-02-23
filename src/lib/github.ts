@@ -92,6 +92,8 @@ export interface GitHubTreeEntry {
   type: "blob" | "tree";
 }
 
+import { generateArticleJsonLd } from "@/lib/engine/json-ld";
+
 interface ArticlePayload {
   title: string;
   slug: string;
@@ -99,6 +101,8 @@ interface ArticlePayload {
   metaDescription?: string;
   tags?: string[];
   date?: string;
+  siteUrl?: string;
+  siteName?: string;
 }
 
 const GITHUB_API = "https://api.github.com";
@@ -227,7 +231,22 @@ function generateFrontmatter(payload: ArticlePayload, format: "md" | "mdx"): str
 
 export function buildFileContent(payload: ArticlePayload, format: "md" | "mdx"): string {
   const frontmatter = generateFrontmatter(payload, format);
-  return `${frontmatter}\n\n${payload.content}\n`;
+
+  let jsonLdBlock = "";
+  if (payload.siteUrl && payload.siteName) {
+    jsonLdBlock = "\n\n" + generateArticleJsonLd({
+      title: payload.title,
+      description: payload.metaDescription ?? "",
+      content: payload.content,
+      slug: payload.slug,
+      siteUrl: payload.siteUrl,
+      siteName: payload.siteName,
+      publishedAt: payload.date ?? new Date().toISOString().split("T")[0],
+      tags: payload.tags,
+    });
+  }
+
+  return `${frontmatter}\n\n${payload.content}${jsonLdBlock}\n`;
 }
 
 /**

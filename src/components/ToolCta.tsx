@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Zap } from "lucide-react";
 
 const otherTools = [
+  { label: "AI Content Scorer", href: "/tools/ai-content-scorer", description: "Get your GEO score" },
   { label: "Headline Analyzer", href: "/tools/headline-analyzer", description: "Score your titles for SEO" },
-  { label: "Readability Checker", href: "/tools/readability-checker", description: "Check reading level & time" },
   { label: "Keyword Density", href: "/tools/keyword-density", description: "Spot over-optimization" },
   { label: "SERP Preview", href: "/tools/serp-preview", description: "Preview your Google result" },
 ];

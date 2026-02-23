@@ -470,6 +470,7 @@ export async function POST(req: NextRequest) {
               pillar_keyword: c.pillarKeyword,
               supporting_keywords: c.supportingKeywords,
               search_intent: c.searchIntent,
+              article_type: c.articleType ?? "informational",
               difficulty: c.difficulty,
               total_volume:
                 (pillar?.searchVolume ?? 0) + supportingVols,

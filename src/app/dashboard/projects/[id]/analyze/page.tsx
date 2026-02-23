@@ -47,7 +47,7 @@ interface AnalysisResult {
   analysis: {
     productSummary: string;
     targetAudience: string;
-    contentAngles: string[];
+    contentAngles: (string | { title: string; type: string })[];
   };
   competitors: Competitor[];
   keywords: Keyword[];
@@ -464,12 +464,17 @@ function AnalyzeContent() {
       {/* Ideas */}
       {tab === "ideas" && (
         <div className="space-y-2">
-          {result!.analysis.contentAngles.map((angle, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3.5 transition-colors hover:bg-card-hover">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-xs tabular-nums font-medium text-muted">{i + 1}</span>
-              <p className="text-sm">{angle}</p>
-            </div>
-          ))}
+          {result!.analysis.contentAngles.map((angle, i) => {
+            const title = typeof angle === "string" ? angle : angle.title;
+            const type = typeof angle === "string" ? null : angle.type;
+            return (
+              <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3.5 transition-colors hover:bg-card-hover">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-xs tabular-nums font-medium text-muted">{i + 1}</span>
+                <p className="flex-1 text-sm">{title}</p>
+                {type && <span className="shrink-0 rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-light">{type}</span>}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

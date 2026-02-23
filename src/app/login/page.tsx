@@ -16,10 +16,8 @@ export default function LoginPage() {
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,36 +27,19 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
 
     const supabase = createClient();
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Check your email to confirm your account.");
-      }
+    if (error) {
+      setError(error.message);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push(next);
-        router.refresh();
-      }
+      router.push(next);
+      router.refresh();
     }
 
     setLoading(false);
@@ -75,14 +56,8 @@ function LoginForm() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
             <Send className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold">
-            {isSignUp ? "Create your account" : "Welcome back"}
-          </h1>
-          <p className="mt-2 text-base text-muted">
-            {isSignUp
-              ? "Start growing your organic traffic"
-              : "Sign in to your OctoBoost account"}
-          </p>
+          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <p className="mt-2 text-base text-muted">Sign in to your OctoBoost account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,12 +93,6 @@ function LoginForm() {
             </div>
           )}
 
-          {message && (
-            <div className="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
-              {message}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={loading}
@@ -131,8 +100,6 @@ function LoginForm() {
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : isSignUp ? (
-              "Create Account"
             ) : (
               "Sign In"
             )}
@@ -140,17 +107,7 @@ function LoginForm() {
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError(null);
-              setMessage(null);
-            }}
-            className="text-accent-light transition hover:underline"
-          >
-            {isSignUp ? "Sign in" : "Sign up"}
-          </button>
+          Access is currently invite-only.
         </p>
       </div>
     </main>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { generateArticleJsonLd } from "@/lib/engine/json-ld";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -29,7 +30,7 @@ export async function GET(
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, name, url")
     .eq("api_key", key)
     .single();
 
@@ -57,6 +58,19 @@ export async function GET(
     );
   }
 
+  const jsonLd = generateArticleJsonLd({
+    title: article.title,
+    description: article.meta_description ?? "",
+    content: article.content,
+    slug: article.slug,
+    siteUrl: project.url ?? "",
+    siteName: project.name ?? "",
+    publishedAt: article.created_at,
+    updatedAt: article.updated_at ?? undefined,
+    pillarKeyword: article.pillar_keyword,
+    tags: article.supporting_keywords ?? [],
+  });
+
   return NextResponse.json(
     {
       title: article.title,
@@ -67,6 +81,7 @@ export async function GET(
       tags: article.supporting_keywords ?? [],
       wordCount: article.word_count,
       publishedAt: article.updated_at ?? article.created_at,
+      jsonLd,
     },
     {
       headers: {

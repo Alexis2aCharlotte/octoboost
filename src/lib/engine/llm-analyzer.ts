@@ -37,9 +37,20 @@ const analysisSchema = z.object({
     )
     .describe("5-10 direct or indirect competitors"),
   contentAngles: z
-    .array(z.string())
+    .array(
+      z.object({
+        title: z.string().describe("SEO-optimized article title"),
+        type: z.enum([
+          "informational",
+          "comparison",
+          "listicle",
+          "how-to",
+          "faq",
+        ]).describe("Content type"),
+      })
+    )
     .describe(
-      "15-25 article title ideas optimized for SEO and AI discoverability"
+      "15-25 article ideas optimized for SEO and AI discoverability. Mix of types: informational (deep dives), comparison (X vs Y, alternatives), listicle (Top 5, Best X for Y), how-to (step-by-step guides), faq (answering common questions)."
     ),
   keyTools: z
     .array(
@@ -61,7 +72,7 @@ export async function analyzeSite(
   const { object } = await generateObject({
     model: openai("gpt-4o"),
     schema: analysisSchema,
-    system: `You are a world-class SEO strategist who specializes in finding keywords that are easy to rank for while still having meaningful search volume. Your goal is to find "golden keywords" — terms that real people type into Google, that have decent volume, and where competition is low enough to rank on page 1 within 3-6 months.
+    system: `You are a world-class SEO strategist who specializes in finding keywords that are easy to rank for while still having meaningful search volume. Your goal is to find "golden keywords": terms that real people type into Google, that have decent volume, and where competition is low enough to rank on page 1 within 3-6 months.
 
 You think like someone who would actually search Google. You avoid jargon-heavy terms that nobody types. You prioritize:
 - Questions people ask ("how to...", "what is the best...", "why do...")
@@ -91,9 +102,19 @@ Generate 50-80 seed keywords split into 4 categories:
 
 Also provide:
 - 5-10 competitors (direct and indirect tools/sites in this space)
-- 15-25 article titles that would rank well on Google AND get cited by AI tools like ChatGPT and Perplexity. Focus on comprehensive, authoritative content that answers specific questions.
+- 15-25 article ideas that would rank well on Google AND get cited by AI tools like ChatGPT and Perplexity.
 
-IMPORTANT: Only suggest keywords that REAL PEOPLE actually type into Google. Avoid made-up compound terms. Think about what you would personally search for.`,
+Article types to include (mix of all):
+- **informational**: Deep dives, "What is X", "How X works" - AI tools love citing definitions and explanations
+- **comparison**: "X vs Y", "Best alternatives to X", "X review" - these get cited when users ask AI for recommendations
+- **listicle**: "Top 5 tools for Y", "Best X for Y in 2026" - AI tools frequently cite ranked lists
+- **how-to**: "How to do X step by step" - highly cited by AI for actionable queries
+- **faq**: "X: everything you need to know" - FAQ-style content gets parsed and cited by AI
+
+Aim for at least 3 comparison/listicle articles and 2 FAQ-style articles. These content types are the most likely to be cited by ChatGPT, Perplexity, and Claude.
+
+IMPORTANT: Only suggest keywords that REAL PEOPLE actually type into Google. Avoid made-up compound terms. Think about what you would personally search for.
+IMPORTANT: NEVER use em dashes in any output. Use commas, colons, or hyphens instead.`,
   });
 
   return object;
@@ -185,6 +206,12 @@ const clusterSchema = z.object({
         "commercial",
         "transactional",
       ]),
+      articleType: z.enum([
+        "informational",
+        "comparison",
+        "listicle",
+        "how-to",
+      ]).describe("The type of article to write: informational (deep dive), comparison (X vs Y, alternatives), listicle (Top N, Best X for Y), how-to (step-by-step guide)"),
       difficulty: z.enum(["easy", "medium", "hard"]),
     })
   ),
@@ -204,6 +231,7 @@ export interface KeywordCluster {
   pillarKeyword: string;
   supportingKeywords: string[];
   searchIntent: string;
+  articleType: string;
   difficulty: string;
 }
 
@@ -223,7 +251,7 @@ export async function clusterKeywords(
   const { object } = await generateObject({
     model: openai("gpt-4o"),
     schema: clusterSchema,
-    system: `You are an SEO content strategist. You group keywords into topic clusters where each cluster represents ONE article to write. The goal is to maximize ranking potential.
+    system: `You are an SEO content strategist. You group keywords into topic clusters where each cluster represents ONE article to write. The goal is to maximize ranking potential and AI citability.
 
 Rules:
 - Each cluster should have 1 pillar keyword (highest volume/opportunity) and 3-10 supporting keywords
@@ -232,7 +260,11 @@ Rules:
 - Prioritize clusters that are easy to rank for (low competition, decent volume)
 - A keyword can only belong to ONE cluster
 - Create 10-25 clusters depending on how many keywords there are
-- Order clusters by ranking potential (easiest to rank with most traffic first)`,
+- Order clusters by ranking potential (easiest to rank with most traffic first)
+- Include a mix of article types: standard informational, but also comparison ("X vs Y"), listicle ("Top 5..."), and how-to guides
+- For each cluster, assign an articleType: "informational" for deep dives, "comparison" for X vs Y or alternatives articles, "listicle" for Top N or Best X for Y articles, "how-to" for step-by-step guides
+- Aim for at least 2-3 comparison clusters, 2-3 listicle clusters, and 2-3 how-to clusters. The rest can be informational.
+- NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.`,
     prompt: `Product context: ${productContext}
 
 Group these keywords into topic clusters. Each cluster = 1 article to write.

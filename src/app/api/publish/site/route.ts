@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, user_id, url, site_connection")
+    .select("id, user_id, name, url, site_connection")
     .eq("id", article.project_id)
     .eq("user_id", user.id)
     .single();
@@ -98,6 +98,8 @@ export async function POST(req: NextRequest) {
         content: article.content,
         metaDescription: article.meta_description ?? undefined,
         tags,
+        siteUrl: project.url ?? "",
+        siteName: project.name ?? "",
       });
       resultUrl = result.url;
     } else {

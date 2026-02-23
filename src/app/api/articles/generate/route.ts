@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
         pillarKeyword: cluster.pillar_keyword,
         supportingKeywords: cluster.supporting_keywords ?? [],
         searchIntent: cluster.search_intent ?? "informational",
+        articleType: cluster.article_type ?? "informational",
         difficulty: cluster.difficulty ?? "medium",
         totalVolume: cluster.total_volume ?? 0,
       },
