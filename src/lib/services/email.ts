@@ -14,7 +14,7 @@ function getResendClient(): Resend {
   return resend;
 }
 
-const FROM_EMAIL = "OctoBoost <support@arianeconcept.fr>";
+const FROM_EMAIL = "OctoBoost <contact@octoboost.app>";
 
 export async function sendWelcomeEmail(toEmail: string): Promise<void> {
   const html = getWelcomeEmailHTML();
