@@ -170,7 +170,7 @@ export default function PublishPage() {
       if (demoData) {
         setRealProjectId(demoData.project.projectId);
         setApiKey("ob_demo_k7x9m2p4q8r1w5y3a6b0");
-        setConnection({ status: "connected", type: "api" } as SiteConnection);
+        setConnection({ status: "connected", type: "custom_api" } as SiteConnection);
         setChannels(demoData.channels);
         setVariants(demoData.schedule.variants ?? []);
         setTab((prev) => prev ?? "schedule");
