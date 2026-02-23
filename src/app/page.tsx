@@ -174,9 +174,53 @@ const faqs = [
 
 /* ─── Page ──────────────────────────────────────────────── */
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "OctoBoost",
+      url: "https://octoboost.app",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "Automated SEO articles optimized for search engines and AI citations. From keyword research to multi-platform publishing.",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        availability: "https://schema.org/PreOrder",
+      },
+    },
+    {
+      "@type": "Organization",
+      name: "OctoBoost",
+      url: "https://octoboost.app",
+      logo: "https://octoboost.app/Logo%20Octoboost.png",
+      contactPoint: {
+        "@type": "ContactPoint",
+        email: "contact@octoboost.app",
+        contactType: "customer support",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.q,
+        acceptedAnswer: { "@type": "Answer", text: faq.a },
+      })),
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <main className="isolate flex min-h-screen flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ── Nav ── */}
       <Navbar />
 
@@ -380,7 +424,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border px-6 py-8">
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/Logo Octoboost.png" alt="OctoBoost" width={60} height={60} className="h-6 w-6 object-contain" />
+            <Image src="/Logo Octoboost.png" alt="OctoBoost logo — automated SEO content engine" width={60} height={60} className="h-6 w-6 object-contain" />
             <span className="text-sm font-semibold">OctoBoost</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-muted/60">

@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How OctoBoost collects, uses, and protects your data.",
+  alternates: { canonical: "/privacy" },
+};
 
 export default function PrivacyPage() {
   return (

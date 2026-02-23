@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms and conditions for using OctoBoost.",
+  alternates: { canonical: "/terms" },
+};
 
 export default function TermsPage() {
   return (

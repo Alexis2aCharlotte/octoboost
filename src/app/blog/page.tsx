@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+
+export const metadata: Metadata = {
+  title: "Blog",
+  description: "SEO tips, content strategy guides, and product updates from OctoBoost.",
+  alternates: { canonical: "/blog" },
+};
 
 export default function BlogPage() {
   return (

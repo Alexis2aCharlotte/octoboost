@@ -16,9 +16,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OctoBoost | Get Discovered on Google and Cited by AI",
+  metadataBase: new URL("https://octoboost.app"),
+  title: {
+    default: "OctoBoost | Get Discovered on Google and Cited by AI",
+    template: "%s | OctoBoost",
+  },
   description:
     "Automated SEO articles optimized for search engines and AI citations. From keyword research to multi-platform publishing. Zero writing.",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "OctoBoost | Get Discovered on Google and Cited by AI",
     description:
@@ -26,6 +31,7 @@ export const metadata: Metadata = {
     images: [{ url: "/og-image-v1.png", width: 1200, height: 630 }],
     type: "website",
     siteName: "OctoBoost",
+    url: "https://octoboost.app",
   },
   twitter: {
     card: "summary_large_image",
