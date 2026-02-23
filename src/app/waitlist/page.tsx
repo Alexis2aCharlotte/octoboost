@@ -56,6 +56,9 @@ export default function WaitlistPage() {
               <p className="mt-1 text-sm text-muted">
                 We&apos;ll notify you at <span className="font-medium text-foreground">{email}</span> when we launch.
               </p>
+              <p className="mt-2 text-xs text-muted/60">
+                Don&apos;t see our email? Check your spam folder.
+              </p>
             </div>
           ) : (
             <>

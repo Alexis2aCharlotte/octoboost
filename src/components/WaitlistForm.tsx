@@ -37,7 +37,7 @@ export function WaitlistForm() {
     return (
       <div className="mx-auto flex max-w-sm items-center gap-2 text-sm text-green-400">
         <Check className="h-4 w-4 shrink-0" />
-        <span>You&apos;re on the list! We&apos;ll notify you at launch.</span>
+        <span>You&apos;re on the list! Check your spam folder just in case.</span>
       </div>
     );
   }
