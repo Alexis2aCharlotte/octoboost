@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "OctoBoost | Get Discovered on Google and Cited by AI",
     description:
       "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
-    images: [{ url: "/og-image-v1.png", width: 1200, height: 630 }],
+    images: [{ url: "/OG-Image-v2.png", width: 1200, height: 630 }],
     type: "website",
     siteName: "OctoBoost",
     url: "https://octoboost.app",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     title: "OctoBoost | Get Discovered on Google and Cited by AI",
     description:
       "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
-    images: ["/og-image-v1.png"],
+    images: ["/OG-Image-v2.png"],
   },
 };
 
