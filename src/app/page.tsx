@@ -197,7 +197,6 @@ export default function Home() {
               Google + AI optimized
             </span>
             <span>11 platforms</span>
-            <span>No credit card</span>
           </div>
         </div>
 
