@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import {
   Search,
   Target,
@@ -73,6 +74,7 @@ export default function ProjectKeywordsPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
 
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -99,6 +101,13 @@ export default function ProjectKeywordsPage() {
     }
     async function load() {
       try {
+        if (cachedData) {
+          setKeywords(cachedData.keywords);
+          setClusters(cachedData.clusters);
+          setLoading(false);
+          return;
+        }
+        if (cacheLoading) return;
         const res = await fetch(fetchUrl(`/api/keywords?projectId=${id}`));
         if (!res.ok) return;
         const data = await res.json();
@@ -111,7 +120,7 @@ export default function ProjectKeywordsPage() {
       }
     }
     load();
-  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading, cachedData, cacheLoading]);
 
   function handleSort(field: SortField) {
     if (sortField === field) {

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
@@ -147,6 +148,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 export default function ArticlesPage() {
   const { id } = useParams<{ id: string }>();
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -196,6 +198,15 @@ export default function ArticlesPage() {
       setLoading(false);
       return;
     }
+    if (cachedData) {
+      setClusters(cachedData.clusters);
+      setArticles(cachedData.articles);
+      setChannels(cachedData.channels);
+      setRealProjectId(cachedData.project?.projectId ?? null);
+      setLoading(false);
+      return;
+    }
+    if (cacheLoading) return;
     try {
       const [kwRes, projRes, artRes, chRes] = await Promise.all([
         fetch(fetchUrl(`/api/keywords?projectId=${id}`)),
@@ -228,7 +239,7 @@ export default function ArticlesPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading, cachedData, cacheLoading]);
 
   useEffect(() => {
     loadData();

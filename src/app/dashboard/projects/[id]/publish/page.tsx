@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import {
   Plug,
   Radio,
@@ -122,6 +123,7 @@ export default function PublishPage() {
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
   const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,6 +180,17 @@ export default function PublishPage() {
       setLoading(false);
       return;
     }
+    if (cachedData) {
+      setRealProjectId(cachedData.project.projectId);
+      if (cachedData.apiKey) setApiKey(cachedData.apiKey);
+      if (cachedData.connection) setConnection(cachedData.connection);
+      setChannels(cachedData.channels);
+      setVariants(cachedData.schedule.variants ?? []);
+      setTab((prev) => prev ?? "schedule");
+      setLoading(false);
+      return;
+    }
+    if (cacheLoading) return;
     try {
       const [projRes, connRes, chRes, schedRes, keyRes] = await Promise.all([
         fetch(fetchUrl(`/api/projects/${id}`)),
@@ -218,7 +231,7 @@ export default function PublishPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, isDemo, fetchUrl, demoData, demoLoading]);
+  }, [id, isDemo, fetchUrl, demoData, demoLoading, cachedData, cacheLoading]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

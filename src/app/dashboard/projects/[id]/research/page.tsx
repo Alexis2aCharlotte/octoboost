@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import {
   Search,
   Target,
@@ -134,6 +135,7 @@ const difficultyColors: Record<string, string> = {
 export default function ResearchPage() {
   const { id } = useParams<{ id: string }>();
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
 
   const [project, setProject] = useState<Project | null>(null);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -178,6 +180,20 @@ export default function ResearchPage() {
       setLoading(false);
       return;
     }
+    if (cachedData) {
+      const p = cachedData.project;
+      setProject({
+        id: p.projectId, name: p.name, slug: p.slug, url: p.url,
+        latestAnalysisId: p.latestAnalysisId, latestAnalysis: p.latestAnalysis,
+        analysesLast30d: p.analysesLast30d, totalAnalyses: p.totalAnalyses,
+      });
+      setKeywords(cachedData.keywords);
+      setClusters(cachedData.clusters);
+      if (cachedData.analysis) setAnalysisResult(cachedData.analysis);
+      setLoading(false);
+      return;
+    }
+    if (cacheLoading) return;
     try {
       const [projRes, kwRes] = await Promise.all([
         fetch(fetchUrl(`/api/projects/${id}`)),
@@ -215,7 +231,7 @@ export default function ResearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading, cachedData, cacheLoading]);
 
   useEffect(() => {
     loadData();

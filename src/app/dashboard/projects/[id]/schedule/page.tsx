@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import {
   Calendar,
   Copy,
@@ -86,6 +87,7 @@ export default function SchedulePage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
   const [scheduledArticles, setScheduledArticles] = useState<ScheduledArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,14 @@ export default function SchedulePage() {
       setLoading(false);
       return;
     }
+    if (cachedData) {
+      setRealProjectId(cachedData.project.projectId);
+      setVariants(cachedData.schedule.variants ?? []);
+      setScheduledArticles(cachedData.schedule.articles ?? []);
+      setLoading(false);
+      return;
+    }
+    if (cacheLoading) return;
     setLoading(true);
     try {
       const [projRes, schedRes] = await Promise.all([
@@ -132,7 +142,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading, cachedData, cacheLoading]);
 
   useEffect(() => {
     fetchSchedule();

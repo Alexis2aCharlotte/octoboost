@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useDemo } from "@/lib/demo/context";
+import { useProjectCache } from "@/lib/project-cache";
 import Link from "next/link";
 import {
   Loader2,
@@ -78,6 +79,7 @@ export default function ProjectOverviewPage() {
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: cachedData, loading: cacheLoading } = useProjectCache();
   const [pipelineOpen, setPipelineOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -87,6 +89,12 @@ export default function ProjectOverviewPage() {
       setLoading(false);
       return;
     }
+    if (cachedData) {
+      setData(cachedData.overview);
+      setLoading(false);
+      return;
+    }
+    if (cacheLoading) return;
     try {
       const res = await fetch(fetchUrl(`/api/projects/${id}/overview`));
       if (res.ok) {
@@ -95,7 +103,7 @@ export default function ProjectOverviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading, cachedData, cacheLoading]);
 
   useEffect(() => {
     load();
