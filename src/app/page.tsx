@@ -422,7 +422,7 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="relative z-10 border-t border-border px-6 py-8">
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-4">
           <div className="flex items-center gap-2">
             <Image src="/Logo Octoboost.png" alt="OctoBoost logo — automated SEO content engine" width={60} height={60} className="h-6 w-6 object-contain" />
             <span className="text-sm font-semibold">OctoBoost</span>
@@ -430,8 +430,9 @@ export default function Home() {
           <div className="flex items-center gap-6 text-xs text-muted/60">
             <Link href="/terms" className="transition hover:text-foreground">Terms</Link>
             <Link href="/privacy" className="transition hover:text-foreground">Privacy</Link>
-            <span>&copy; {new Date().getFullYear()} OctoBoost</span>
+            <a href="https://x.com/Tobby_scraper" target="_blank" rel="noopener noreferrer" className="transition hover:text-foreground">Twitter</a>
           </div>
+          <p className="text-xs text-muted/40">&copy; {new Date().getFullYear()} OctoBoost. All rights reserved.</p>
         </div>
       </footer>
     </main>
