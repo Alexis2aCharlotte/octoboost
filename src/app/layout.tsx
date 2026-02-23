@@ -14,9 +14,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OctoBoost — Automatic Article Publisher for SaaS Growth",
+  title: "OctoBoost — Get Discovered on Google and Cited by AI",
   description:
-    "AI-powered agent that generates SEO-optimized articles and publishes them across Dev.to, Medium, Hashnode, Reddit & more. Autopilot your content marketing.",
+    "Automated SEO articles optimized for search engines and AI citations. From keyword research to multi-platform publishing. Zero writing.",
+  openGraph: {
+    title: "OctoBoost — Get Discovered on Google and Cited by AI",
+    description:
+      "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
+    images: [{ url: "/OG Image.png", width: 1200, height: 630 }],
+    type: "website",
+    siteName: "OctoBoost",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OctoBoost — Get Discovered on Google and Cited by AI",
+    description:
+      "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
+    images: ["/OG Image.png"],
+  },
 };
 
 export default function RootLayout({
