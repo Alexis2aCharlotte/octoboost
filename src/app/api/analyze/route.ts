@@ -345,6 +345,7 @@ export async function POST(req: NextRequest) {
       pillarKeyword: string;
       supportingKeywords: string[];
       searchIntent: string;
+      articleType?: string;
       difficulty: string;
     }[] = [];
 
