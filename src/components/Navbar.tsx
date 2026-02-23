@@ -22,6 +22,7 @@ const navLinks = [
     href: "#",
     children: [
       { label: "Blog", href: "/blog" },
+      { label: "About", href: "/about" },
     ],
   },
 ];
@@ -66,19 +67,21 @@ export function Navbar() {
             >
               <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground">
                 {link.label}
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className={`h-3 w-3 transition-transform ${openDropdown === link.label ? "rotate-180" : ""}`} />
               </button>
               {openDropdown === link.label && (
-                <div className="absolute top-full left-1/2 mt-1 min-w-[180px] -translate-x-1/2 rounded-lg border border-border bg-card p-1 shadow-lg">
-                  {link.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className="block rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground"
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2">
+                  <div className="min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg">
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="block rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
