@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useDemo } from "@/lib/demo/context";
 import Link from "next/link";
 import {
   Search,
@@ -37,6 +38,7 @@ interface Project {
 
 export default function DashboardPage() {
   const { confirm } = useConfirm();
+  const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
@@ -44,11 +46,28 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/projects")
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        const p = demoData.project;
+        setProjects([{
+          id: p.projectId,
+          name: p.name,
+          slug: p.slug,
+          url: p.url,
+          created_at: p.createdAt,
+          latestAnalysisId: p.latestAnalysisId,
+          latestAnalysis: p.latestAnalysis,
+        }]);
+      }
+      setLoading(false);
+      return;
+    }
+    fetch(fetchUrl("/api/projects"))
       .then((r) => r.json())
       .then((data) => setProjects(data.projects ?? []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [fetchUrl, isDemo, demoData, demoLoading]);
 
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
@@ -152,40 +171,42 @@ export default function DashboardPage() {
       )}
 
       {/* Add new site */}
-      <form
-        onSubmit={handleAnalyze}
-        className="flex items-center gap-3 rounded-xl border border-border bg-card p-2.5"
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted/60">
-          <Search className="h-4 w-4" />
-        </div>
-        <input
-          type="url"
-          value={newUrl}
-          onChange={(e) => setNewUrl(e.target.value)}
-          placeholder="Add a new site — https://yourURL.example.com"
-          required
-          disabled={analyzing}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/40 disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={analyzing}
-          className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-light disabled:opacity-50"
+      {!isDemo && (
+        <form
+          onSubmit={handleAnalyze}
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-2.5"
         >
-          {analyzing ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4" />
-              Analyze
-            </>
-          )}
-        </button>
-      </form>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted/60">
+            <Search className="h-4 w-4" />
+          </div>
+          <input
+            type="url"
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            placeholder="Add a new site — https://yourURL.example.com"
+            required
+            disabled={analyzing}
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/40 disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={analyzing}
+            className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-light disabled:opacity-50"
+          >
+            {analyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Analyze
+              </>
+            )}
+          </button>
+        </form>
+      )}
 
       {/* Projects list */}
       {projects.length === 0 ? (
@@ -211,7 +232,7 @@ export default function DashboardPage() {
                 className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
               >
                 <Link
-                  href={`/dashboard/projects/${project.slug || project.id}/overview`}
+                  href={`${basePath}/projects/${project.slug || project.id}/overview`}
                   className="flex flex-1 items-center gap-3.5"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
@@ -224,20 +245,27 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted">{project.url}</p>
                   </div>
                   {hasAnalysis && (
-                    <div className="flex items-center gap-3 text-xs text-muted/60">
-                      <span className="flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        Research
+                    isDemo ? (
+                      <span className="flex items-center gap-1.5 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent-light">
+                        Go to the project
+                        <ChevronRight className="h-3 w-3" />
                       </span>
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Articles
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Send className="h-3 w-3" />
-                        Publish
-                      </span>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-3 text-xs text-muted/60">
+                        <span className="flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          Research
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Articles
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Send className="h-3 w-3" />
+                          Publish
+                        </span>
+                      </div>
+                    )
                   )}
                   {!hasAnalysis && (
                     <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400">
@@ -246,13 +274,15 @@ export default function DashboardPage() {
                   )}
                 </Link>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleDelete(project.id)}
-                    className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
-                    title="Delete project"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {!isDemo && (
+                    <button
+                      onClick={() => handleDelete(project.id)}
+                      className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                      title="Delete project"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <ChevronRight className="h-4 w-4 text-muted/40" />
                 </div>
               </div>

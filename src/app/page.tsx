@@ -176,7 +176,7 @@ const faqs = [
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col bg-background text-foreground">
+    <main className="isolate flex min-h-screen flex-col bg-background text-foreground">
       {/* ── Nav ── */}
       <Navbar />
 
@@ -191,7 +191,15 @@ export default function Home() {
           </h1>
           <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Automated SEO articles optimized for search engines and AI citations. Zero writing.</p>
           <WaitlistForm />
-          <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted/60">
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/demo"
+              className="text-sm font-medium text-accent-light transition-colors hover:text-accent hover:underline"
+            >
+              Or try the interactive demo &rarr;
+            </Link>
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-6 text-xs text-muted/60">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
               Google + AI optimized

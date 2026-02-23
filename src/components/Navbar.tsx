@@ -94,13 +94,21 @@ export function Navbar() {
         )}
       </div>
 
-      {/* Right — Login */}
-      <Link
-        href="/login"
-        className="hidden rounded-lg border border-border px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:border-accent/50 hover:text-foreground md:inline-flex"
-      >
-        Login
-      </Link>
+      {/* Right — Demo + Login */}
+      <div className="hidden items-center gap-3 md:flex">
+        <Link
+          href="/demo"
+          className="rounded-lg px-4 py-1.5 text-sm font-medium text-accent-light transition-colors hover:text-accent"
+        >
+          Try the Demo
+        </Link>
+        <Link
+          href="/login"
+          className="rounded-lg border border-border px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:border-accent/50 hover:text-foreground"
+        >
+          Login
+        </Link>
+      </div>
 
       {/* Mobile toggle */}
       <button
@@ -142,8 +150,15 @@ export function Navbar() {
             )
           )}
           <Link
+            href="/demo"
+            className="mt-3 flex w-full items-center justify-center rounded-lg bg-accent/10 py-2.5 text-sm font-medium text-accent-light transition-colors hover:bg-accent/20"
+            onClick={() => setMobileOpen(false)}
+          >
+            Try the Demo
+          </Link>
+          <Link
             href="/login"
-            className="mt-3 flex w-full items-center justify-center rounded-lg border border-border py-2.5 text-sm font-medium text-muted transition-colors hover:border-accent/50 hover:text-foreground"
+            className="mt-2 flex w-full items-center justify-center rounded-lg border border-border py-2.5 text-sm font-medium text-muted transition-colors hover:border-accent/50 hover:text-foreground"
             onClick={() => setMobileOpen(false)}
           >
             Login

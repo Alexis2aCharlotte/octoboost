@@ -176,6 +176,16 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 - [x] Engagement rate calculation (reactions+comments / views)
 - [ ] (Optional) Google Search Console integration for client site impressions
 
+### Demo Mode
+- [x] **Step 1 — Supabase seed**: create demo user (`demo@octoboost.com`) in Supabase Auth, duplicate Niches Hunter data (project, analyses, keywords, clusters, articles, channels, variants) under demo `user_id`
+- [x] **Step 2 — Demo constants**: `src/lib/demo/constants.ts` with hardcoded `DEMO_PROJECT_ID` and `DEMO_PROJECT_SLUG`
+- [x] **Step 3 — Demo mode in API routes**: add `?demo=true` bypass in existing API routes (service role + demo user_id, skip auth) — 8 routes modified
+- [x] **Step 4 — Demo layout**: `/demo/layout.tsx` — same sidebar/topbar as dashboard + sticky "Demo Mode" banner + "Sign up free" CTA, no auth check
+- [x] **Step 5 — Demo pages**: `/demo/page.tsx` + `/demo/projects/[id]/` pages — shared components via DemoContext (no code duplication)
+- [x] **Step 6 — Block actions**: Delete button hidden in demo, form hidden in demo dashboard
+- [x] **Step 7 — Landing page**: "Try the Demo" link in hero + navbar
+- [ ] **Step 8 — Polish**: test full flow, verify all pages load, refine CTA placement
+
 ### Billing & Usage Limits
 - [ ] Stripe integration (subscriptions, webhooks, customer portal)
 - [ ] Plan-based article generation quotas tied to Stripe subscription (Explore: 8 master articles/mo, Pro: 15/mo per site)
@@ -200,6 +210,9 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 7. ~~**Clean syndication** — systematic canonical URLs + per-platform logic~~ ✅
 8. ~~**WordPress connector** — largest market~~ ✅
 9. ~~**Analytics** — live stats from Dev.to + Hashnode~~ ✅
+10. **Demo Mode** — interactive demo with real Niches Hunter data ← **NEXT**
+11. Billing & Stripe
+12. Mobile responsive + logo
 
 ---
 

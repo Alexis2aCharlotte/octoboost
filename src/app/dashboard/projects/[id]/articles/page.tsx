@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useDemo } from "@/lib/demo/context";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
@@ -145,6 +146,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 
 export default function ArticlesPage() {
   const { id } = useParams<{ id: string }>();
+  const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -183,10 +185,23 @@ export default function ArticlesPage() {
   const initialLoadDone = useRef(false);
 
   const loadData = useCallback(async () => {
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        setClusters(demoData.clusters);
+        setRealProjectId(demoData.project.projectId);
+        setArticles(demoData.articles);
+        setChannels(demoData.channels);
+      }
+      setLoading(false);
+      return;
+    }
     try {
-      const [kwRes, projRes] = await Promise.all([
-        fetch(`/api/keywords?projectId=${id}`),
-        fetch(`/api/projects/${id}`),
+      const [kwRes, projRes, artRes, chRes] = await Promise.all([
+        fetch(fetchUrl(`/api/keywords?projectId=${id}`)),
+        fetch(fetchUrl(`/api/projects/${id}`)),
+        fetch(fetchUrl(`/api/articles?projectId=${id}`)),
+        fetch(fetchUrl(`/api/channels?projectId=${id}`)),
       ]);
 
       if (kwRes.ok) {
@@ -197,27 +212,23 @@ export default function ArticlesPage() {
       if (projRes.ok) {
         const projData = await projRes.json();
         setRealProjectId(projData.projectId);
+      }
 
-        const [artRes, chRes] = await Promise.all([
-          fetch(`/api/articles?projectId=${projData.projectId}`),
-          fetch(`/api/channels?projectId=${projData.projectId}`),
-        ]);
+      if (artRes.ok) {
+        const artData = await artRes.json();
+        setArticles(artData.articles ?? []);
+      }
 
-        if (artRes.ok) {
-          const artData = await artRes.json();
-          setArticles(artData.articles ?? []);
-        }
-        if (chRes.ok) {
-          const chData = await chRes.json();
-          setChannels(chData.channels ?? []);
-        }
+      if (chRes.ok) {
+        const chData = await chRes.json();
+        setChannels(chData.channels ?? []);
       }
     } catch {
       // silent
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
 
   useEffect(() => {
     loadData();
@@ -266,6 +277,7 @@ export default function ArticlesPage() {
   const articleByCluster = new Map(articles.map((a) => [a.clusterId, a]));
 
   async function handleGenerate(clusterId: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (!realProjectId || generatingId) return;
     setGeneratingId(clusterId);
 
@@ -275,7 +287,7 @@ export default function ArticlesPage() {
     setPersistentGenerating(genInfo);
 
     try {
-      const res = await fetch("/api/articles/generate", {
+      const res = await fetch(fetchUrl("/api/articles/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clusterId, projectId: realProjectId }),
@@ -314,7 +326,7 @@ export default function ArticlesPage() {
     setVariants([]);
     try {
       const [artRes] = await Promise.all([
-        fetch(`/api/articles/${articleId}`),
+        fetch(fetchUrl(`/api/articles/${articleId}`)),
         loadVariants(articleId),
       ]);
       if (artRes.ok) {
@@ -326,8 +338,9 @@ export default function ArticlesPage() {
   }
 
   async function handleDelete(articleId: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (!(await confirm({ message: "Delete this article?", destructive: true }))) return;
-    const res = await fetch(`/api/articles/${articleId}`, { method: "DELETE" });
+    const res = await fetch(fetchUrl(`/api/articles/${articleId}`), { method: "DELETE" });
     if (res.ok) {
       setArticles((prev) => prev.filter((a) => a.id !== articleId));
       if (previewArticle?.id === articleId) {
@@ -339,7 +352,7 @@ export default function ArticlesPage() {
 
   async function loadVariants(articleId: string) {
     try {
-      const res = await fetch(`/api/articles/variants?articleId=${articleId}`);
+      const res = await fetch(fetchUrl(`/api/articles/variants?articleId=${articleId}`));
       if (res.ok) {
         const data = await res.json();
         setVariants(data.variants ?? []);
@@ -350,11 +363,12 @@ export default function ArticlesPage() {
   }
 
   async function handleGenerateVariant(articleId: string, channelId: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (generatingVariant) return;
     setGeneratingVariant(channelId);
 
     try {
-      const res = await fetch("/api/articles/variants/generate", {
+      const res = await fetch(fetchUrl("/api/articles/variants/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ articleId, channelId }),
@@ -389,7 +403,7 @@ export default function ArticlesPage() {
     setPreviewLoading(true);
     setView("variant");
     try {
-      const res = await fetch(`/api/articles/variants/${variantId}`);
+      const res = await fetch(fetchUrl(`/api/articles/variants/${variantId}`));
       if (res.ok) {
         setVariantPreview(await res.json());
       }
@@ -399,8 +413,9 @@ export default function ArticlesPage() {
   }
 
   async function handleDeleteVariant(variantId: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (!(await confirm({ message: "Delete this variant?", destructive: true }))) return;
-    const res = await fetch(`/api/articles/variants/${variantId}`, { method: "DELETE" });
+    const res = await fetch(fetchUrl(`/api/articles/variants/${variantId}`), { method: "DELETE" });
     if (res.ok) {
       setVariants((prev) => prev.filter((v) => v.id !== variantId));
       if (variantPreview?.id === variantId) {
@@ -420,10 +435,11 @@ export default function ArticlesPage() {
   }
 
   async function handlePublishToSite(articleId: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (publishingToSite) return;
     setPublishingToSite(true);
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(fetchUrl(`/api/articles/${articleId}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "published" }),
@@ -456,10 +472,11 @@ export default function ArticlesPage() {
   }
 
   async function handleSaveEdit() {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (!previewArticle || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/articles/${previewArticle.id}`, {
+      const res = await fetch(fetchUrl(`/api/articles/${previewArticle.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editTitle, content: editContent }),
@@ -480,7 +497,8 @@ export default function ArticlesPage() {
   }
 
   async function handlePublishVariantNow(variantId: string) {
-    const res = await fetch("/api/publish", {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
+    const res = await fetch(fetchUrl("/api/publish"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ variantId }),
@@ -497,7 +515,7 @@ export default function ArticlesPage() {
   }
 
   async function handleRescheduleVariant(variantId: string, scheduledAt: string) {
-    const res = await fetch(`/api/variants/${variantId}/schedule`, {
+    const res = await fetch(fetchUrl(`/api/variants/${variantId}/schedule`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scheduledAt }),
@@ -514,9 +532,10 @@ export default function ArticlesPage() {
   }
 
   async function handleScheduleToSite(articleId: string, scheduledAt: string) {
+    if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     setSchedulingSite(true);
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(fetchUrl(`/api/articles/${articleId}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "scheduled", scheduled_at: scheduledAt }),
@@ -839,7 +858,7 @@ export default function ArticlesPage() {
             <p className="text-sm text-muted">
               No channels configured yet.{" "}
               <Link
-                href={`/dashboard/projects/${id}/channels`}
+                href={`${basePath}/projects/${id}/channels`}
                 className="text-accent-light underline-offset-2 hover:underline"
               >
                 Add channels
@@ -1058,7 +1077,7 @@ export default function ArticlesPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={async () => {
-                                  const res = await fetch(`/api/articles/variants/${v.id}`);
+                                  const res = await fetch(fetchUrl(`/api/articles/variants/${v.id}`));
                                   if (res.ok) {
                                     const data = await res.json();
                                     navigator.clipboard.writeText(`# ${data.title}\n\n${data.content}`);
@@ -1171,7 +1190,7 @@ export default function ArticlesPage() {
             Run an analysis first to generate keyword clusters.
           </p>
           <Link
-            href={`/dashboard/projects/${id}/analyze`}
+            href={`${basePath}/projects/${id}/analyze`}
             className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light"
           >
             Go to Analyze

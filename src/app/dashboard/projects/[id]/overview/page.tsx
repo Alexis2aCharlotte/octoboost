@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useDemo } from "@/lib/demo/context";
 import Link from "next/link";
 import {
   Loader2,
@@ -74,20 +75,27 @@ const platformLabels: Record<string, string> = {
 
 export default function ProjectOverviewPage() {
   const { id } = useParams<{ id: string }>();
+  const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pipelineOpen, setPipelineOpen] = useState(false);
 
   const load = useCallback(async () => {
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) setData(demoData.overview);
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await fetch(`/api/projects/${id}/overview`);
+      const res = await fetch(fetchUrl(`/api/projects/${id}/overview`));
       if (res.ok) {
         setData(await res.json());
       }
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
 
   useEffect(() => {
     load();
@@ -106,7 +114,7 @@ export default function ProjectOverviewPage() {
       <div className="flex min-h-[50vh] flex-col items-center justify-center">
         <p className="text-sm text-muted">Project not found</p>
         <Link
-          href="/dashboard"
+          href={basePath}
           className="mt-3 text-sm text-accent-light hover:underline"
         >
           Back to Dashboard
@@ -115,43 +123,46 @@ export default function ProjectOverviewPage() {
     );
   }
 
-  const { project, stats, pipeline, recentArticles, recentPublished } = data;
+  const { project, stats, recentArticles, recentPublished } = data;
+  const pipeline = isDemo
+    ? { ...data.pipeline, siteConnected: true }
+    : data.pipeline;
 
   const pipelineSteps = [
     {
       done: pipeline.siteConnected,
       label: "Connect your site",
-      href: `/dashboard/projects/${id}/publish`,
+      href: `${basePath}/projects/${id}/publish`,
       icon: Plug,
     },
     {
       done: pipeline.analysisComplete,
       label: "Analyze your site",
-      href: `/dashboard/projects/${id}/research`,
+      href: `${basePath}/projects/${id}/research`,
       icon: Search,
     },
     {
       done: pipeline.keywordsFound,
       label: "Discover keywords",
-      href: `/dashboard/projects/${id}/research`,
+      href: `${basePath}/projects/${id}/research`,
       icon: Target,
     },
     {
       done: pipeline.articlesGenerated,
       label: "Generate articles",
-      href: `/dashboard/projects/${id}/articles`,
+      href: `${basePath}/projects/${id}/articles`,
       icon: FileText,
     },
     {
       done: pipeline.channelsConfigured,
       label: "Configure channels",
-      href: `/dashboard/projects/${id}/publish`,
+      href: `${basePath}/projects/${id}/publish`,
       icon: Megaphone,
     },
     {
       done: pipeline.published,
       label: "Publish content",
-      href: `/dashboard/projects/${id}/publish`,
+      href: `${basePath}/projects/${id}/publish`,
       icon: Send,
     },
   ];
@@ -254,13 +265,13 @@ export default function ProjectOverviewPage() {
           icon={Target}
           label="Keywords"
           value={stats.keywords}
-          href={`/dashboard/projects/${id}/research`}
+          href={`${basePath}/projects/${id}/research`}
         />
         <StatCard
           icon={Layers}
           label="Clusters"
           value={stats.clusters}
-          href={`/dashboard/projects/${id}/research`}
+          href={`${basePath}/projects/${id}/research`}
         />
         <StatCard
           icon={FileText}
@@ -271,7 +282,7 @@ export default function ProjectOverviewPage() {
               ? `${stats.articlesPublished} published`
               : undefined
           }
-          href={`/dashboard/projects/${id}/articles`}
+          href={`${basePath}/projects/${id}/articles`}
         />
         <StatCard
           icon={Send}
@@ -282,26 +293,26 @@ export default function ProjectOverviewPage() {
               ? `of ${stats.variantsTotal} variants`
               : undefined
           }
-          href={`/dashboard/projects/${id}/publish`}
+          href={`${basePath}/projects/${id}/publish`}
         />
       </div>
 
       {/* Quick actions */}
       <div className="grid gap-3 sm:grid-cols-3">
         <QuickAction
-          href={`/dashboard/projects/${id}/research`}
+          href={`${basePath}/projects/${id}/research`}
           icon={Search}
           label="Research"
           description="Analyze site & discover keywords"
         />
         <QuickAction
-          href={`/dashboard/projects/${id}/articles`}
+          href={`${basePath}/projects/${id}/articles`}
           icon={FileText}
           label="Articles"
           description="Generate SEO content"
         />
         <QuickAction
-          href={`/dashboard/projects/${id}/publish`}
+          href={`${basePath}/projects/${id}/publish`}
           icon={Send}
           label="Publish"
           description="Connect site & distribute"
@@ -315,7 +326,7 @@ export default function ProjectOverviewPage() {
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <h3 className="text-sm font-semibold">Recent Articles</h3>
             <Link
-              href={`/dashboard/projects/${id}/articles`}
+              href={`${basePath}/projects/${id}/articles`}
               className="text-sm text-accent-light hover:underline"
             >
               View all
@@ -351,7 +362,7 @@ export default function ProjectOverviewPage() {
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <h3 className="text-sm font-semibold">Recent Publications</h3>
             <Link
-              href={`/dashboard/projects/${id}/publish`}
+              href={`${basePath}/projects/${id}/publish`}
               className="text-sm text-accent-light hover:underline"
             >
               View all

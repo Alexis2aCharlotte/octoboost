@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { useDemo } from "@/lib/demo/context";
 import {
   Calendar,
   Copy,
@@ -84,6 +85,7 @@ function timelineLabel(dateKey: string): string {
 export default function SchedulePage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
   const [scheduledArticles, setScheduledArticles] = useState<ScheduledArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,23 +101,38 @@ export default function SchedulePage() {
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const fetchSchedule = useCallback(async () => {
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        setRealProjectId(demoData.project.projectId);
+        setVariants(demoData.schedule.variants ?? []);
+        setScheduledArticles(demoData.schedule.articles ?? []);
+      }
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const projRes = await fetch(`/api/projects/${id}`);
-      if (!projRes.ok) return;
-      const projData = await projRes.json();
-      setRealProjectId(projData.projectId);
+      const [projRes, schedRes] = await Promise.all([
+        fetch(fetchUrl(`/api/projects/${id}`)),
+        fetch(fetchUrl(`/api/schedule?projectId=${id}`)),
+      ]);
 
-      const res = await fetch(`/api/schedule?projectId=${projData.projectId}`);
-      const data = await res.json();
-      setVariants(data.variants ?? []);
-      setScheduledArticles(data.articles ?? []);
+      if (projRes.ok) {
+        const projData = await projRes.json();
+        setRealProjectId(projData.projectId);
+      }
+      if (schedRes.ok) {
+        const data = await schedRes.json();
+        setVariants(data.variants ?? []);
+        setScheduledArticles(data.articles ?? []);
+      }
     } catch {
       console.error("Failed to load schedule");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
 
   useEffect(() => {
     fetchSchedule();
@@ -149,7 +166,7 @@ export default function SchedulePage() {
 
   const handleCopy = async (variant: ScheduledVariant) => {
     try {
-      const res = await fetch(`/api/articles/variants/${variant.id}`);
+      const res = await fetch(fetchUrl(`/api/articles/variants/${variant.id}`));
       const data = await res.json();
       await navigator.clipboard.writeText(data.content ?? variant.title);
     } catch {
@@ -162,7 +179,7 @@ export default function SchedulePage() {
   async function handlePublishVariantNow(variantId: string) {
     setPublishingId(variantId);
     try {
-      const res = await fetch("/api/publish", {
+      const res = await fetch(fetchUrl("/api/publish"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variantId }),
@@ -183,7 +200,7 @@ export default function SchedulePage() {
   async function handlePublishArticleNow(articleId: string) {
     setPublishingId(articleId);
     try {
-      const res = await fetch(`/api/articles/${articleId}`, {
+      const res = await fetch(fetchUrl(`/api/articles/${articleId}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "published" }),
@@ -210,7 +227,7 @@ export default function SchedulePage() {
     try {
       if (rescheduleItem.type === "variant") {
         const isoDate = new Date(dateValue).toISOString();
-        const res = await fetch(`/api/variants/${rescheduleItem.data.id}/schedule?date=${encodeURIComponent(isoDate)}`);
+        const res = await fetch(fetchUrl(`/api/variants/${rescheduleItem.data.id}/schedule?date=${encodeURIComponent(isoDate)}`));
         const data = await res.json();
         setRescheduleValidation(data);
       } else {
@@ -231,7 +248,7 @@ export default function SchedulePage() {
       const isoDate = new Date(rescheduleDate).toISOString();
 
       if (rescheduleItem.type === "variant") {
-        const res = await fetch(`/api/variants/${rescheduleItem.data.id}/schedule`, {
+        const res = await fetch(fetchUrl(`/api/variants/${rescheduleItem.data.id}/schedule`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ scheduledAt: isoDate }),
@@ -242,7 +259,7 @@ export default function SchedulePage() {
           return;
         }
       } else {
-        const res = await fetch(`/api/articles/${rescheduleItem.data.id}`, {
+        const res = await fetch(fetchUrl(`/api/articles/${rescheduleItem.data.id}`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ scheduled_at: isoDate, status: "scheduled" }),

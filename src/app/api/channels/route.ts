@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { verifyHashnodeKey } from "@/lib/hashnode";
+import { isDemoRequest, createDemoClient, getDemoUserId } from "@/lib/demo/helpers";
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const isDemo = isDemoRequest(req);
+  const supabase = isDemo ? createDemoClient() : await createClient();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let userId: string;
+  if (isDemo) {
+    userId = getDemoUserId();
+  } else {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    userId = user.id;
   }
 
   const projectParam = req.nextUrl.searchParams.get("projectId");
@@ -23,7 +29,7 @@ export async function GET(req: NextRequest) {
   const { data: projects } = await supabase
     .from("projects")
     .select("id, slug")
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   const isUuid = /^[0-9a-f]{8}-/i.test(projectParam);
   const project = (projects ?? []).find((p) =>

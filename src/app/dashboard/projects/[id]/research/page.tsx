@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useDemo } from "@/lib/demo/context";
 import {
   Search,
   Target,
@@ -132,6 +133,7 @@ const difficultyColors: Record<string, string> = {
 
 export default function ResearchPage() {
   const { id } = useParams<{ id: string }>();
+  const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
 
   const [project, setProject] = useState<Project | null>(null);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -155,15 +157,49 @@ export default function ResearchPage() {
   const [volumeOnly, setVolumeOnly] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        const p = demoData.project;
+        setProject({
+          id: p.projectId,
+          name: p.name,
+          slug: p.slug,
+          url: p.url,
+          latestAnalysisId: p.latestAnalysisId,
+          latestAnalysis: p.latestAnalysis,
+          analysesLast30d: p.analysesLast30d,
+          totalAnalyses: p.totalAnalyses,
+        });
+        setKeywords(demoData.keywords);
+        setClusters(demoData.clusters);
+        if (demoData.analysis) setAnalysisResult(demoData.analysis);
+      }
+      setLoading(false);
+      return;
+    }
     try {
-      const projRes = await fetch(`/api/projects`);
-      const projData = await projRes.json();
-      const proj = (projData.projects ?? []).find(
-        (p: Project) => p.id === id || p.slug === id
-      );
-      setProject(proj ?? null);
+      const [projRes, kwRes] = await Promise.all([
+        fetch(fetchUrl(`/api/projects/${id}`)),
+        fetch(fetchUrl(`/api/keywords?projectId=${id}`)),
+      ]);
 
-      const kwRes = await fetch(`/api/keywords?projectId=${id}`);
+      let proj: Project | null = null;
+      if (projRes.ok) {
+        const projData = await projRes.json();
+        proj = {
+          id: projData.projectId,
+          name: projData.name,
+          slug: projData.slug,
+          url: projData.url,
+          latestAnalysisId: projData.latestAnalysisId,
+          latestAnalysis: projData.latestAnalysis,
+          analysesLast30d: projData.analysesLast30d,
+          totalAnalyses: projData.totalAnalyses,
+        };
+      }
+      setProject(proj);
+
       if (kwRes.ok) {
         const kwData = await kwRes.json();
         setKeywords(kwData.keywords ?? []);
@@ -171,7 +207,7 @@ export default function ResearchPage() {
       }
 
       if (proj?.latestAnalysisId) {
-        const aRes = await fetch(`/api/analysis/${proj.latestAnalysisId}`);
+        const aRes = await fetch(fetchUrl(`/api/analysis/${proj.latestAnalysisId}`));
         if (aRes.ok) {
           setAnalysisResult(await aRes.json());
         }
@@ -179,18 +215,18 @@ export default function ResearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   async function runAnalysis() {
-    if (!project?.url || analyzing) return;
+    if (isDemo || !project?.url || analyzing) return;
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      const res = await fetch("/api/analyze", {
+      const res = await fetch(fetchUrl("/api/analyze"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: project.url }),
@@ -200,10 +236,10 @@ export default function ResearchPage() {
         throw new Error(data.error || "Analysis failed");
       }
       const { analysisId } = await res.json();
-      const aRes = await fetch(`/api/analysis/${analysisId}`);
+      const aRes = await fetch(fetchUrl(`/api/analysis/${analysisId}`));
       if (aRes.ok) setAnalysisResult(await aRes.json());
       // Reload keywords
-      const kwRes = await fetch(`/api/keywords?projectId=${id}`);
+      const kwRes = await fetch(fetchUrl(`/api/keywords?projectId=${id}`));
       if (kwRes.ok) {
         const kwData = await kwRes.json();
         setKeywords(kwData.keywords ?? []);

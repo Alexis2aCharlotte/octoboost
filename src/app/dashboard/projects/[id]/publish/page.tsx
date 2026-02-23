@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useDemo } from "@/lib/demo/context";
 import {
   Plug,
   Radio,
@@ -120,6 +121,7 @@ export default function PublishPage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { confirm } = useConfirm();
+  const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
   const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,18 +165,32 @@ export default function PublishPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        setRealProjectId(demoData.project.projectId);
+        setApiKey("ob_demo_k7x9m2p4q8r1w5y3a6b0");
+        setConnection({ status: "connected", type: "api" } as SiteConnection);
+        setChannels(demoData.channels);
+        setVariants(demoData.schedule.variants ?? []);
+        setTab((prev) => prev ?? "schedule");
+      }
+      setLoading(false);
+      return;
+    }
     try {
-      const projRes = await fetch(`/api/projects/${id}`);
-      if (!projRes.ok) return;
-      const projData = await projRes.json();
-      setRealProjectId(projData.projectId);
-
-      const [connRes, chRes, schedRes, keyRes] = await Promise.all([
-        fetch(`/api/site-connection?projectId=${projData.projectId}`),
-        fetch(`/api/channels?projectId=${projData.projectId}`),
-        fetch(`/api/schedule?projectId=${projData.projectId}`),
-        fetch(`/api/projects/${projData.projectId}/api-key`),
+      const [projRes, connRes, chRes, schedRes, keyRes] = await Promise.all([
+        fetch(fetchUrl(`/api/projects/${id}`)),
+        fetch(fetchUrl(`/api/site-connection?projectId=${id}`)),
+        fetch(fetchUrl(`/api/channels?projectId=${id}`)),
+        fetch(fetchUrl(`/api/schedule?projectId=${id}`)),
+        fetch(fetchUrl(`/api/projects/${id}/api-key`)),
       ]);
+
+      if (projRes.ok) {
+        const projData = await projRes.json();
+        setRealProjectId(projData.projectId);
+      }
 
       let conn: SiteConnection | null = null;
       let key: string | null = null;
@@ -202,7 +218,7 @@ export default function PublishPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isDemo, fetchUrl, demoData, demoLoading]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -212,7 +228,7 @@ export default function PublishPage() {
   /* ── GitHub handlers ── */
 
   function handleConnectGitHub() {
-    if (!realProjectId || !id) return;
+    if (isDemo || !realProjectId || !id) return;
     window.location.href = `/api/auth/github?projectId=${realProjectId}&projectSlug=${id}`;
   }
 
@@ -220,7 +236,7 @@ export default function PublishPage() {
     if (!realProjectId || ghLoadingRepos) return;
     setGhLoadingRepos(true);
     try {
-      const res = await fetch(`/api/github/repos?projectId=${realProjectId}`);
+      const res = await fetch(fetchUrl(`/api/github/repos?projectId=${realProjectId}`));
       if (res.ok) {
         const data = await res.json();
         setGhRepos(data.repos ?? []);
@@ -240,7 +256,7 @@ export default function PublishPage() {
     setGhLoadingDirs(true);
     try {
       const res = await fetch(
-        `/api/github/tree?projectId=${realProjectId}&owner=${owner}&repo=${repo}&branch=${branch}`
+        fetchUrl(`/api/github/tree?projectId=${realProjectId}&owner=${owner}&repo=${repo}&branch=${branch}`)
       );
       if (res.ok) {
         const data = await res.json();
@@ -259,7 +275,7 @@ export default function PublishPage() {
       const selectedRepo = ghRepos.find((r) => r.full_name === ghSelectedRepo);
       const branch = selectedRepo?.default_branch ?? "main";
 
-      const res = await fetch("/api/site-connection", {
+      const res = await fetch(fetchUrl("/api/site-connection"), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -290,7 +306,7 @@ export default function PublishPage() {
 
   async function handleDisconnect() {
     if (!realProjectId || !(await confirm({ message: "Disconnect your site?", destructive: true }))) return;
-    const res = await fetch("/api/site-connection", {
+    const res = await fetch(fetchUrl("/api/site-connection"), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ projectId: realProjectId, action: "disconnect" }),
@@ -312,7 +328,7 @@ export default function PublishPage() {
     if (!realProjectId || !(await confirm({ message: "Regenerate API key? The old key will stop working.", destructive: true }))) return;
     setApiKeyLoading(true);
     try {
-      const res = await fetch(`/api/projects/${realProjectId}/api-key`, { method: "POST" });
+      const res = await fetch(fetchUrl(`/api/projects/${realProjectId}/api-key`), { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setApiKey(data.apiKey);
@@ -333,7 +349,7 @@ export default function PublishPage() {
       if (opts?.apiKey) config.apiKey = opts.apiKey;
       if (platformType === "hashnode" && opts?.publicationHost) config.publicationHost = opts.publicationHost.trim();
       if (opts?.profileUrl) config.profileUrl = opts.profileUrl.trim();
-      const res = await fetch("/api/channels", {
+      const res = await fetch(fetchUrl("/api/channels"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: realProjectId, platformType, name: meta?.label ?? platformType, config }),
@@ -347,12 +363,13 @@ export default function PublishPage() {
     if (!(await confirm({ message: "Remove this channel?", destructive: true }))) return;
     setDeleting(channelId);
     try {
-      const res = await fetch(`/api/channels/${channelId}`, { method: "DELETE" });
+      const res = await fetch(fetchUrl(`/api/channels/${channelId}`), { method: "DELETE" });
       if (res.ok) setChannels((prev) => prev.filter((c) => c.id !== channelId));
     } finally { setDeleting(null); }
   }
 
   function handleRedditConnect(channelId: string) {
+    if (isDemo) return;
     window.location.href = `/api/auth/reddit?channelId=${channelId}&projectSlug=${id}`;
   }
 
@@ -370,7 +387,7 @@ export default function PublishPage() {
     if (!realProjectId || !wpInput || !wpInput.siteUrl.trim() || !wpInput.username.trim() || !wpInput.appPassword.trim()) return;
     setAdding("wordpress");
     try {
-      const res = await fetch("/api/channels", {
+      const res = await fetch(fetchUrl("/api/channels"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -397,10 +414,10 @@ export default function PublishPage() {
   }
 
   function handleBloggerConnect() {
-    if (!realProjectId || !bloggerBlogUrl?.trim()) return;
+    if (isDemo || !realProjectId || !bloggerBlogUrl?.trim()) return;
     setAdding("blogger");
     const meta = platformMeta.blogger;
-    fetch("/api/channels", {
+    fetch(fetchUrl("/api/channels"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ projectId: realProjectId, platformType: "blogger", name: meta?.label ?? "Blogger", config: { blogUrl: bloggerBlogUrl.trim() } }),
@@ -417,7 +434,7 @@ export default function PublishPage() {
 
   const handleCopyVariant = async (variant: ScheduledVariant) => {
     try {
-      const res = await fetch(`/api/articles/variants/${variant.id}`);
+      const res = await fetch(fetchUrl(`/api/articles/variants/${variant.id}`));
       const data = await res.json();
       await navigator.clipboard.writeText(data.content ?? variant.title);
     } catch {
@@ -969,7 +986,7 @@ export default function PublishPage() {
                           return isConnected ? (
                             <span className="rounded-md bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">Connected</span>
                           ) : (
-                            <button onClick={() => { window.location.href = `/api/auth/blogger?channelId=${channel.id}&projectSlug=${id}`; }} className="rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-400 transition hover:bg-orange-500/20">
+                            <button onClick={() => { if (!isDemo) window.location.href = `/api/auth/blogger?channelId=${channel.id}&projectSlug=${id}`; }} className="rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-400 transition hover:bg-orange-500/20">
                               Connect Blogger
                             </button>
                           );

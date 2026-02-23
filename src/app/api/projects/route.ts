@@ -1,15 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isDemoRequest, createDemoClient, getDemoUserId } from "@/lib/demo/helpers";
 
-export async function GET() {
-  const supabase = await createClient();
+export async function GET(req: NextRequest) {
+  const isDemo = isDemoRequest(req);
+  const supabase = isDemo ? createDemoClient() : await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let userId: string;
+  if (isDemo) {
+    userId = getDemoUserId();
+  } else {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    userId = user.id;
   }
 
   const { data: projects, error } = await supabase
@@ -29,7 +34,7 @@ export async function GET() {
       )
     `
     )
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) {

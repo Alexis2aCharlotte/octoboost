@@ -1,8 +1,10 @@
 "use client";
 
 import { BarChart3, Eye, Heart, MessageCircle, TrendingUp } from "lucide-react";
+import { useDemo } from "@/lib/demo/context";
 
 export default function AnalyticsPage() {
+  useDemo();
   return (
     <div className="mx-auto max-w-5xl py-6">
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-8 py-20 text-center">

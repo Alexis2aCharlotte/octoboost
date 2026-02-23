@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useDemo } from "@/lib/demo/context";
 import {
   Search,
   Target,
@@ -71,6 +72,7 @@ const difficultyColors: Record<string, string> = {
 export default function ProjectKeywordsPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
+  const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
 
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -86,9 +88,18 @@ export default function ProjectKeywordsPage() {
 
   useEffect(() => {
     if (!id) return;
+    if (isDemo) {
+      if (demoLoading) return;
+      if (demoData) {
+        setKeywords(demoData.keywords);
+        setClusters(demoData.clusters);
+      }
+      setLoading(false);
+      return;
+    }
     async function load() {
       try {
-        const res = await fetch(`/api/keywords?projectId=${id}`);
+        const res = await fetch(fetchUrl(`/api/keywords?projectId=${id}`));
         if (!res.ok) return;
         const data = await res.json();
         setKeywords(data.keywords ?? []);
@@ -100,7 +111,7 @@ export default function ProjectKeywordsPage() {
       }
     }
     load();
-  }, [id]);
+  }, [id, fetchUrl, isDemo, demoData, demoLoading]);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -170,7 +181,7 @@ export default function ProjectKeywordsPage() {
             site.
           </p>
           <a
-            href={id ? `/dashboard/projects/${id}/analyze` : "/dashboard/analyze"}
+            href={id ? `${basePath}/projects/${id}/analyze` : `${basePath}/analyze`}
             className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light"
           >
             Go to Analyze
