@@ -14,23 +14,23 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OctoBoost — Get Discovered on Google and Cited by AI",
+  title: "OctoBoost | Get Discovered on Google and Cited by AI",
   description:
     "Automated SEO articles optimized for search engines and AI citations. From keyword research to multi-platform publishing. Zero writing.",
   openGraph: {
-    title: "OctoBoost — Get Discovered on Google and Cited by AI",
+    title: "OctoBoost | Get Discovered on Google and Cited by AI",
     description:
       "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
-    images: [{ url: "/OG Image.png", width: 1200, height: 630 }],
+    images: [{ url: "/og-image-v1.png", width: 1200, height: 630 }],
     type: "website",
     siteName: "OctoBoost",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OctoBoost — Get Discovered on Google and Cited by AI",
+    title: "OctoBoost | Get Discovered on Google and Cited by AI",
     description:
       "Automated SEO articles optimized for search engines and AI citations. Zero writing.",
-    images: ["/OG Image.png"],
+    images: ["/og-image-v1.png"],
   },
 };
 
