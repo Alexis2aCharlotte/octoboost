@@ -98,7 +98,7 @@ export function Navbar() {
       <div className="hidden items-center gap-3 md:flex">
         <Link
           href="/demo"
-          className="rounded-lg px-4 py-1.5 text-sm font-medium text-accent-light transition-colors hover:text-accent"
+          className="rounded-lg border border-accent px-4 py-1.5 text-sm font-medium text-accent-light transition-all hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(108,92,231,0.25)]"
         >
           Try the Demo
         </Link>
