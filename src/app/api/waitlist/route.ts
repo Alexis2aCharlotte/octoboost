@@ -4,20 +4,34 @@ import { createClient } from "@supabase/supabase-js";
 import { sendWelcomeEmail } from "@/lib/services/email";
 import { notifyTelegram } from "@/lib/services/telegram";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    const { email } = body;
+
+    if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceKey) {
+      console.error("Missing SUPABASE_URL or SERVICE_ROLE_KEY env vars");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     const { error } = await supabase
       .from("waitlist")
@@ -27,26 +41,32 @@ export async function POST(req: NextRequest) {
       if (error.code === "23505") {
         return NextResponse.json({ success: true, message: "Already registered" });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("Supabase waitlist insert error:", error);
+      return NextResponse.json({ error: "Failed to register. Please try again." }, { status: 500 });
     }
 
     after(async () => {
       try {
-        console.log(`📧 New waitlist entry: ${normalizedEmail}`);
+        console.log(`New waitlist entry: ${normalizedEmail}`);
 
         await sendWelcomeEmail(normalizedEmail);
-        console.log(`✅ Welcome email sent to ${normalizedEmail}`);
+        console.log(`Welcome email sent to ${normalizedEmail}`);
 
-        await notifyTelegram(`New waitlist signup! 📧`);
-        console.log(`✅ Telegram notification sent`);
+        await notifyTelegram(`New waitlist signup!`);
+        console.log(`Telegram notification sent`);
       } catch (err) {
         console.error(`Error processing waitlist entry:`, err);
-        await notifyTelegram(`⚠️ OctoBoost — New waitlist signup, but email sending failed`);
+        try {
+          await notifyTelegram(`OctoBoost — New waitlist signup, but email sending failed`);
+        } catch {
+          console.error("Failed to send Telegram fallback notification");
+        }
       }
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error("Waitlist API unexpected error:", err);
+    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
   }
 }

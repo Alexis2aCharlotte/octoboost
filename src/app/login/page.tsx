@@ -28,27 +28,39 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push(next);
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Authentication failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       router.refresh();
+      router.push(next);
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="animate-pulse-glow absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[140px]" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="animate-glow-pulse absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[60px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-sm">

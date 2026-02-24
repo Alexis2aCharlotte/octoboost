@@ -21,14 +21,21 @@ export default function WaitlistPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = await res.json();
+
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        let errorMsg = "Something went wrong. Please try again.";
+        try {
+          const data = await res.json();
+          if (data.error) errorMsg = data.error;
+        } catch {
+          // Response wasn't JSON
+        }
+        setError(errorMsg);
       } else {
         setSubmitted(true);
       }
     } catch {
-      setError("Connection error. Please try again.");
+      setError("Connection error. Please check your network and try again.");
     } finally {
       setLoading(false);
     }

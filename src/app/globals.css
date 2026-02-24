@@ -48,12 +48,21 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+}
+
 .animate-slide-up {
   animation: slide-up 0.4s ease-out forwards;
 }
 
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
 }
 
 /* ── Flashy gradient text ── */
@@ -83,8 +92,8 @@ body {
     linear-gradient(rgba(0, 119, 255, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 119, 255, 0.06) 1px, transparent 1px);
   background-size: 50px 50px;
-  mask-image: radial-gradient(ellipse 70% 55% at 50% 50%, black 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 90%);
   -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 50%, black 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 90%);
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 50%, black 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 90%);
 }
 
 /* ── Ambient background with blue glow ── */
@@ -153,6 +162,9 @@ body {
     rgba(0, 119, 255, 0.0) 100%
   );
   -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;

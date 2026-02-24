@@ -133,7 +133,7 @@ function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/80 px-6 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
       <div className="flex items-center gap-1.5 text-sm text-muted">
         <Link href="/dashboard" className="transition-colors hover:text-foreground">
           OctoBoost

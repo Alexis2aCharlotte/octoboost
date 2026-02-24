@@ -48,7 +48,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className={`fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-xl transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
+    <nav className={`fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
       {/* Left — Logo */}
       <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
         <Image src="/Logo Octoboost.png" alt="OctoBoost logo — automated SEO content engine" width={120} height={120} className="h-9 w-9 object-contain" priority />
