@@ -386,6 +386,66 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Social Proof (TODO: à finaliser) ── */}
+      <section className="relative z-10 px-6 py-16 md:py-20" hidden>
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="mb-3 text-2xl font-bold tracking-tighter md:text-4xl">
+            The same engine behind <span className="gradient-text">Niches Hunter</span>
+          </h2>
+          <p className="mx-auto mb-10 max-w-lg text-sm text-muted">
+            From zero to 39k+ impressions in 2 months, with automated SEO articles only.
+          </p>
+
+          <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
+            <div className="overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src="/GSC1.png"
+                  alt="Google Search Console results — 338 clicks, 39.2k impressions in 2 months with Niches Hunter"
+                  fill
+                  className="rounded-xl object-cover object-top"
+                  priority={false}
+                />
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src="/GSC2.png"
+                  alt="Most popular pages on Niches Hunter — top articles ranking on Google"
+                  fill
+                  className="rounded-xl object-cover object-top"
+                  priority={false}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-center">
+            <div>
+              <p className="text-2xl font-bold md:text-3xl">39.2k</p>
+              <p className="text-xs text-muted">Impressions</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <p className="text-2xl font-bold md:text-3xl">338</p>
+              <p className="text-xs text-muted">Clicks</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <p className="text-2xl font-bold md:text-3xl">6.4</p>
+              <p className="text-xs text-muted">Avg. position</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <p className="text-2xl font-bold md:text-3xl">2 mo</p>
+              <p className="text-xs text-muted">From launch</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* ── Pricing ── */}
       <PricingSection />
 
