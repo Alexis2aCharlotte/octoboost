@@ -476,6 +476,7 @@ export default function PublishPage() {
   const sortedDays = [...variantsByDay.keys()].sort();
   const totalScheduled = variants.filter((v) => v.status === "scheduled").length;
   const totalPublished = variants.filter((v) => v.status === "published").length;
+  const totalFailed = variants.filter((v) => v.status === "failed").length;
 
   const snippet = snippetTab === "util"
     ? generateSnippetFetchUtil(apiKey ?? "YOUR_API_KEY")
@@ -1118,6 +1119,12 @@ export default function PublishPage() {
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>{totalPublished} published</span>
             </div>
+            {totalFailed > 0 && (
+              <div className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-red-400">
+                <X className="h-3.5 w-3.5" />
+                <span>{totalFailed} failed</span>
+              </div>
+            )}
           </div>
 
           {/* Timeline */}
@@ -1153,9 +1160,10 @@ export default function PublishPage() {
                           const platform = schedulePlatformMeta[variant.channels.platform_type];
                           const isManual = platform?.connectionType === "manual";
                           const isPublished = variant.status === "published";
+                          const isFailed = variant.status === "failed";
                           const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
                           return (
-                            <div key={variant.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20">
+                            <div key={variant.id} className={`flex items-center gap-3 rounded-lg border p-3 transition hover:border-accent/20 ${isFailed ? "border-red-500/30 bg-red-500/5" : "border-border bg-card"}`}>
                               <span
                                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
                                 style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
@@ -1163,11 +1171,20 @@ export default function PublishPage() {
                                 {platform?.icon ?? "📄"}
                               </span>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium">{variant.title}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="truncate text-sm font-medium">{variant.title}</p>
+                                  <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium" style={{ color: platform?.color ?? "#888" }}>
+                                    {platform?.label ?? variant.channels.platform_type}
+                                  </span>
+                                </div>
                                 <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
                               </div>
                               <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
-                              {isPublished ? (
+                              {isFailed ? (
+                                <span className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-400">
+                                  <X className="h-3 w-3" />Failed
+                                </span>
+                              ) : isPublished ? (
                                 variant.published_url ? (
                                   <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
                                     <ExternalLink className="h-3 w-3" />View

@@ -6,13 +6,27 @@ import { publishArticleToGitHub, getValidToken, type GitHubSiteConnection } from
 
 export const maxDuration = 120;
 
-export async function POST(req: NextRequest) {
+function verifyAuth(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
   const expected = `Bearer ${process.env.CRON_SECRET}`;
+  return !!auth && auth === expected;
+}
 
-  if (!auth || auth !== expected) {
+export async function GET(req: NextRequest) {
+  if (!verifyAuth(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  return runPublishScheduled();
+}
+
+export async function POST(req: NextRequest) {
+  if (!verifyAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return runPublishScheduled();
+}
+
+async function runPublishScheduled() {
 
   const supabase = createServiceClient();
   const now = new Date().toISOString();
@@ -21,7 +35,7 @@ export async function POST(req: NextRequest) {
   const { data: dueVariants } = await supabase
     .from("article_variants")
     .select("id")
-    .eq("status", "scheduled")
+    .in("status", ["scheduled", "failed"])
     .lte("scheduled_at", now);
 
   for (const v of dueVariants ?? []) {

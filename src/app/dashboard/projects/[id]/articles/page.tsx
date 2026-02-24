@@ -34,6 +34,7 @@ import {
   ClipboardCopy,
   ExternalLink,
   CalendarClock,
+  RefreshCw,
 } from "lucide-react";
 import PublishDialog from "@/components/PublishDialog";
 import DateTimePicker from "@/components/DateTimePicker";
@@ -143,6 +144,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
   ready: { label: "Ready", color: "text-blue-400 bg-blue-500/10", icon: CheckCircle2 },
   scheduled: { label: "Scheduled", color: "text-blue-400 bg-blue-500/10", icon: CalendarClock },
   published: { label: "Published", color: "text-green-400 bg-green-500/10", icon: Send },
+  failed: { label: "Failed", color: "text-red-400 bg-red-500/10", icon: X },
 };
 
 export default function ArticlesPage() {
@@ -568,7 +570,7 @@ export default function ArticlesPage() {
 
   async function handlePublishAll() {
     const unpublished = variants.filter(
-      (v) => v.status !== "published" && platformMeta[v.platformType]?.connectionType !== "manual"
+      (v) => (v.status !== "published") && platformMeta[v.platformType]?.connectionType !== "manual"
     );
     if (unpublished.length === 0) return;
     if (!(await confirm({ message: `Publish ${unpublished.length} variant(s) now?` }))) return;
@@ -971,6 +973,14 @@ export default function ArticlesPage() {
                                   <ExternalLink className="h-3 w-3" />
                                   Published
                                 </span>
+                              ) : v.status === "failed" ? (
+                                <button
+                                  onClick={() => setPublishDialogVariant(v)}
+                                  className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20"
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                  Retry
+                                </button>
                               ) : v.scheduledAt ? (
                                 <button
                                   onClick={() => setPublishDialogVariant(v)}

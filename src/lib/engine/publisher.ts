@@ -171,19 +171,48 @@ export async function publishVariant(
       return { success: false, error: `Publishing not yet supported for ${platform}` };
     }
 
+    const now = new Date().toISOString();
+
     await supabase
       .from("article_variants")
       .update({
         status: "published",
         published_url: publishedUrl,
-        published_at: new Date().toISOString(),
+        published_at: now,
+        updated_at: now,
+      })
+      .eq("id", variantId);
+
+    // Auto-update parent article status to "published" if still draft/ready
+    const articleId = variant.article_id;
+    if (articleId) {
+      const { data: article } = await supabase
+        .from("articles")
+        .select("status")
+        .eq("id", articleId)
+        .single();
+
+      if (article && (article.status === "draft" || article.status === "ready")) {
+        await supabase
+          .from("articles")
+          .update({ status: "published", updated_at: now })
+          .eq("id", articleId);
+      }
+    }
+
+    return { success: true, url: publishedUrl, platform };
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : "Publish failed";
+    console.error(`[Publisher] ${platform} error:`, e);
+
+    await supabase
+      .from("article_variants")
+      .update({
+        status: "failed",
         updated_at: new Date().toISOString(),
       })
       .eq("id", variantId);
 
-    return { success: true, url: publishedUrl, platform };
-  } catch (e) {
-    console.error(`[Publisher] ${platform} error:`, e);
-    return { success: false, error: e instanceof Error ? e.message : "Publish failed" };
+    return { success: false, error: errorMsg };
   }
 }
