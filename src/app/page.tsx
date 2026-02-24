@@ -230,10 +230,10 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
           <h1 className="text-4xl font-bold leading-[1.08] tracking-tighter sm:text-5xl md:text-7xl">
-            <span className="gradient-text">Get discovered</span> on Google<br />
-            and cited <span className="gradient-text">by AI</span>
+            A full <span className="gradient-text">SEO pipeline</span><br />
+            <span className="gradient-text">not just</span> an AI writer
           </h1>
-          <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Automated SEO articles optimized for search engines and AI citations. Zero writing.</p>
+          <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Keyword research, competitor analysis, topic clustering, article generation.<br />Automated publishing with canonical backlinks.</p>
           <WaitlistForm />
           <div className="mt-4 flex justify-center">
             <Link
@@ -276,9 +276,9 @@ export default function Home() {
       {/* ── Features ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl">A full <span className="gradient-text">SEO pipeline</span><br />not just an AI writer</h2>
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tighter md:text-5xl"><span className="gradient-text">Get discovered</span> on Google<br />and cited <span className="gradient-text">by AI</span></h2>
           <p className="mx-auto mb-12 max-w-lg text-center text-sm text-muted sm:text-base">
-            Keyword research, competitor analysis, topic clustering, article generation, and automated publishing with canonical backlinks.
+            Automated SEO articles optimized for search engines and AI citations. Zero writing.
           </p>
           <div className="grid gap-5 sm:grid-cols-2">
             {features.map((f) => (
