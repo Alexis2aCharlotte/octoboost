@@ -14,13 +14,15 @@ function getResendClient(): Resend {
   return resend;
 }
 
-const FROM_EMAIL = "OctoBoost <contact@octoboost.app>";
+const NEWSLETTER_FROM = "OctoBoost <newsletter@octoboost.app>";
+const NEWSLETTER_REPLY_TO = "contact@octoboost.app";
 
 export async function sendWelcomeEmail(toEmail: string): Promise<void> {
   const html = getWelcomeEmailHTML();
 
   const { error } = await getResendClient().emails.send({
-    from: FROM_EMAIL,
+    from: NEWSLETTER_FROM,
+    replyTo: NEWSLETTER_REPLY_TO,
     to: toEmail,
     subject: "Welcome to OctoBoost 🚀",
     html,
