@@ -2,7 +2,7 @@ import Stripe from "stripe";
 
 let _stripe: Stripe | null = null;
 
-export function getStripe() {
+export function getStripe(): Stripe {
   if (!_stripe) {
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
       typescript: true,
@@ -11,9 +11,10 @@ export function getStripe() {
   return _stripe;
 }
 
-export const stripe = new Proxy({} as Stripe, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const stripe: Stripe = new Proxy({} as any, {
   get(_, prop) {
-    return (getStripe() as Record<string | symbol, unknown>)[prop];
+    return (getStripe() as any)[prop];
   },
 });
 
