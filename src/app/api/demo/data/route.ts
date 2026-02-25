@@ -265,5 +265,38 @@ export async function GET() {
     schedule,
   };
 
-  return NextResponse.json(shiftAllDates(result, deltaMs));
+  const shifted = shiftAllDates(result, deltaMs);
+
+  // Post-process schedule variants for demo: mix of published / scheduled / copy
+  const sv = shifted.schedule.variants as Array<Record<string, unknown>>;
+  if (sv.length > 0) {
+    const keepPublished = Math.ceil(sv.length * 0.4);
+
+    // Find the latest day among published variants to avoid overlap
+    let lastPublishedDay = new Date();
+    lastPublishedDay.setHours(0, 0, 0, 0);
+    for (let i = 0; i < keepPublished; i++) {
+      const d = new Date(sv[i].scheduled_at as string);
+      if (d > lastPublishedDay) lastPublishedDay = d;
+    }
+    const scheduleStart = new Date(lastPublishedDay);
+    scheduleStart.setDate(scheduleStart.getDate() + 1);
+    scheduleStart.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < sv.length; i++) {
+      if (i >= keepPublished) {
+        sv[i].status = "scheduled";
+        sv[i].published_at = null;
+        sv[i].published_url = null;
+        const idx = i - keepPublished;
+        const dayOffset = Math.floor(idx / 2);
+        const d = new Date(scheduleStart);
+        d.setDate(d.getDate() + dayOffset);
+        d.setHours(idx % 2 === 0 ? 10 : 16, 0, 0, 0);
+        sv[i].scheduled_at = d.toISOString();
+      }
+    }
+  }
+
+  return NextResponse.json(shifted);
 }

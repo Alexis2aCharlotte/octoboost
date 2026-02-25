@@ -1,10 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Type, Check, X, Minus } from "lucide-react";
+import { Type, Check, X, Minus } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToolCta } from "@/components/ToolCta";
+import { ToolHowItWorks } from "@/components/ToolHowItWorks";
+import { ToolFaq, faqJsonLd } from "@/components/ToolFaq";
+import type { HowItWorksStep } from "@/components/ToolHowItWorks";
+import type { FaqItem } from "@/components/ToolFaq";
+
+const howItWorks: HowItWorksStep[] = [
+  {
+    emoji: "✍️",
+    title: "Type Your Headline",
+    description:
+      "Paste or type the title you plan to use for your blog post, landing page, or email subject line.",
+  },
+  {
+    emoji: "📊",
+    title: "Get Instant Analysis",
+    description:
+      "Our algorithm checks 9 ranking factors: length, power words, emotional triggers, numbers, brackets, and more.",
+  },
+  {
+    emoji: "🚀",
+    title: "Optimize & Publish",
+    description:
+      "Follow the actionable tips to improve your score, then publish a headline that drives clicks and ranks on Google.",
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    question: "What makes a good SEO headline?",
+    answer:
+      "A good SEO headline is 50-60 characters long, contains a primary keyword near the front, uses power words or numbers to boost CTR, and clearly communicates the value the reader will get. Headlines with brackets like [2026 Guide] see 38% higher click-through rates.",
+  },
+  {
+    question: "How does the headline score work?",
+    answer:
+      "The score is calculated out of 100 based on 9 factors: title length, word count, presence of numbers, power words, emotional triggers, question format, brackets, capitalization, and freshness signals like a year. Each factor is weighted by its impact on SEO and CTR.",
+  },
+  {
+    question: "Why do numbers in headlines boost clicks?",
+    answer:
+      "Headlines with numbers get 36% more clicks because they set clear expectations. Readers know exactly what they'll get (e.g., \"7 Tips\") and odd numbers tend to outperform even numbers. Listicles are also favored by Google for featured snippets.",
+  },
+  {
+    question: "What are power words and why do they matter?",
+    answer:
+      "Power words are persuasive terms like 'ultimate', 'proven', 'free', 'essential', and 'guide' that trigger curiosity or urgency. They make headlines more compelling in search results, increasing click-through rates without changing your actual ranking position.",
+  },
+  {
+    question: "How long should my title tag be for Google?",
+    answer:
+      "Google displays approximately 50-60 characters of a title tag in search results. Titles longer than 60 characters will be truncated with an ellipsis, which can cut off important keywords or your brand name. Aim for 55 characters as the sweet spot.",
+  },
+  {
+    question: "Is this headline analyzer free to use?",
+    answer:
+      "Yes, the OctoBoost Headline Analyzer is 100% free with no limits. You can analyze as many headlines as you want without creating an account. For a full SEO content pipeline including article generation and multi-platform publishing, check out OctoBoost.",
+  },
+];
 
 const POWER_WORDS = [
   "ultimate", "proven", "essential", "complete", "definitive", "powerful",
@@ -150,23 +208,29 @@ export default function HeadlineAnalyzerPage() {
   const result = title.trim().length > 0 ? analyzeHeadline(title) : null;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="isolate min-h-screen bg-background text-foreground">
       <Navbar />
+      <div className="grid-bg" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faqs)) }}
+      />
 
-      <div className="mx-auto max-w-2xl px-6 pt-24 pb-16">
-        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" />
-          Back to home
-        </Link>
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-12 text-center">
+        <span className="mb-5 inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/70">
+          Free Tool
+        </span>
 
-        <div className="mb-1 flex items-center gap-2">
-          <Type className="h-5 w-5 text-accent-light" />
-          <h1 className="text-2xl font-bold">Headline Analyzer</h1>
-        </div>
-        <p className="mb-8 text-sm text-muted">
-          Score your article title for SEO impact, readability, and click-through potential. 100% free.
+        <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter md:text-7xl">
+          <span className="gradient-text">Headline</span> Analyzer
+        </h1>
+
+        <p className="mx-auto mt-6 mb-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">
+          Score your article title for SEO impact, readability, and click-through potential. Analyze <strong className="text-foreground">9 ranking factors</strong> instantly.
         </p>
+      </section>
 
+      <div className="mx-auto max-w-4xl px-6 pb-16">
         <div className="mb-6">
           <input
             type="text"
@@ -220,7 +284,12 @@ export default function HeadlineAnalyzerPage() {
         )}
 
         {result && <ToolCta currentTool="/tools/headline-analyzer" />}
+
+        <ToolHowItWorks steps={howItWorks} />
+        <ToolFaq faqs={faqs} />
       </div>
+
+      <Footer />
     </main>
   );
 }

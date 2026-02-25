@@ -1,36 +1,179 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import Image from "next/image";
+import { BookOpen, ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { WaitlistForm } from "@/components/WaitlistForm";
+import { fetchAllPosts, type BlogPost } from "./data";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Blog",
-  description: "SEO tips, content strategy guides, and product updates from OctoBoost.",
+  title: "Blog — SEO Insights & Content Strategy",
+  description:
+    "Actionable SEO tips, content strategy guides, GEO insights, and case studies from OctoBoost. Learn how to rank on Google and get cited by AI.",
   alternates: { canonical: "/blog" },
+  openGraph: {
+    title: "Blog — SEO Insights & Content Strategy | OctoBoost",
+    description:
+      "Actionable SEO tips, content strategy guides, GEO insights, and case studies from OctoBoost.",
+    url: "/blog",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog — SEO Insights & Content Strategy | OctoBoost",
+    description:
+      "Actionable SEO tips, content strategy guides, GEO insights, and case studies from OctoBoost.",
+  },
 };
 
-export default function BlogPage() {
+const categoryEmojis: Record<string, string> = {
+  SEO: "🔍",
+  GEO: "🤖",
+  "Content Strategy": "✍️",
+  "Case Studies": "📊",
+  Guides: "📘",
+};
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function PostCard({ post }: { post: BlogPost }) {
+  const emoji = categoryEmojis[post.category || ""] || "📝";
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 pt-16">
-        <div className="mx-auto max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
-            <BookOpen className="h-8 w-8 text-accent-light" />
+    <Link
+      href={`/blog/${post.slug}`}
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-accent/30 hover:bg-card-hover"
+    >
+      <div className="relative aspect-[16/9] w-full overflow-hidden">
+        {post.cover_image ? (
+          <Image
+            src={post.cover_image}
+            alt={post.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/15 to-accent/5">
+            <span className="text-5xl">{emoji}</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Blog coming soon</h1>
-          <p className="mt-3 text-sm text-muted">
-            We're working on articles about SEO, GEO, and AI-powered content strategy. Stay tuned.
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-center gap-3">
+          {post.category && (
+            <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-light">
+              {post.category}
+            </span>
+          )}
+          {post.published_at && (
+            <span className="text-xs text-muted/60">
+              {formatDate(post.published_at)}
+            </span>
+          )}
+        </div>
+
+        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-snug transition-colors group-hover:text-accent-light">
+          {post.title}
+        </h3>
+
+        {post.excerpt && (
+          <p className="mb-4 line-clamp-3 flex-1 text-sm leading-relaxed text-muted">
+            {post.excerpt}
           </p>
-          <Link
-            href="/"
-            className="mt-6 inline-flex items-center gap-1.5 text-sm text-accent-light transition hover:underline"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to home
-          </Link>
+        )}
+
+        <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
+          <span className="text-xs text-muted/60">{post.author}</span>
+          <span className="flex items-center gap-1 text-xs font-medium text-accent-light transition-colors group-hover:underline">
+            Read more <ArrowRight className="h-3 w-3" />
+          </span>
         </div>
       </div>
+    </Link>
+  );
+}
+
+export default async function BlogPage() {
+  const posts = await fetchAllPosts();
+
+  return (
+    <main className="isolate flex min-h-screen flex-col bg-background text-foreground">
+      <Navbar />
+
+      <section className="relative px-6 pt-28 pb-12">
+        <div className="grid-bg" />
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <span className="mb-4 inline-block rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-xs font-medium text-accent-light">
+            {posts.length} article{posts.length !== 1 ? "s" : ""} published
+          </span>
+          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
+            The OctoBoost{" "}
+            <span className="gradient-text">Blog</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-lg text-sm text-muted sm:text-base">
+            SEO insights, content strategy guides, and everything you need to
+            rank on Google and get cited by AI.
+          </p>
+        </div>
+      </section>
+
+      <section className="relative z-10 px-6 pb-16">
+        <div className="mx-auto max-w-5xl">
+          {posts.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
+                <BookOpen className="h-8 w-8 text-accent-light" />
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight">
+                Coming Soon
+              </h2>
+              <p className="mt-3 max-w-sm text-sm text-muted">
+                We&apos;re preparing articles about SEO, GEO, and AI-powered
+                content strategy. Join the waitlist to get notified.
+              </p>
+              <Link
+                href="/waitlist"
+                className="btn-glow mt-6 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
+              >
+                Join the waitlist
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="relative z-10 px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-xl text-center">
+          <h2 className="text-2xl font-bold tracking-tighter md:text-4xl">
+            Stay ahead with{" "}
+            <span className="gradient-text">SEO insights</span>
+          </h2>
+          <p className="mx-auto mt-3 mb-6 max-w-md text-sm text-muted">
+            Get the latest tips on SEO, GEO, and content strategy delivered to
+            your inbox.
+          </p>
+          <WaitlistForm />
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }

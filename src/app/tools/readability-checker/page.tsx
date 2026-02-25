@@ -1,10 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, BookOpen, Clock, FileText, BarChart3, AlignLeft } from "lucide-react";
+import { BookOpen, Clock, FileText, BarChart3, AlignLeft } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToolCta } from "@/components/ToolCta";
+import { ToolHowItWorks } from "@/components/ToolHowItWorks";
+import { ToolFaq, faqJsonLd } from "@/components/ToolFaq";
+import type { HowItWorksStep } from "@/components/ToolHowItWorks";
+import type { FaqItem } from "@/components/ToolFaq";
+
+const howItWorks: HowItWorksStep[] = [
+  {
+    emoji: "📋",
+    title: "Paste Your Text",
+    description:
+      "Copy and paste your blog post, email, or any content. The analyzer works with any English text.",
+  },
+  {
+    emoji: "🎯",
+    title: "Get Readability Metrics",
+    description:
+      "See your Flesch score, word count, sentence count, reading time, and average sentence length at a glance.",
+  },
+  {
+    emoji: "💡",
+    title: "Improve Your Writing",
+    description:
+      "Follow targeted SEO writing tips based on your content's specific metrics to write content that ranks and converts.",
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    question: "What is the Flesch readability score?",
+    answer:
+      "The Flesch Reading Ease score rates text on a 0-100 scale. Higher scores mean easier reading: 70-100 is easy (conversational), 50-70 is fairly easy (standard), 30-50 is difficult (academic), and below 30 is very difficult (legal/technical). For SEO content, aim for 60-70.",
+  },
+  {
+    question: "Why does readability matter for SEO?",
+    answer:
+      "Google's algorithms favor content that provides a good user experience. If visitors leave your page quickly because the text is too complex, it signals low quality. Readable content keeps users engaged longer, reduces bounce rates, and increases the chance of earning backlinks and shares.",
+  },
+  {
+    question: "What is the ideal reading level for blog posts?",
+    answer:
+      "Most successful blog posts are written at a 6th-8th grade reading level (Flesch score 60-70). This doesn't mean 'dumbing down' your content — it means using clear language, short sentences, and simple structure so the widest audience can understand your expertise.",
+  },
+  {
+    question: "How long should sentences be for web content?",
+    answer:
+      "Aim for an average of 15-20 words per sentence. Sentences over 25 words are harder to parse on screens. Mix short punchy sentences with longer ones for rhythm. Break complex ideas into multiple sentences rather than using semicolons or long clauses.",
+  },
+  {
+    question: "What is the ideal word count for SEO articles?",
+    answer:
+      "For competitive keywords, 2,000+ words tend to rank best. However, quality beats quantity — a focused 1,500-word article can outrank a padded 3,000-word one. The sweet spot for most blog posts is 1,800-2,500 words with comprehensive coverage of the topic.",
+  },
+  {
+    question: "Is this readability checker free?",
+    answer:
+      "Yes, the OctoBoost Readability Checker is completely free with no limits. Analyze as many texts as you want without signing up. For automated content generation that's already optimized for readability and SEO, explore the full OctoBoost platform.",
+  },
+];
 
 interface ReadabilityResult {
   wordCount: number;
@@ -91,22 +149,29 @@ export default function ReadabilityCheckerPage() {
   const result = analyze(text);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="isolate min-h-screen bg-background text-foreground">
       <Navbar />
+      <div className="grid-bg" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faqs)) }}
+      />
 
-      <div className="mx-auto max-w-2xl px-6 pt-24 pb-16">
-        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" />
-          Back to home
-        </Link>
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-12 text-center">
+        <span className="mb-5 inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/70">
+          Free Tool
+        </span>
 
-        <div className="mb-1 flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-accent-light" />
-          <h1 className="text-2xl font-bold">Readability Checker</h1>
-        </div>
-        <p className="mb-8 text-sm text-muted">
-          Paste your content to get word count, reading time, and a Flesch readability score. 100% free.
+        <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter md:text-7xl">
+          <span className="gradient-text">Readability</span> Checker
+        </h1>
+
+        <p className="mx-auto mt-6 mb-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">
+          Get your <strong className="text-foreground">Flesch readability score</strong>, word count, reading time, and sentence analysis instantly.
         </p>
+      </section>
+
+      <div className="mx-auto max-w-4xl px-6 pb-16">
 
         <textarea
           placeholder="Paste your article or text here..."
@@ -184,7 +249,12 @@ export default function ReadabilityCheckerPage() {
         )}
 
         {result && <ToolCta currentTool="/tools/readability-checker" />}
+
+        <ToolHowItWorks steps={howItWorks} />
+        <ToolFaq faqs={faqs} />
       </div>
+
+      <Footer />
     </main>
   );
 }

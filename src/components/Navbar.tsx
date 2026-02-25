@@ -14,9 +14,10 @@ const navLinks = [
       { label: "Headline Analyzer", href: "/tools/headline-analyzer" },
       { label: "Keyword Density", href: "/tools/keyword-density" },
       { label: "SERP Preview", href: "/tools/serp-preview" },
+      { label: "Readability Checker", href: "/tools/readability-checker" },
     ],
   },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "Pricing", href: "/pricing" },
   {
     label: "Resources",
     href: "#",

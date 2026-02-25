@@ -1,10 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Brain, CheckCircle2, AlertTriangle, XCircle, FileText, List, HelpCircle, Heading2, Code2, Quote } from "lucide-react";
+import { Brain, CheckCircle2, AlertTriangle, XCircle, FileText, List, HelpCircle, Heading2, Code2, Quote } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToolCta } from "@/components/ToolCta";
+import { ToolHowItWorks } from "@/components/ToolHowItWorks";
+import { ToolFaq, faqJsonLd } from "@/components/ToolFaq";
+import type { HowItWorksStep } from "@/components/ToolHowItWorks";
+import type { FaqItem } from "@/components/ToolFaq";
+
+const howItWorks: HowItWorksStep[] = [
+  {
+    emoji: "📋",
+    title: "Paste Your Article",
+    description:
+      "Copy your blog post or article in Markdown or plain text. We analyze structure, headings, FAQ sections, and formatting.",
+  },
+  {
+    emoji: "📊",
+    title: "Get Your GEO Score",
+    description:
+      "See a detailed breakdown across 6 categories: word count, heading structure, FAQ, lists, formatting, and content type.",
+  },
+  {
+    emoji: "💡",
+    title: "Follow the Tips",
+    description:
+      "Actionable recommendations show exactly what to add or improve so Google and AI tools like ChatGPT cite your content.",
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    question: "What is a GEO score?",
+    answer:
+      "GEO stands for Google + Engine Optimization. It measures how well your content is structured for both traditional Google rankings and AI citation engines like ChatGPT, Perplexity, and Claude. A high GEO score means your content is optimized for both search and AI discovery.",
+  },
+  {
+    question: "How is the AI Content Score calculated?",
+    answer:
+      "The score is based on 6 weighted categories: word count (20 points), heading structure with H2/H3 (20 points), FAQ section presence (20 points), lists and structured data (15 points), rich formatting like bold and blockquotes (10 points), and AI-friendly content type detection (15 points).",
+  },
+  {
+    question: "Why does word count matter for AI citations?",
+    answer:
+      "Longer articles (2,000+ words) provide more context for AI models to understand and cite. They also tend to rank higher on Google because they cover topics more comprehensively. Short articles rarely appear in AI-generated answers or rank for competitive keywords.",
+  },
+  {
+    question: "What content formats do AI tools prefer to cite?",
+    answer:
+      "AI tools most frequently cite comparisons (X vs Y), how-to guides, listicles (Top 10...), and FAQ-rich content. These formats provide structured, factual information that AI models can easily extract and reference in their responses.",
+  },
+  {
+    question: "Do I need a FAQ section in every article?",
+    answer:
+      "Adding a FAQ section with 3-5 questions significantly increases your chances of appearing in Google's People Also Ask boxes and being cited by AI tools. FAQ schema markup also generates rich results in search, boosting click-through rates.",
+  },
+  {
+    question: "Is this AI content scorer free?",
+    answer:
+      "Yes, the OctoBoost AI Content Scorer is completely free with unlimited analyses. No signup required. For automated article generation with built-in GEO optimization, explore the full OctoBoost platform.",
+  },
+];
 
 interface ScoreBreakdown {
   label: string;
@@ -196,22 +254,29 @@ export default function AIContentScorerPage() {
   const result = scoreContent(text);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="isolate min-h-screen bg-background text-foreground">
       <Navbar />
+      <div className="grid-bg" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faqs)) }}
+      />
 
-      <div className="mx-auto max-w-2xl px-6 pt-24 pb-16">
-        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" />
-          Back to home
-        </Link>
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-12 text-center">
+        <span className="mb-5 inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/70">
+          Free Tool
+        </span>
 
-        <div className="mb-1 flex items-center gap-2">
-          <Brain className="h-5 w-5 text-accent-light" />
-          <h1 className="text-2xl font-bold">AI Content Scorer</h1>
-        </div>
-        <p className="mb-8 text-sm text-muted">
-          Paste your article and get a GEO score. See how well your content is optimized for Google and AI citations. 100% free.
+        <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter md:text-7xl">
+          AI Content <span className="gradient-text">Scorer</span>
+        </h1>
+
+        <p className="mx-auto mt-6 mb-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">
+          Paste your article and get a <strong className="text-foreground">GEO score</strong>. See how well your content is optimized for Google rankings and AI citations.
         </p>
+      </section>
+
+      <div className="mx-auto max-w-4xl px-6 pb-16">
 
         <textarea
           placeholder="Paste your article (Markdown or plain text)..."
@@ -293,7 +358,12 @@ export default function AIContentScorerPage() {
         )}
 
         {result && <ToolCta currentTool="/tools/ai-content-scorer" />}
+
+        <ToolHowItWorks steps={howItWorks} />
+        <ToolFaq faqs={faqs} />
       </div>
+
+      <Footer />
     </main>
   );
 }

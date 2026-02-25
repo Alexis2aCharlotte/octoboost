@@ -1,10 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Monitor, Smartphone, Globe } from "lucide-react";
+import { Monitor, Smartphone, Globe } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToolCta } from "@/components/ToolCta";
+import { ToolHowItWorks } from "@/components/ToolHowItWorks";
+import { ToolFaq, faqJsonLd } from "@/components/ToolFaq";
+import type { HowItWorksStep } from "@/components/ToolHowItWorks";
+import type { FaqItem } from "@/components/ToolFaq";
+
+const howItWorks: HowItWorksStep[] = [
+  {
+    emoji: "✍️",
+    title: "Enter Title, Description & URL",
+    description:
+      "Type or paste your page title, meta description, and URL to see how they'll appear in Google search results.",
+  },
+  {
+    emoji: "👁️",
+    title: "Preview Desktop & Mobile",
+    description:
+      "Toggle between desktop and mobile views to see exactly how Google will display your result on each device.",
+  },
+  {
+    emoji: "🖱️",
+    title: "Optimize for Clicks",
+    description:
+      "Follow length warnings and validation tips to maximize your click-through rate from search results.",
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    question: "What is a SERP preview?",
+    answer:
+      "A SERP (Search Engine Results Page) preview shows how your webpage will appear in Google search results. It displays your title tag, meta description, and URL exactly as searchers will see them, helping you optimize for maximum clicks.",
+  },
+  {
+    question: "How long should my title tag be?",
+    answer:
+      "Google displays approximately 50-60 characters (or about 600 pixels wide) of a title tag. Titles longer than this are truncated with an ellipsis. Aim for 55 characters to ensure your full title is visible. Keep your primary keyword near the beginning.",
+  },
+  {
+    question: "What is the ideal meta description length?",
+    answer:
+      "Google typically displays 150-160 characters of a meta description. Write compelling copy within this limit that includes your target keyword and a clear call to action. Descriptions that are too short waste valuable SERP real estate.",
+  },
+  {
+    question: "Does meta description affect Google rankings?",
+    answer:
+      "Meta descriptions don't directly affect rankings, but they significantly impact click-through rate (CTR). A higher CTR sends positive signals to Google and can indirectly improve your ranking. Think of your meta description as ad copy for organic search.",
+  },
+  {
+    question: "Why does my SERP result look different on mobile?",
+    answer:
+      "Google shows slightly different result formats on mobile and desktop. Mobile results have narrower width, which means titles and descriptions may be truncated earlier. Since over 60% of searches happen on mobile, optimizing for mobile display is critical.",
+  },
+  {
+    question: "Is this SERP preview tool free?",
+    answer:
+      "Yes, the OctoBoost SERP Preview is 100% free with no usage limits. Preview as many pages as you want without creating an account. For automated SEO content that's already optimized for search, explore the full OctoBoost platform.",
+  },
+];
 
 const TITLE_LIMIT = 60;
 const DESC_LIMIT = 160;
@@ -55,22 +113,29 @@ export default function SerpPreviewPage() {
   const descLen = description.trim().length;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="isolate min-h-screen bg-background text-foreground">
       <Navbar />
+      <div className="grid-bg" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faqs)) }}
+      />
 
-      <div className="mx-auto max-w-3xl px-6 pt-24 pb-16">
-        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" />
-          Back to home
-        </Link>
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-12 text-center">
+        <span className="mb-5 inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/70">
+          Free Tool
+        </span>
 
-        <div className="mb-1 flex items-center gap-2">
-          <Globe className="h-5 w-5 text-accent-light" />
-          <h1 className="text-2xl font-bold">SERP Preview</h1>
-        </div>
-        <p className="mb-8 text-sm text-muted">
-          See exactly how your page will look in Google search results. Optimize your title and meta description for maximum clicks. 100% free.
+        <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter md:text-7xl">
+          <span className="gradient-text">SERP</span> Preview
+        </h1>
+
+        <p className="mx-auto mt-6 mb-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">
+          See exactly how your page looks in <strong className="text-foreground">Google search results</strong> on desktop and mobile. Optimize for maximum clicks.
         </p>
+      </section>
+
+      <div className="mx-auto max-w-4xl px-6 pb-16">
 
         {/* Inputs */}
         <div className="mb-8 space-y-4">
@@ -219,7 +284,12 @@ export default function SerpPreviewPage() {
         )}
 
         {hasContent && <ToolCta currentTool="/tools/serp-preview" />}
+
+        <ToolHowItWorks steps={howItWorks} />
+        <ToolFaq faqs={faqs} />
       </div>
+
+      <Footer />
     </main>
   );
 }

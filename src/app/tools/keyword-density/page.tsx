@@ -1,10 +1,67 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
-import { ArrowLeft, Search } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToolCta } from "@/components/ToolCta";
+import { ToolHowItWorks } from "@/components/ToolHowItWorks";
+import { ToolFaq, faqJsonLd } from "@/components/ToolFaq";
+import type { HowItWorksStep } from "@/components/ToolHowItWorks";
+import type { FaqItem } from "@/components/ToolFaq";
+
+const howItWorks: HowItWorksStep[] = [
+  {
+    emoji: "📋",
+    title: "Paste Your Content",
+    description:
+      "Copy and paste your blog post, landing page copy, or any text you want to analyze for keyword usage.",
+  },
+  {
+    emoji: "🔍",
+    title: "See Keyword Frequency",
+    description:
+      "Get a ranked list of your most-used single keywords, 2-word phrases (bigrams), and 3-word phrases (trigrams) with density percentages.",
+  },
+  {
+    emoji: "⚠️",
+    title: "Fix Over-Optimization",
+    description:
+      "Identify keywords above 3% density that could trigger a stuffing penalty. Adjust your content before publishing.",
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    question: "What is keyword density?",
+    answer:
+      "Keyword density is the percentage of times a keyword appears in your content relative to the total word count. For example, if your keyword appears 10 times in a 1,000-word article, the density is 1%. It helps search engines understand what your content is about.",
+  },
+  {
+    question: "What is the ideal keyword density for SEO?",
+    answer:
+      "The ideal primary keyword density is 0.5-2%. Above 2% is acceptable but risky. Anything above 3% may be flagged as keyword stuffing by Google, which can hurt your rankings. Focus on natural writing with semantic variations instead of repeating the same phrase.",
+  },
+  {
+    question: "What is keyword stuffing and why is it bad?",
+    answer:
+      "Keyword stuffing is the practice of unnaturally repeating keywords to manipulate search rankings. Google's algorithms detect this and can penalize your page by lowering its ranking or removing it from results entirely. Modern SEO rewards natural, helpful content over keyword repetition.",
+  },
+  {
+    question: "What are bigrams and trigrams?",
+    answer:
+      "Bigrams are 2-word phrases (e.g., 'content marketing') and trigrams are 3-word phrases (e.g., 'search engine optimization'). Analyzing these multi-word phrases helps you identify your content's topical focus and find long-tail keyword opportunities that single-word analysis misses.",
+  },
+  {
+    question: "How often should I check keyword density?",
+    answer:
+      "Check keyword density before publishing any new content and during content audits. It's especially important when targeting competitive keywords where over-optimization could cost you rankings. Use this tool alongside the AI Content Scorer for a complete optimization check.",
+  },
+  {
+    question: "Is this keyword density tool free?",
+    answer:
+      "Yes, the OctoBoost Keyword Density Analyzer is 100% free with no usage limits. Analyze as many texts as you want without signing up. For automated keyword research and content generation, check out the full OctoBoost platform.",
+  },
+];
 
 const STOP_WORDS = new Set([
   "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -90,22 +147,29 @@ export default function KeywordDensityPage() {
   const maxDensity = result?.words[0]?.density ?? 1;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="isolate min-h-screen bg-background text-foreground">
       <Navbar />
+      <div className="grid-bg" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faqs)) }}
+      />
 
-      <div className="mx-auto max-w-2xl px-6 pt-24 pb-16">
-        <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" />
-          Back to home
-        </Link>
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-12 text-center">
+        <span className="mb-5 inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/70">
+          Free Tool
+        </span>
 
-        <div className="mb-1 flex items-center gap-2">
-          <Search className="h-5 w-5 text-accent-light" />
-          <h1 className="text-2xl font-bold">Keyword Density Analyzer</h1>
-        </div>
-        <p className="mb-8 text-sm text-muted">
-          Paste your content to find the most frequent keywords and phrases. Spot over-optimization instantly. 100% free.
+        <h1 className="text-5xl font-bold leading-[1.1] tracking-tighter md:text-7xl">
+          <span className="gradient-text">Keyword</span> Density Analyzer
+        </h1>
+
+        <p className="mx-auto mt-6 mb-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">
+          Find the most frequent keywords and phrases in your content. Spot <strong className="text-foreground">keyword stuffing</strong> before Google does.
         </p>
+      </section>
+
+      <div className="mx-auto max-w-4xl px-6 pb-16">
 
         <textarea
           placeholder="Paste your article or text here..."
@@ -189,7 +253,12 @@ export default function KeywordDensityPage() {
         )}
 
         {result && <ToolCta currentTool="/tools/keyword-density" />}
+
+        <ToolHowItWorks steps={howItWorks} />
+        <ToolFaq faqs={faqs} />
       </div>
+
+      <Footer />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -42,6 +43,7 @@ export default function TermsPage() {
           <p>For questions about these Terms, contact us at support@octoboost.app.</p>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }

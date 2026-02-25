@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -45,6 +46,7 @@ export default function PrivacyPage() {
           <p>For privacy-related questions, contact us at support@octoboost.app.</p>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }

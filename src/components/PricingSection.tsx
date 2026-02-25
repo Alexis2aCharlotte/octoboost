@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, ArrowRight, Lock, ShieldCheck, Loader2 } from "lucide-react";
 
 const plans = [
   {
     name: "Explore",
     monthlyPrice: 19,
+    yearlyPrice: 15,
     sites: "1 site",
     features: [
       "+50 AI articles/month",
@@ -21,6 +23,7 @@ const plans = [
   {
     name: "Pro",
     monthlyPrice: 39,
+    yearlyPrice: 31,
     sites: "5 sites",
     features: [
       "+50 AI articles/month",
@@ -35,6 +38,7 @@ const plans = [
   {
     name: "Custom",
     monthlyPrice: null,
+    yearlyPrice: null,
     sites: "Unlimited sites",
     features: [
       "Everything in Pro",
@@ -49,7 +53,30 @@ const plans = [
 ];
 
 export function PricingSection() {
-  const [yearly, setYearly] = useState(false);
+  const [yearly, setYearly] = useState(true);
+  const [loading, setLoading] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function handleCheckout(plan: string) {
+    setLoading(plan);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: plan.toLowerCase(), interval: yearly ? "yearly" : "monthly" }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        router.push(`/login?next=/pricing`);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setLoading(null);
+    }
+  }
 
   return (
     <section id="pricing" className="relative z-10 px-6 py-16 md:py-20">
@@ -66,7 +93,7 @@ export function PricingSection() {
           <span className={`text-sm font-medium ${!yearly ? "text-foreground" : "text-muted"}`}>Monthly</span>
           <button
             onClick={() => setYearly(!yearly)}
-            className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-border bg-card transition-colors hover:border-accent/30"
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${yearly ? "border border-accent bg-accent/20" : "border border-border bg-card hover:border-accent/30"}`}
           >
             <span
               className={`inline-block h-5 w-5 rounded-full bg-accent transition-transform ${yearly ? "translate-x-6" : "translate-x-1"}`}
@@ -81,14 +108,7 @@ export function PricingSection() {
         {/* Cards */}
         <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-3">
           {plans.map((plan) => {
-            const price = plan.monthlyPrice
-              ? yearly
-                ? Math.round(plan.monthlyPrice * 0.8)
-                : plan.monthlyPrice
-              : null;
-            const yearlyTotal = plan.monthlyPrice
-              ? Math.round(plan.monthlyPrice * 0.8 * 12)
-              : null;
+            const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
 
             return (
               <div
@@ -107,17 +127,17 @@ export function PricingSection() {
 
                 {price !== null ? (
                   <>
-                    <p className="mt-6 text-5xl font-bold">
+                    <p className="mt-6 text-5xl font-bold text-accent-light">
                       ${price}
                       <span className="text-lg font-normal text-muted">/mo</span>
                     </p>
                     <p className="mt-1 text-sm text-muted">
-                      {yearly ? `$${yearlyTotal} billed yearly` : "Billed monthly"}
+                      {yearly ? "Per month, billed yearly" : "Billed monthly"}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="mt-6 text-4xl font-bold">Let&apos;s talk</p>
+                    <p className="mt-6 text-4xl font-bold text-accent-light">Let&apos;s talk</p>
                     <p className="mt-1 text-sm text-muted">Tailored to your needs</p>
                   </>
                 )}
@@ -140,15 +160,36 @@ export function PricingSection() {
                   </a>
                 ) : (
                   <button
-                    disabled
-                    className="mt-10 w-full cursor-not-allowed rounded-lg bg-accent/50 py-3 text-center text-sm font-semibold text-white/60"
+                    onClick={() => handleCheckout(plan.name)}
+                    disabled={loading === plan.name}
+                    className="btn-glow mt-10 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-center text-sm font-semibold text-white transition disabled:opacity-60"
                   >
-                    Coming Soon
+                    {loading === plan.name ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>Get started <ArrowRight className="h-3.5 w-3.5" /></>
+                    )}
                   </button>
                 )}
               </div>
             );
           })}
+        </div>
+
+        {/* Trust bar */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted/60">
+          <span className="flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            Secure payment via Stripe
+          </span>
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            7-day money-back guarantee
+          </span>
+          <span className="flex items-center gap-2">
+            <Check className="h-4 w-4" />
+            Cancel anytime
+          </span>
         </div>
       </div>
     </section>

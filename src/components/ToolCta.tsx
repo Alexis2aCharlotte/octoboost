@@ -6,6 +6,7 @@ const otherTools = [
   { label: "Headline Analyzer", href: "/tools/headline-analyzer", description: "Score your titles for SEO" },
   { label: "Keyword Density", href: "/tools/keyword-density", description: "Spot over-optimization" },
   { label: "SERP Preview", href: "/tools/serp-preview", description: "Preview your Google result" },
+  { label: "Readability Checker", href: "/tools/readability-checker", description: "Check Flesch score & reading time" },
 ];
 
 export function ToolCta({ currentTool }: { currentTool: string }) {

@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { Check, ArrowRight } from "lucide-react";
 
 function WaitlistForm() {
@@ -116,6 +117,7 @@ export default function WaitlistPage() {
           <p className="mt-6 text-xs text-muted/40">No spam. Unsubscribe anytime.</p>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }

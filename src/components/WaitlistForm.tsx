@@ -56,7 +56,7 @@ export function WaitlistForm() {
           name="email"
           type="email"
           required
-          placeholder="you@company.com"
+          placeholder="https://mysaas.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus:border-accent/50 focus:outline-none"
@@ -67,7 +67,7 @@ export function WaitlistForm() {
           disabled={loading}
           className="btn-glow flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
         >
-          {loading ? "..." : "Get early access"}
+          {loading ? "..." : "Start Generating"}
           {!loading && <ArrowRight className="h-3.5 w-3.5" />}
         </button>
       </form>
