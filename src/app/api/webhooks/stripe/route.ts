@@ -37,6 +37,10 @@ export async function POST(req: NextRequest) {
       const userId = subscription.metadata.supabase_user_id;
       if (!userId) break;
 
+      const item = subscription.items.data[0];
+      const periodStart = item?.current_period_start;
+      const periodEnd = item?.current_period_end;
+
       await supabase.from("subscriptions").upsert(
         {
           user_id: userId,
@@ -45,8 +49,8 @@ export async function POST(req: NextRequest) {
           plan: subscription.metadata.plan ?? "explore",
           interval: subscription.metadata.interval ?? "monthly",
           status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          ...(periodStart && { current_period_start: new Date(periodStart * 1000).toISOString() }),
+          ...(periodEnd && { current_period_end: new Date(periodEnd * 1000).toISOString() }),
         },
         { onConflict: "user_id" }
       );
@@ -58,14 +62,18 @@ export async function POST(req: NextRequest) {
       const userId = subscription.metadata.supabase_user_id;
       if (!userId) break;
 
+      const item = subscription.items.data[0];
+      const periodStart = item?.current_period_start;
+      const periodEnd = item?.current_period_end;
+
       await supabase
         .from("subscriptions")
         .update({
           status: subscription.status,
           plan: subscription.metadata.plan ?? undefined,
           interval: subscription.metadata.interval ?? undefined,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          ...(periodStart && { current_period_start: new Date(periodStart * 1000).toISOString() }),
+          ...(periodEnd && { current_period_end: new Date(periodEnd * 1000).toISOString() }),
         })
         .eq("user_id", userId);
       break;
