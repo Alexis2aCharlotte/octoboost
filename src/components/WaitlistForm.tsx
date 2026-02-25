@@ -51,8 +51,9 @@ export function WaitlistForm() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="mx-auto flex max-w-md gap-2">
+      <form onSubmit={handleSubmit} action="/api/waitlist" method="POST" className="mx-auto flex max-w-md gap-2">
         <input
+          name="email"
           type="email"
           required
           placeholder="you@company.com"

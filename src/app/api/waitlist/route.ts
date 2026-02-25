@@ -8,16 +8,27 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   try {
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    const contentType = req.headers.get("content-type") || "";
+    const isFormSubmit = !contentType.includes("application/json");
+
+    let email: string | undefined;
+
+    if (isFormSubmit) {
+      const formData = await req.formData();
+      email = formData.get("email")?.toString();
+    } else {
+      try {
+        const body = await req.json();
+        email = body.email;
+      } catch {
+        return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+      }
     }
 
-    const { email } = body;
-
     if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+      if (isFormSubmit) {
+        return NextResponse.redirect(new URL("/waitlist?error=invalid", req.url));
+      }
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
@@ -28,6 +39,9 @@ export async function POST(req: NextRequest) {
 
     if (!supabaseUrl || !serviceKey) {
       console.error("Missing SUPABASE_URL or SERVICE_ROLE_KEY env vars");
+      if (isFormSubmit) {
+        return NextResponse.redirect(new URL("/waitlist?error=server", req.url));
+      }
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }
 
@@ -39,9 +53,15 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === "23505") {
+        if (isFormSubmit) {
+          return NextResponse.redirect(new URL("/waitlist?success=true", req.url));
+        }
         return NextResponse.json({ success: true, message: "Already registered" });
       }
       console.error("Supabase waitlist insert error:", error);
+      if (isFormSubmit) {
+        return NextResponse.redirect(new URL("/waitlist?error=failed", req.url));
+      }
       return NextResponse.json({ error: "Failed to register. Please try again." }, { status: 500 });
     }
 
@@ -64,9 +84,15 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    if (isFormSubmit) {
+      return NextResponse.redirect(new URL("/waitlist?success=true", req.url));
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Waitlist API unexpected error:", err);
-    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
+    if ((req.headers.get("content-type") || "").includes("application/json")) {
+      return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
+    }
+    return NextResponse.redirect(new URL("/waitlist?error=server", req.url));
   }
 }

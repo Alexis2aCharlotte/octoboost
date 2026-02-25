@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Check, ArrowRight } from "lucide-react";
 
 export default function WaitlistPage() {
+  const searchParams = useSearchParams();
+  const urlSuccess = searchParams.get("success") === "true";
+  const urlError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(urlSuccess);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    urlError === "invalid" ? "Invalid email address." :
+    urlError === "failed" ? "Something went wrong. Please try again." :
+    urlError === "server" ? "Server error. Please try again." : ""
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +78,9 @@ export default function WaitlistPage() {
             </div>
           ) : (
             <>
-              <form onSubmit={handleSubmit} className="mx-auto flex max-w-sm gap-2">
+              <form onSubmit={handleSubmit} action="/api/waitlist" method="POST" className="mx-auto flex max-w-sm gap-2">
                 <input
+                  name="email"
                   type="email"
                   required
                   placeholder="you@company.com"
