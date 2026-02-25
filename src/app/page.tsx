@@ -230,8 +230,8 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
           <h1 className="text-4xl font-bold leading-[1.08] tracking-tighter sm:text-5xl md:text-7xl">
-            A full <span className="gradient-text">SEO pipeline</span><br />
-            <span className="gradient-text">not just</span> an AI writer
+            <span className="gradient-text">Not just</span> an AI writer<br />
+            A full <span className="gradient-text">SEO pipeline</span>
           </h1>
           <p className="mt-6 mb-8 text-base leading-relaxed text-muted sm:text-lg md:text-xl">Keyword research, competitor analysis, topic clustering, article generation.<br />Automated publishing with canonical backlinks.</p>
           <WaitlistForm />
