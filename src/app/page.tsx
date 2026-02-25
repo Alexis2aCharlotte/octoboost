@@ -26,6 +26,7 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PricingSection } from "@/components/PricingSection";
+import { SeenOnCycler } from "@/components/SeenOnCycler";
 
 /* ─── Data ──────────────────────────────────────────────── */
 
@@ -229,6 +230,9 @@ export default function Home() {
         <div className="grid-bg" />
 
         <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+          <p className="mb-4 inline-block rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-xs font-medium text-accent-light sm:text-sm">
+            Built for founders &amp; indie hackers
+          </p>
           <h1 className="text-4xl font-bold leading-[1.08] tracking-tighter sm:text-5xl md:text-7xl">
             A full <span className="gradient-text">SEO pipeline</span><br />
             <span className="gradient-text">Not just</span> an AI writer
@@ -243,16 +247,40 @@ export default function Home() {
               Or try the interactive demo &rarr;
             </Link>
           </div>
-          <div className="mt-4 flex items-center justify-center gap-6 text-xs text-muted/60">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
-              Google + AI optimized
-            </span>
-            <span>11 platforms</span>
+
+          {/* Trust signals */}
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 text-xs text-muted/70">
+              <div className="flex -space-x-2">
+                {[3, 11, 32, 44, 49].map((id) => (
+                  <img
+                    key={id}
+                    src={`https://i.pravatar.cc/48?img=${id}`}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 rounded-full border-2 border-background object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+              <span>Already <strong className="text-foreground">89 founders</strong> on the waitlist</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted/50">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
+                Google + AI optimized
+              </span>
+              <span>11 platforms</span>
+              <span>Autopilot publishing</span>
+            </div>
           </div>
         </div>
 
       </section>
+
+      {/* ── "Get seen on" cycler ── */}
+      <SeenOnCycler />
 
       {/* ── How it works ── */}
       <section className="relative z-10 px-6 py-16 md:py-20">
@@ -386,54 +414,80 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Social Proof (TODO: à finaliser) ── */}
-      <section className="relative z-10 px-6 py-16 md:py-20" hidden>
+      {/* ── Social Proof ── */}
+      <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="mb-3 text-2xl font-bold tracking-tighter md:text-4xl">
             The same engine behind <span className="gradient-text">Niches Hunter</span>
           </h2>
           <p className="mx-auto mb-10 max-w-lg text-sm text-muted">
-            From zero to 39k+ impressions in 2 months, with automated SEO articles only.
+            From 0 to 43k+ impressions in 2 months, with automated SEO articles only.
           </p>
 
           <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
             <div className="overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
-              <div className="relative aspect-[4/3] w-full">
+              <div className="relative aspect-[16/9] w-full">
                 <Image
-                  src="/GSC1.png"
-                  alt="Google Search Console results — 338 clicks, 39.2k impressions in 2 months with Niches Hunter"
+                  src="/GS1.png"
+                  alt="Google Search Console results — 355 clicks, 43.3k impressions in 2 months with Niches Hunter"
                   fill
-                  className="rounded-xl object-cover object-top"
+                  className="rounded-xl object-contain"
                   priority={false}
                 />
               </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
-              <div className="relative aspect-[4/3] w-full">
+              <div className="relative aspect-[16/9] w-full">
                 <Image
-                  src="/GSC2.png"
+                  src="/GS2.png"
                   alt="Most popular pages on Niches Hunter — top articles ranking on Google"
                   fill
-                  className="rounded-xl object-cover object-top"
+                  className="rounded-xl object-contain"
                   priority={false}
                 />
               </div>
             </div>
           </div>
 
+          {/* AI referral sources */}
+          <div className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
+            <div className="rounded-xl bg-card/80 px-8 py-6">
+              <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-muted/60">Also cited by AI tools</p>
+              <div className="grid grid-cols-5 gap-6">
+                {[
+                  { name: "Google", logo: "/logos/google.svg", visits: 311, invert: false },
+                  { name: "ChatGPT", logo: "/logos/chatgpt.svg", visits: 46, invert: false },
+                  { name: "Perplexity", logo: "/logos/perplexity.webp", visits: 18, invert: true },
+                  { name: "Claude", logo: "/logos/claude.png", visits: 12, invert: false },
+                  { name: "Gemini", logo: "/logos/Google_Gemini_icon_2025.svg.png", visits: 11, invert: false },
+                ].map((ai) => (
+                  <div key={ai.name} className="flex flex-col items-center gap-2.5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-white/5">
+                      <Image src={ai.logo} alt={ai.name} width={28} height={28} className={`h-7 w-7 object-contain${ai.invert ? " brightness-0 invert" : ""}`} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold leading-tight">{ai.visits}</p>
+                      <p className="mt-0.5 text-xs text-muted">{ai.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-center">
             <div>
-              <p className="text-2xl font-bold md:text-3xl">39.2k</p>
+              <p className="text-2xl font-bold md:text-3xl">43.3k</p>
               <p className="text-xs text-muted">Impressions</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <p className="text-2xl font-bold md:text-3xl">338</p>
+              <p className="text-2xl font-bold md:text-3xl">355</p>
               <p className="text-xs text-muted">Clicks</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <p className="text-2xl font-bold md:text-3xl">6.4</p>
+              <p className="text-2xl font-bold md:text-3xl">6.3</p>
               <p className="text-xs text-muted">Avg. position</p>
             </div>
             <div className="h-8 w-px bg-border" />
@@ -476,7 +530,25 @@ export default function Home() {
             Paste your URL and let OctoBoost handle the rest. SEO articles, backlinks, and organic traffic on autopilot.
           </p>
           <WaitlistForm />
-          <p className="mt-4 text-xs text-muted/50">No spam · We'll notify you at launch</p>
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-muted/50">No spam · We&apos;ll notify you at launch</p>
+            <div className="flex items-center gap-2 text-xs text-muted/50">
+              <div className="flex -space-x-1.5">
+                {[3, 11, 32].map((id) => (
+                  <img
+                    key={id}
+                    src={`https://i.pravatar.cc/48?img=${id}`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="h-5 w-5 rounded-full border-2 border-background object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+              <span>Already <strong className="text-foreground/70">89 founders</strong> on the waitlist</span>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -67,7 +67,7 @@ export function WaitlistForm() {
           disabled={loading}
           className="btn-glow flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
         >
-          {loading ? "..." : "Join the waitlist"}
+          {loading ? "..." : "Get early access"}
           {!loading && <ArrowRight className="h-3.5 w-3.5" />}
         </button>
       </form>
