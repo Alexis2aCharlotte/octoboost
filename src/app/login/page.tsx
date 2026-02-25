@@ -28,10 +28,10 @@ function GoogleIcon({ className }: { className?: string }) {
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  const initialMode = "login"; // signup disabled for now — was: searchParams.get("mode") === "signup" ? "signup" : "login"
   const next = searchParams.get("next") ?? "/dashboard";
 
-  const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -39,6 +39,7 @@ function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const router = useRouter();
 
@@ -85,6 +86,32 @@ function LoginForm() {
     }
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/settings`,
+      });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      setResetSent(true);
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleGoogleAuth() {
     setGoogleLoading(true);
     setError(null);
@@ -104,6 +131,35 @@ function LoginForm() {
       setError("An unexpected error occurred. Please try again.");
       setGoogleLoading(false);
     }
+  }
+
+  if (resetSent) {
+    return (
+      <main className="flex min-h-screen flex-col bg-background">
+        <Navbar />
+        <div className="relative z-10 mx-auto flex flex-1 w-full max-w-sm items-center justify-center px-6 pt-16">
+          <div className="w-full text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/20">
+                <Send className="h-6 w-6 text-accent-light" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold">Check your email</h1>
+            <p className="mt-3 text-sm text-muted">
+              We sent a password reset link to <strong className="text-foreground">{email}</strong>.
+              Click the link to set a new password.
+            </p>
+            <button
+              onClick={() => { setResetSent(false); setMode("login"); setError(null); }}
+              className="mt-6 text-sm text-accent-light transition hover:underline"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
   }
 
   if (signupSuccess) {
@@ -149,12 +205,14 @@ function LoginForm() {
             <Send className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
           </h1>
           <p className="mt-2 text-base text-muted">
             {mode === "login"
               ? "Sign in to your OctoBoost account"
-              : "Start generating SEO content today"}
+              : mode === "signup"
+              ? "Start generating SEO content today"
+              : "Enter your email and we\u2019ll send you a reset link"}
           </p>
         </div>
 
@@ -181,7 +239,7 @@ function LoginForm() {
         </div>
         */}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={mode === "forgot" ? handleForgotPassword : handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <div>
               <label className="mb-1.5 block text-sm text-muted">Full name</label>
@@ -207,18 +265,31 @@ function LoginForm() {
             />
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm text-muted">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              placeholder="••••••••"
-              className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm outline-none transition focus:border-accent/50"
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="block text-sm text-muted">Password</label>
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode("forgot"); setError(null); }}
+                    className="text-xs text-accent-light transition hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                placeholder="••••••••"
+                className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm outline-none transition focus:border-accent/50"
+              />
+            </div>
+          )}
 
           {error && (
             <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
@@ -236,14 +307,28 @@ function LoginForm() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : mode === "login" ? (
               "Sign In"
-            ) : (
+            ) : mode === "signup" ? (
               "Create Account"
+            ) : (
+              "Send Reset Link"
             )}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          {mode === "login" ? (
+          {mode === "forgot" ? (
+            <>
+              Remember your password?{" "}
+              <button
+                onClick={() => { setMode("login"); setError(null); }}
+                className="text-accent-light transition hover:underline"
+              >
+                Sign in
+              </button>
+            </>
+          ) : null}
+          {/* Signup link hidden for now
+          {mode === "login" && (
             <>
               Don&apos;t have an account?{" "}
               <button
@@ -253,17 +338,8 @@ function LoginForm() {
                 Sign up
               </button>
             </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button
-                onClick={() => { setMode("login"); setError(null); }}
-                className="text-accent-light transition hover:underline"
-              >
-                Sign in
-              </button>
-            </>
           )}
+          */}
         </p>
        </div>
       </div>
