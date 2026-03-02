@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -26,10 +26,26 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function mapLoginErrorFromQuery(errorCode: string | null): string | null {
+  switch (errorCode) {
+    case "missing_fields":
+      return "Please enter your email and password.";
+    case "invalid_credentials":
+      return "Invalid email or password.";
+    case "auth_failed":
+      return "Authentication failed. Please try again.";
+    case "server_config":
+      return "Authentication is temporarily unavailable. Please try again later.";
+    default:
+      return null;
+  }
+}
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const initialMode = "login"; // signup disabled for now — was: searchParams.get("mode") === "signup" ? "signup" : "login"
   const next = searchParams.get("next") ?? "/dashboard";
+  const queryError = mapLoginErrorFromQuery(searchParams.get("error"));
 
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
@@ -37,11 +53,23 @@ function LoginForm() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(queryError);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
-  const router = useRouter();
+  async function waitForClientSession(supabase: ReturnType<typeof createClient>) {
+    const waitSteps = [120, 180, 280, 420, 600];
+
+    for (let i = 0; i < waitSteps.length; i += 1) {
+      const { data, error } = await supabase.auth.getSession();
+      if (!error && data.session?.access_token) {
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, waitSteps[i]));
+    }
+
+    return false;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,8 +89,16 @@ function LoginForm() {
           setLoading(false);
           return;
         }
-        router.refresh();
-        router.push(next);
+
+        const sessionReady = await waitForClientSession(supabase);
+        if (!sessionReady) {
+          setError("Signed in, but your session is still initializing. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        window.location.assign(next);
+        return;
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -239,7 +275,14 @@ function LoginForm() {
         </div>
         */}
 
-        <form onSubmit={mode === "forgot" ? handleForgotPassword : handleSubmit} className="space-y-4">
+        <form
+          onSubmit={mode === "forgot" ? handleForgotPassword : handleSubmit}
+          action={mode === "login" ? "/api/auth/password" : undefined}
+          method={mode === "login" ? "post" : undefined}
+          className="space-y-4"
+        >
+          {mode === "login" && <input type="hidden" name="next" value={next} />}
+
           {mode === "signup" && (
             <div>
               <label className="mb-1.5 block text-sm text-muted">Full name</label>
@@ -256,6 +299,7 @@ function LoginForm() {
           <div>
             <label className="mb-1.5 block text-sm text-muted">Email</label>
             <input
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -280,6 +324,7 @@ function LoginForm() {
                 )}
               </div>
               <input
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

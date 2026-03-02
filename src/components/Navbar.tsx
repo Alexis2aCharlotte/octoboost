@@ -33,6 +33,25 @@ export function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const navRef = useRef<HTMLElement | null>(null);
+
+  const supportsHover = () =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  const openDropdownFromHover = (label: string) => {
+    if (!supportsHover()) return;
+    setOpenDropdown(label);
+  };
+
+  const closeDropdownFromHover = (label: string) => {
+    if (!supportsHover()) return;
+    setOpenDropdown((current) => (current === label ? null : current));
+  };
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdown((current) => (current === label ? null : label));
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -48,8 +67,35 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!navRef.current) return;
+      const target = event.target as Node;
+      if (!navRef.current.contains(target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenDropdown(null);
+        setMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
   return (
-    <nav className={`fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
+    <nav
+      ref={navRef}
+      className={`fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}
+    >
       {/* Left — Logo */}
       <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
         <Image src="/Logo Octoboost.png" alt="OctoBoost logo — automated SEO content engine" width={120} height={120} className="h-9 w-9 object-contain" priority />
@@ -63,20 +109,36 @@ export function Navbar() {
             <div
               key={link.label}
               className="relative"
-              onMouseEnter={() => setOpenDropdown(link.label)}
-              onMouseLeave={() => setOpenDropdown(null)}
+              onMouseEnter={() => openDropdownFromHover(link.label)}
+              onMouseLeave={() => closeDropdownFromHover(link.label)}
             >
-              <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground">
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={openDropdown === link.label}
+                onClick={() => toggleDropdown(link.label)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleDropdown(link.label);
+                  } else if (e.key === "Escape") {
+                    setOpenDropdown(null);
+                  }
+                }}
+                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
                 {link.label}
                 <ChevronDown className={`h-3 w-3 transition-transform ${openDropdown === link.label ? "rotate-180" : ""}`} />
               </button>
               {openDropdown === link.label && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2">
-                  <div className="min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg">
+                  <div className="min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg" role="menu" aria-label={link.label}>
                     {link.children.map((child) => (
                       <Link
                         key={child.href}
                         href={child.href}
+                        role="menuitem"
+                        onClick={() => setOpenDropdown(null)}
                         className="block rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground"
                       >
                         {child.label}
@@ -90,6 +152,7 @@ export function Navbar() {
             <Link
               key={link.label}
               href={link.href}
+              onClick={() => setOpenDropdown(null)}
               className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground"
             >
               {link.label}
@@ -117,7 +180,10 @@ export function Navbar() {
       {/* Mobile toggle */}
       <button
         className="rounded-lg p-2 text-muted transition-colors hover:text-foreground md:hidden"
-        onClick={() => setMobileOpen(!mobileOpen)}
+        onClick={() => {
+          setOpenDropdown(null);
+          setMobileOpen(!mobileOpen);
+        }}
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
