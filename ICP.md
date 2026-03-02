@@ -233,38 +233,98 @@ Ce profil arrive en Phase 2 quand l'integration WordPress site principal sera fi
 
 ## 6. Strategie de distribution
 
-### Budget allocation recommandee
+### Contrainte : creatives statiques uniquement (pas de video au lancement)
 
-| Canal | % budget | Role | CPA cible |
-|-------|----------|------|-----------|
-| **Google Ads (Search)** | 40% | Conversion directe (intent haut) | $60-80 |
-| **YouTube Ads (Pre-roll)** | 30% | Awareness + demo produit | $80-120 |
-| **Meta Ads (Retargeting)** | 20% | Retargeting visiteurs site + lookalike users | $30-60 |
-| **Organique (TikTok/Twitter/YouTube)** | Temps, pas $ | Brand building + communaute | $0 |
+### Plateformes evaluees
 
-### Ciblage Meta Ads (retargeting only, PAS cold)
+| Plateforme | Verdict | Raison |
+|-----------|---------|--------|
+| **Google Ads Search** | OUI — Priorite 1 | Intent haut, pas besoin de creative (texte), CPA previsible, meilleur canal pour SaaS low-ticket |
+| **Reddit Ads** | OUI — Priorite 2 | CPC le plus bas ($0.50-3), l'ICP vibe coder vit sur Reddit, format natif = image statique, 7x ROAS en consumer tech |
+| **Meta Ads (retargeting)** | OUI — Phase 2 | Statiques = 60-70% des conversions Meta, mais PAS en cold (pas d'interet "vibe coder" ciblable) |
+| **Meta Ads (cold)** | NON | Audience trop imprecise pour l'ICP, budget gaspille |
+| **TikTok Ads** | NON | Static ne fonctionne PAS sur TikTok (video-only). SaaS conversion rate = 0.6%, le pire de toutes les industries |
+| **YouTube Ads** | PLUS TARD | Requiert de la video. A lancer quand on a du budget pour produire des pre-roll 30-60 sec |
+| **LinkedIn Ads** | PLUS TARD | CPC $6-12 trop cher pour un SaaS a $19/mo. Viable uniquement pour l'ICP secondaire (consultants/freelances) |
 
-- Retargeting : visiteurs landing page qui n'ont pas converti (pixel Meta)
-- Lookalike 1% : base sur les users qui ont paye
-- Lookalike 1% : base sur les inscrits waitlist
+### Benchmarks par plateforme
 
-### Ciblage Google Ads (keywords)
+| Plateforme | CPC | CTR | Conversion rate | CPA estime | Format |
+|-----------|-----|-----|----------------|------------|--------|
+| Google Search | $2-5 | 3-5% | 3-8% | $60-100 | Texte uniquement |
+| Reddit Ads | $0.50-3 | 0.5-1% | 3-5% (free trial) | $40-80 | Image statique + titre natif |
+| Meta retargeting | $0.60-1.20 | 1-2% | 5-10% (retarget) | $30-50 | Image statique 1:1 ou 9:16 |
+| Meta lookalike | $0.60-1.20 | 0.8-1.5% | 2-4% | $60-90 | Image statique 1:1 |
 
-| Keyword | Intent | Volume estime |
-|---------|--------|--------------|
-| "AI SEO tool" | High | Eleve |
-| "automated blog for SaaS" | High | Moyen |
-| "SEO for indie hackers" | High | Faible-Moyen |
-| "AI content publishing tool" | High | Moyen |
-| "get organic traffic for startup" | High | Moyen |
-| "alternative to surfer SEO" | High | Moyen |
-| "SEO tool for solo founders" | High | Faible |
+### Plan de lancement en 3 phases
 
-### Ciblage YouTube Ads (audiences)
+#### Phase 1 — Mois 1 : Google Search + Reddit ($500-1000/mois)
 
-- Viewers de : "build a SaaS with Cursor", "vibe coding tutorial", "indie hacker"
-- Chaines : Fireship, Theo, Web Dev Simplified, Y Combinator, Greg Isenberg
-- Interets : Software development, Entrepreneurship, Startups, AI tools
+**Google Ads Search (60% du budget)**
+
+Pas de creative a produire. Annonces texte uniquement.
+
+| Keyword | Match type | CPC estime | Intent |
+|---------|-----------|------------|--------|
+| "AI SEO tool" | Broad match modified | $3-5 | Tres haut |
+| "automated blog for SaaS" | Phrase match | $2-4 | Tres haut |
+| "SEO for indie hackers" | Exact match | $1-3 | Haut |
+| "AI content publishing" | Phrase match | $2-4 | Haut |
+| "get organic traffic SaaS" | Phrase match | $3-5 | Haut |
+| "alternative to surfer SEO" | Exact match | $4-6 | Tres haut |
+| "automated SEO articles" | Phrase match | $2-4 | Haut |
+| "SEO tool for solo founders" | Exact match | $1-3 | Haut |
+
+Negatives : "free", "course", "tutorial", "what is", "definition".
+
+**Reddit Ads (40% du budget)**
+
+Format natif Reddit : image statique + titre + texte. Budget $15-25/jour.
+
+Subreddits a cibler :
+- Coeur de cible : r/SaaS, r/indiehackers, r/startups, r/microsaas
+- Adjacent : r/Entrepreneur, r/smallbusiness, r/growthhacking
+- Technique : r/webdev, r/nextjs, r/reactjs, r/learnprogramming
+- AI : r/artificial, r/ChatGPT, r/LocalLLaMA
+
+Creatives statiques Reddit (3 a tester en rotation) :
+
+1. **Before/After** : Screenshot Google Search Console (43k impressions, graphe qui monte). Titre : "I vibe-coded a SaaS. 0 Google traffic. This tool fixed it in 2 months — zero blog posts written."
+2. **Pain point** : Dashboard analytics vide (0 organic visitors). Titre : "Built a great product but invisible on Google? This AI writes and publishes SEO articles on autopilot."
+3. **Chiffre choc** : "43,300" en gros sur fond sombre type OctoBoost. Titre : "From 0 to 43K Google impressions in 60 days. No writing. No SEO skills. Just pasted my URL."
+
+**Action jour 1** : poser le pixel Meta + le Reddit Conversion Pixel sur le site.
+
+#### Phase 2 — Mois 2 : Ajouter Meta retargeting (+$300/mois)
+
+Audience : visiteurs du site (30 derniers jours) qui n'ont PAS converti.
+
+Creatives statiques Meta (4 en rotation) :
+
+| Creative | Format | Contenu |
+|----------|--------|---------|
+| Before/After | 1:1 feed | "0 → 43,000 impressions. Without writing a word." + screenshot GSC |
+| Pain point | 1:1 feed | "You're paying $5/click on ads. What if Google sent you traffic for free?" |
+| How it works | Carrousel 3 slides | Slide 1: Paste URL → Slide 2: AI writes articles → Slide 3: Published on 11 platforms |
+| Social proof | 9:16 Stories | "89 founders already on the waitlist. Here's why." + stat key |
+
+Budget : $10-15/jour. Optimiser pour conversions (signup/trial).
+
+#### Phase 3 — Mois 3+ : Scale ce qui marche
+
+- Lookalike Meta 1% base sur les users payants (quand 100+ users atteints)
+- Scale les keywords Google avec le meilleur CPA
+- Augmenter budget Reddit sur les subreddits les plus performants
+- Tester YouTube Ads si budget pour produire une video de demo 30-60 sec
+
+### Ciblage organique (gratuit, en parallele)
+
+| Canal | Action | Frequence |
+|-------|--------|-----------|
+| Twitter/X | Build in public, partager les stats, repondre aux threads SEO/vibe coding | 3-5 tweets/semaine |
+| Reddit (organique) | Posts de valeur sur r/SaaS, r/indiehackers (pas de spam, valeur reelle) | 2-3 posts/semaine |
+| Product Hunt | Launch quand le free tier est pret | 1 fois |
+| Indie Hackers | Post de lancement + updates mensuels | 1-2/mois |
 
 ---
 
