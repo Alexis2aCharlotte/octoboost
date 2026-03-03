@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -12,6 +13,8 @@ import {
   Send,
   Eye,
   Rocket,
+  Menu,
+  X,
 } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
@@ -39,77 +42,110 @@ function useProjectSlug(): string | null {
   return match ? match[1] : null;
 }
 
-function Sidebar() {
+function Sidebar({
+  mobileOpen,
+  onClose,
+}: {
+  mobileOpen: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
   const projectSlug = useProjectSlug();
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-[#0a0f1e]">
-      <Link
-        href="/demo"
-        className="flex h-20 shrink-0 items-center gap-3 border-b border-border px-4 transition-opacity hover:opacity-90"
-      >
-        <Image
-          src="/Logo Octoboost.png"
-          alt="OctoBoost"
-          width={120}
-          height={120}
-          className="h-[44px] w-[44px] shrink-0 object-contain"
-          priority
-        />
-        <span className="text-xl font-bold tracking-tight">OctoBoost</span>
-      </Link>
+  useEffect(() => {
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
-      <nav className="flex-1 overflow-y-auto px-3 pt-2">
-        <div className="space-y-0.5">
+  return (
+    <>
+      {/* Backdrop for mobile */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-[#0a0f1e] transition-transform duration-300 ease-in-out md:z-40 md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-border px-4">
           <Link
             href="/demo"
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-              pathname === "/demo"
-                ? "bg-white/[0.06] font-medium text-foreground"
-                : "text-muted hover:bg-white/[0.04] hover:text-foreground"
-            }`}
+            className="flex items-center gap-3 transition-opacity hover:opacity-90"
           >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            <Image
+              src="/Logo Octoboost.png"
+              alt="OctoBoost"
+              width={120}
+              height={120}
+              className="h-[44px] w-[44px] shrink-0 object-contain"
+              priority
+            />
+            <span className="text-xl font-bold tracking-tight">OctoBoost</span>
           </Link>
+          <button
+            className="rounded-lg p-1.5 text-muted transition-colors hover:text-foreground md:hidden"
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {projectSlug && (
-          <>
-            <div className="my-4 border-t border-border" />
-            <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted/50">
-              Project
-            </p>
-            <div className="space-y-0.5">
-              {projectNavItems.map(({ segment, icon: Icon, label }) => {
-                const href = `/demo/projects/${projectSlug}/${segment}`;
-                const isActive = pathname.startsWith(href);
+        <nav className="flex-1 overflow-y-auto px-3 pt-2">
+          <div className="space-y-0.5">
+            <Link
+              href="/demo"
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                pathname === "/demo"
+                  ? "bg-white/[0.06] font-medium text-foreground"
+                  : "text-muted hover:bg-white/[0.04] hover:text-foreground"
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </div>
 
-                return (
-                  <Link
-                    key={segment}
-                    href={href}
-                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? "bg-white/[0.06] font-medium text-foreground"
-                        : "text-muted hover:bg-white/[0.04] hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </nav>
-    </aside>
+          {projectSlug && (
+            <>
+              <div className="my-4 border-t border-border" />
+              <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted/50">
+                Project
+              </p>
+              <div className="space-y-0.5">
+                {projectNavItems.map(({ segment, icon: Icon, label }) => {
+                  const href = `/demo/projects/${projectSlug}/${segment}`;
+                  const isActive = pathname.startsWith(href);
+
+                  return (
+                    <Link
+                      key={segment}
+                      href={href}
+                      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "bg-white/[0.06] font-medium text-foreground"
+                          : "text-muted hover:bg-white/[0.04] hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </nav>
+      </aside>
+    </>
   );
 }
 
-function TopBar() {
+function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const pathname = usePathname();
   const projectSlug = useProjectSlug();
 
@@ -120,26 +156,39 @@ function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
-      <div className="flex items-center gap-1.5 text-sm text-muted">
-        <Link href="/demo" className="transition-colors hover:text-foreground">
-          OctoBoost
-        </Link>
-        <ChevronRight className="h-3 w-3 text-muted/40" />
-        {projectSlug ? (
-          <>
-            <Link
-              href="/demo"
-              className="transition-colors hover:text-foreground"
-            >
-              Projects
-            </Link>
-            <ChevronRight className="h-3 w-3 text-muted/40" />
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 md:px-6">
+      <div className="flex items-center gap-3">
+        <button
+          className="rounded-lg p-1.5 text-muted transition-colors hover:text-foreground md:hidden"
+          onClick={onMenuToggle}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="flex items-center gap-1.5 text-sm text-muted">
+          <Link
+            href="/demo"
+            className="hidden transition-colors hover:text-foreground sm:inline"
+          >
+            OctoBoost
+          </Link>
+          <ChevronRight className="hidden h-3 w-3 text-muted/40 sm:inline" />
+          {projectSlug ? (
+            <>
+              <Link
+                href="/demo"
+                className="transition-colors hover:text-foreground"
+              >
+                Projects
+              </Link>
+              <ChevronRight className="h-3 w-3 text-muted/40" />
+              <span className="font-medium text-foreground">
+                {currentPage}
+              </span>
+            </>
+          ) : (
             <span className="font-medium text-foreground">{currentPage}</span>
-          </>
-        ) : (
-          <span className="font-medium text-foreground">{currentPage}</span>
-        )}
+          )}
+        </div>
       </div>
     </header>
   );
@@ -147,10 +196,10 @@ function TopBar() {
 
 function DemoBanner() {
   return (
-    <div className="sticky top-14 z-20 flex items-center justify-between border-b border-accent/20 bg-accent/5 px-6 py-2.5 backdrop-blur-sm">
+    <div className="sticky top-14 z-20 flex flex-col items-start gap-2 border-b border-accent/20 bg-accent/5 px-4 py-2.5 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <p className="text-sm text-accent-light">
         <span className="font-medium">Demo Mode</span>
-        <span className="ml-2 text-muted">
+        <span className="ml-2 hidden text-muted sm:inline">
           You&apos;re viewing a demo project with real data.
         </span>
       </p>
@@ -187,6 +236,23 @@ export default function DemoLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const toggleSidebar = useCallback(
+    () => setSidebarOpen((prev) => !prev),
+    []
+  );
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarOpen]);
+
   return (
     <DemoProvider>
       <ToastProvider>
@@ -196,11 +262,14 @@ export default function DemoLayout({
             onClick={interceptExternalClicks}
           >
             <div className="grid-bg" />
-            <Sidebar />
-            <div className="relative pl-60" style={{ zIndex: 1 }}>
-              <TopBar />
+            <Sidebar mobileOpen={sidebarOpen} onClose={closeSidebar} />
+            <div
+              className="relative md:pl-60"
+              style={{ zIndex: 1 }}
+            >
+              <TopBar onMenuToggle={toggleSidebar} />
               <DemoBanner />
-              <main className="px-8 py-6">{children}</main>
+              <main className="px-4 py-4 md:px-8 md:py-6">{children}</main>
             </div>
           </div>
         </ConfirmProvider>

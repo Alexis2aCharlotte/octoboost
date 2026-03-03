@@ -4,7 +4,7 @@ import Image from "next/image";
 export function Footer() {
   return (
     <footer className="relative z-10 border-t border-border px-6 py-6">
-      <div className="mx-auto flex max-w-5xl items-center justify-between">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
         <div className="flex items-center gap-2">
           <Image src="/Logo Octoboost.png" alt="OctoBoost logo" width={60} height={60} className="h-5 w-5 object-contain" />
           <span className="text-sm font-semibold">OctoBoost</span>

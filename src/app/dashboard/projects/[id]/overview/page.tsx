@@ -178,25 +178,25 @@ export default function ProjectOverviewPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">
             {project.name || project.url}
           </h1>
           <a
             href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 text-base text-accent-light transition-colors hover:text-accent"
+            className="mt-1 inline-flex items-center gap-1.5 text-sm text-accent-light transition-colors hover:text-accent sm:text-base"
           >
-            {project.url}
-            <ExternalLink className="h-3 w-3" />
+            <span className="truncate">{project.url}</span>
+            <ExternalLink className="h-3 w-3 shrink-0" />
           </a>
         </div>
         {nextStep && (
           <Link
             href={nextStep.href}
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-base font-medium text-white transition-colors hover:bg-accent-light"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-light sm:text-base"
           >
             <nextStep.icon className="h-4 w-4" />
             {nextStep.label}
@@ -221,12 +221,12 @@ export default function ProjectOverviewPage() {
             )}
             <span className="text-base font-semibold">Setup Pipeline</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className={`text-sm font-medium ${allDone ? "text-green-400" : "text-muted"}`}>
-              {completedSteps}/{pipelineSteps.length} completed
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className={`text-xs font-medium sm:text-sm ${allDone ? "text-green-400" : "text-muted"}`}>
+              {completedSteps}/{pipelineSteps.length}
             </span>
             {!allDone && (
-              <div className="h-1.5 w-24 rounded-full bg-white/[0.06]">
+              <div className="hidden h-1.5 w-24 rounded-full bg-white/[0.06] sm:block">
                 <div
                   className="h-full rounded-full bg-accent transition-all duration-500"
                   style={{ width: `${(completedSteps / pipelineSteps.length) * 100}%` }}

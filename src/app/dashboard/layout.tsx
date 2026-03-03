@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -12,6 +13,8 @@ import {
   LayoutDashboard,
   Send,
   Eye,
+  Menu,
+  X,
 } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
@@ -43,84 +46,120 @@ function useProjectId(): string | null {
   return match ? match[1] : null;
 }
 
-function Sidebar() {
+function Sidebar({
+  mobileOpen,
+  onClose,
+}: {
+  mobileOpen: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
   const projectId = useProjectId();
 
+  useEffect(() => {
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-[#0a0f1e]">
-      <Link href="/dashboard" className="flex h-20 shrink-0 items-center gap-3 border-b border-border px-4 transition-opacity hover:opacity-90">
-        <Image
-          src="/Logo Octoboost.png"
-          alt="OctoBoost"
-          width={120}
-          height={120}
-          className="h-[44px] w-[44px] shrink-0 object-contain"
-          priority
+    <>
+      {/* Backdrop for mobile */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={onClose}
         />
-        <span className="text-xl font-bold tracking-tight">OctoBoost</span>
-      </Link>
+      )}
 
-      <nav className="flex-1 overflow-y-auto px-3 pt-2">
-        <div className="space-y-0.5">
-          {globalNavItems.map(({ href, icon: Icon, label }) => {
-            const isActive =
-              href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(href);
-
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? "bg-white/[0.06] font-medium text-foreground"
-                    : "text-muted hover:bg-white/[0.04] hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            );
-          })}
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-[#0a0f1e] transition-transform duration-300 ease-in-out md:z-40 md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-border px-4">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 transition-opacity hover:opacity-90"
+          >
+            <Image
+              src="/Logo Octoboost.png"
+              alt="OctoBoost"
+              width={120}
+              height={120}
+              className="h-[44px] w-[44px] shrink-0 object-contain"
+              priority
+            />
+            <span className="text-xl font-bold tracking-tight">OctoBoost</span>
+          </Link>
+          <button
+            className="rounded-lg p-1.5 text-muted transition-colors hover:text-foreground md:hidden"
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {projectId && (
-          <>
-            <div className="my-4 border-t border-border" />
-            <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted/50">
-              Project
-            </p>
-            <div className="space-y-0.5">
-              {projectNavItems.map(({ segment, icon: Icon, label }) => {
-                const href = `/dashboard/projects/${projectId}/${segment}`;
-                const isActive = pathname.startsWith(href);
+        <nav className="flex-1 overflow-y-auto px-3 pt-2">
+          <div className="space-y-0.5">
+            {globalNavItems.map(({ href, icon: Icon, label }) => {
+              const isActive =
+                href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname.startsWith(href);
 
-                return (
-                  <Link
-                    key={segment}
-                    href={href}
-                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? "bg-white/[0.06] font-medium text-foreground"
-                        : "text-muted hover:bg-white/[0.04] hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </nav>
-    </aside>
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    isActive
+                      ? "bg-white/[0.06] font-medium text-foreground"
+                      : "text-muted hover:bg-white/[0.04] hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {projectId && (
+            <>
+              <div className="my-4 border-t border-border" />
+              <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted/50">
+                Project
+              </p>
+              <div className="space-y-0.5">
+                {projectNavItems.map(({ segment, icon: Icon, label }) => {
+                  const href = `/dashboard/projects/${projectId}/${segment}`;
+                  const isActive = pathname.startsWith(href);
+
+                  return (
+                    <Link
+                      key={segment}
+                      href={href}
+                      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "bg-white/[0.06] font-medium text-foreground"
+                          : "text-muted hover:bg-white/[0.04] hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </nav>
+      </aside>
+    </>
   );
 }
 
-function TopBar() {
+function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const pathname = usePathname();
   const projectId = useProjectId();
 
@@ -133,12 +172,21 @@ function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 md:px-6">
+      <button
+        className="rounded-lg p-1.5 text-muted transition-colors hover:text-foreground md:hidden"
+        onClick={onMenuToggle}
+      >
+        <Menu className="h-5 w-5" />
+      </button>
       <div className="flex items-center gap-1.5 text-sm text-muted">
-        <Link href="/dashboard" className="transition-colors hover:text-foreground">
+        <Link
+          href="/dashboard"
+          className="hidden transition-colors hover:text-foreground sm:inline"
+        >
           OctoBoost
         </Link>
-        <ChevronRight className="h-3 w-3 text-muted/40" />
+        <ChevronRight className="hidden h-3 w-3 text-muted/40 sm:inline" />
         {projectId ? (
           <>
             <Link
@@ -163,15 +211,35 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const toggleSidebar = useCallback(
+    () => setSidebarOpen((prev) => !prev),
+    []
+  );
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarOpen]);
+
   return (
     <ToastProvider>
       <ConfirmProvider>
         <div className="min-h-screen bg-background text-foreground">
           <div className="grid-bg" />
-          <Sidebar />
-          <div className="relative pl-60" style={{ zIndex: 1 }}>
-            <TopBar />
-            <main className="px-8 py-6">{children}</main>
+          <Sidebar mobileOpen={sidebarOpen} onClose={closeSidebar} />
+          <div
+            className="relative md:pl-60"
+            style={{ zIndex: 1 }}
+          >
+            <TopBar onMenuToggle={toggleSidebar} />
+            <main className="px-4 py-4 md:px-8 md:py-6">{children}</main>
           </div>
         </div>
       </ConfirmProvider>
