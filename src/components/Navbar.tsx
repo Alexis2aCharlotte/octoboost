@@ -32,10 +32,17 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const navRef = useRef<HTMLElement | null>(null);
 
   const supportsHover = () =>
     typeof window !== "undefined" &&
     window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  const closeAllDropdowns = () => {
+    if (!navRef.current) return;
+    const opened = navRef.current.querySelectorAll("details[open]");
+    opened.forEach((details) => details.removeAttribute("open"));
+  };
 
   const openDetailsFromHover = (event: MouseEvent<HTMLDetailsElement>) => {
     if (!supportsHover()) return;
@@ -43,7 +50,7 @@ export function Navbar() {
   };
 
   const closeDetailsFromHover = (event: MouseEvent<HTMLDetailsElement>) => {
-    if (!supportsHover()) return;
+    // Close even on hybrid/non-hover devices when user leaves the dropdown area.
     event.currentTarget.open = false;
   };
 
@@ -63,13 +70,28 @@ export function Navbar() {
         setVisible(currentY < lastScrollY.current);
       }
       lastScrollY.current = currentY;
+      closeAllDropdowns();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!navRef.current) return;
+      const target = event.target as Node;
+      if (!navRef.current.contains(target)) {
+        closeAllDropdowns();
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
   return (
     <nav
+      ref={navRef}
       className={`windows-safe-nav fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}
     >
       {/* Left — Logo */}
