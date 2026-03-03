@@ -94,7 +94,7 @@ export function Navbar() {
   return (
     <nav
       ref={navRef}
-      className={`fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}
+      className={`windows-safe-nav fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}
     >
       {/* Left — Logo */}
       <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">

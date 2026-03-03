@@ -52,6 +52,21 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
+        <Script id="platform-windows-class" strategy="beforeInteractive">
+          {`
+            (function () {
+              try {
+                var uaPlatform = (navigator.userAgentData && navigator.userAgentData.platform) || "";
+                var legacyPlatform = navigator.platform || "";
+                var ua = navigator.userAgent || "";
+                var isWindows = uaPlatform === "Windows" || /Win/i.test(legacyPlatform) || /Windows NT/i.test(ua);
+                if (isWindows) {
+                  document.documentElement.classList.add("is-windows");
+                }
+              } catch (_) {}
+            })();
+          `}
+        </Script>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-26FXEDF59Z"
           strategy="afterInteractive"

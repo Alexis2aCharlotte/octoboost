@@ -230,8 +230,8 @@ function LoginForm() {
   return (
     <main className="flex min-h-screen flex-col bg-background">
       <Navbar />
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="animate-glow-pulse absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[60px]" />
+      <div className="windows-safe-overlay absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="animate-glow-pulse absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[60px] pointer-events-none" />
       </div>
 
       <div className="relative z-10 mx-auto flex flex-1 w-full max-w-sm items-center px-6 pt-16">
