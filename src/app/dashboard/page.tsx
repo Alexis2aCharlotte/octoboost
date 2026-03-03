@@ -119,10 +119,10 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-base text-muted">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted sm:text-base">
             {totalProjects === 0
               ? "Start by adding your first site."
               : `${totalProjects} project${totalProjects > 1 ? "s" : ""} · ${withAnalysis} analyzed`}
@@ -170,24 +170,26 @@ export default function DashboardPage() {
       {!isDemo && (
         <form
           onSubmit={handleAnalyze}
-          className="flex items-center gap-3 rounded-xl border border-border bg-card p-2.5"
+          className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 sm:flex-row sm:items-center sm:gap-3"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted/60">
-            <Search className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted/60">
+              <Search className="h-4 w-4" />
+            </div>
+            <input
+              type="url"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              placeholder="https://yourURL.example.com"
+              required
+              disabled={analyzing}
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/40 disabled:opacity-50"
+            />
           </div>
-          <input
-            type="url"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            placeholder="Add a new site — https://yourURL.example.com"
-            required
-            disabled={analyzing}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted/40 disabled:opacity-50"
-          />
           <button
             type="submit"
             disabled={analyzing}
-            className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-light disabled:opacity-50"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-light disabled:opacity-50"
           >
             {analyzing ? (
               <>
@@ -247,7 +249,7 @@ export default function DashboardPage() {
                         <ChevronRight className="h-3 w-3" />
                       </span>
                     ) : (
-                      <div className="flex items-center gap-3 text-xs text-muted/60">
+                      <div className="hidden items-center gap-3 text-xs text-muted/60 sm:flex">
                         <span className="flex items-center gap-1">
                           <Target className="h-3 w-3" />
                           Research
@@ -273,7 +275,7 @@ export default function DashboardPage() {
                   {!isDemo && (
                     <button
                       onClick={() => handleDelete(project.id)}
-                      className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                      className="rounded-lg p-2 text-muted opacity-100 transition-all hover:bg-danger/10 hover:text-danger md:opacity-0 md:group-hover:opacity-100"
                       title="Delete project"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

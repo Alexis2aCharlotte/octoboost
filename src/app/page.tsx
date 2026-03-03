@@ -454,7 +454,7 @@ export default function Home() {
           <div className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
             <div className="rounded-xl bg-card/80 px-8 py-6">
               <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-muted/60">Also cited by AI tools</p>
-              <div className="grid grid-cols-5 gap-6">
+              <div className="grid grid-cols-3 gap-4 sm:grid-cols-5 sm:gap-6">
                 {[
                   { name: "Google", logo: "/logos/google.svg", visits: 311, invert: false },
                   { name: "ChatGPT", logo: "/logos/chatgpt.svg", visits: 46, invert: false },
