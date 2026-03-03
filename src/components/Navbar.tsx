@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -30,27 +30,28 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const navRef = useRef<HTMLElement | null>(null);
 
   const supportsHover = () =>
     typeof window !== "undefined" &&
     window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-  const openDropdownFromHover = (label: string) => {
+  const openDetailsFromHover = (event: MouseEvent<HTMLDetailsElement>) => {
     if (!supportsHover()) return;
-    setOpenDropdown(label);
+    event.currentTarget.open = true;
   };
 
-  const closeDropdownFromHover = (label: string) => {
+  const closeDetailsFromHover = (event: MouseEvent<HTMLDetailsElement>) => {
     if (!supportsHover()) return;
-    setOpenDropdown((current) => (current === label ? null : current));
+    event.currentTarget.open = false;
   };
 
-  const toggleDropdown = (label: string) => {
-    setOpenDropdown((current) => (current === label ? null : label));
+  const closeDetailsFromItemClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    const details = event.currentTarget.closest("details");
+    if (details) {
+      details.removeAttribute("open");
+    }
   };
 
   useEffect(() => {
@@ -67,33 +68,8 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const onPointerDown = (event: PointerEvent) => {
-      if (!navRef.current) return;
-      const target = event.target as Node;
-      if (!navRef.current.contains(target)) {
-        setOpenDropdown(null);
-      }
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenDropdown(null);
-        setMobileOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, []);
-
   return (
     <nav
-      ref={navRef}
       className={`windows-safe-nav fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-transform duration-300 md:translate-y-0 md:px-8 ${visible ? "translate-y-0" : "-translate-y-full"}`}
     >
       {/* Left — Logo */}
@@ -106,53 +82,38 @@ export function Navbar() {
       <div className="hidden flex-1 items-center justify-center gap-1 md:flex">
         {navLinks.map((link) =>
           link.children ? (
-            <div
+            <details
               key={link.label}
-              className="relative"
-              onMouseEnter={() => openDropdownFromHover(link.label)}
-              onMouseLeave={() => closeDropdownFromHover(link.label)}
+              className="group relative"
+              onMouseEnter={openDetailsFromHover}
+              onMouseLeave={closeDetailsFromHover}
             >
-              <button
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={openDropdown === link.label}
-                onClick={() => toggleDropdown(link.label)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    toggleDropdown(link.label);
-                  } else if (e.key === "Escape") {
-                    setOpenDropdown(null);
-                  }
-                }}
-                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground"
+              <summary
+                className="flex list-none cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden"
               >
                 {link.label}
-                <ChevronDown className={`h-3 w-3 transition-transform ${openDropdown === link.label ? "rotate-180" : ""}`} />
-              </button>
-              {openDropdown === link.label && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2">
-                  <div className="min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg" role="menu" aria-label={link.label}>
-                    {link.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        role="menuitem"
-                        onClick={() => setOpenDropdown(null)}
-                        className="block rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
+                <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 translate-y-1 pt-2 opacity-0 transition-all duration-150 group-open:pointer-events-auto group-open:translate-y-0 group-open:opacity-100">
+                <div className="min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg" role="menu" aria-label={link.label}>
+                  {link.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      role="menuitem"
+                      onClick={closeDetailsFromItemClick}
+                      className="block rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground"
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            </details>
           ) : (
             <Link
               key={link.label}
               href={link.href}
-              onClick={() => setOpenDropdown(null)}
               className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground"
             >
               {link.label}
@@ -180,10 +141,7 @@ export function Navbar() {
       {/* Mobile toggle */}
       <button
         className="rounded-lg p-2 text-muted transition-colors hover:text-foreground md:hidden"
-        onClick={() => {
-          setOpenDropdown(null);
-          setMobileOpen(!mobileOpen);
-        }}
+        onClick={() => setMobileOpen(!mobileOpen)}
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
