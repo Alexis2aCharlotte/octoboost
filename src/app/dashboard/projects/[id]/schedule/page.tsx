@@ -21,6 +21,7 @@ import {
   CalendarClock,
   AlertCircle,
   Check,
+  GripVertical,
 } from "lucide-react";
 import DateTimePicker from "@/components/DateTimePicker";
 
@@ -487,52 +488,63 @@ export default function SchedulePage() {
                         const isDragging = draggedId === dragId;
                         const time = new Date(article.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
                         return (
-                          <div
-                            key={dragId}
-                            draggable={!isPublished}
-                            onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggedId(dragId); }}
-                            onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
-                            className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${!isPublished ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}
-                          >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs">
-                              <Globe className="h-3.5 w-3.5 text-accent" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="truncate text-sm font-medium">{article.title}</p>
-                                <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">BLOG</span>
-                              </div>
-                            </div>
-                            <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
-                            {isPublished ? (
-                              article.canonical_url ? (
-                                <a href={article.canonical_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
-                                  <ExternalLink className="h-3 w-3" />View
-                                </a>
-                              ) : (
-                                <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
-                                  <CheckCircle2 className="h-3 w-3" />Done
-                                </span>
-                              )
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => handlePublishArticleNow(article.id)}
-                                  disabled={publishingId === article.id}
-                                  className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                                >
-                                  {publishingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                                  Now
-                                </button>
-                                <button
-                                  onClick={() => openReschedule(item)}
-                                  className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
-                                >
-                                  <CalendarClock className="h-3 w-3" />
-                                  Move
-                                </button>
+                          <div key={dragId} className="flex items-center gap-1.5">
+                            {!isPublished && (
+                              <div
+                                draggable
+                                onDragStart={(e) => {
+                                  const card = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (card) e.dataTransfer.setDragImage(card, 20, 20);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  setDraggedId(dragId);
+                                }}
+                                onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                                className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted/60 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
+                              >
+                                <GripVertical className="h-4 w-4" />
                               </div>
                             )}
+                            <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}>
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs">
+                                <Globe className="h-3.5 w-3.5 text-accent" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="truncate text-sm font-medium">{article.title}</p>
+                                  <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">BLOG</span>
+                                </div>
+                              </div>
+                              <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                              {isPublished ? (
+                                article.canonical_url ? (
+                                  <a href={article.canonical_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                    <ExternalLink className="h-3 w-3" />View
+                                  </a>
+                                ) : (
+                                  <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                    <CheckCircle2 className="h-3 w-3" />Done
+                                  </span>
+                                )
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handlePublishArticleNow(article.id)}
+                                    disabled={publishingId === article.id}
+                                    className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                                  >
+                                    {publishingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                                    Now
+                                  </button>
+                                  <button
+                                    onClick={() => openReschedule(item)}
+                                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
+                                  >
+                                    <CalendarClock className="h-3 w-3" />
+                                    Move
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       }
@@ -547,58 +559,69 @@ export default function SchedulePage() {
                       const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 
                       return (
-                        <div
-                          key={dragId}
-                          draggable={!isPublished}
-                          onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggedId(dragId); }}
-                          onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
-                          className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${!isPublished ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}
-                        >
-                          <span
-                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
-                            style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
-                          >
-                            {platform?.icon ?? "📄"}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{variant.title}</p>
-                            <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
-                          </div>
-                          <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
-                          {isPublished ? (
-                            variant.published_url ? (
-                              <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
-                                <ExternalLink className="h-3 w-3" />View
-                              </a>
-                            ) : (
-                              <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
-                                <CheckCircle2 className="h-3 w-3" />Done
-                              </span>
-                            )
-                          ) : isManual ? (
-                            <button onClick={() => handleCopy(variant)} className="flex items-center gap-1 rounded-md bg-card-hover px-2 py-1 text-[11px] font-medium text-muted transition hover:text-foreground">
-                              <Copy className="h-3 w-3" />
-                              {copiedId === variant.id ? "Copied!" : "Copy"}
-                            </button>
-                          ) : (
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => handlePublishVariantNow(variant.id)}
-                                disabled={publishingId === variant.id}
-                                className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                              >
-                                {publishingId === variant.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                                Now
-                              </button>
-                              <button
-                                onClick={() => openReschedule(item)}
-                                className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
-                              >
-                                <CalendarClock className="h-3 w-3" />
-                                Move
-                              </button>
+                        <div key={dragId} className="flex items-center gap-1.5">
+                          {!isPublished && (
+                            <div
+                              draggable
+                              onDragStart={(e) => {
+                                const card = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (card) e.dataTransfer.setDragImage(card, 20, 20);
+                                e.dataTransfer.effectAllowed = "move";
+                                setDraggedId(dragId);
+                              }}
+                              onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                              className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted/60 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
+                            >
+                              <GripVertical className="h-4 w-4" />
                             </div>
                           )}
+                          <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}>
+                            <span
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
+                              style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
+                            >
+                              {platform?.icon ?? "📄"}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{variant.title}</p>
+                              <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
+                            </div>
+                            <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                            {isPublished ? (
+                              variant.published_url ? (
+                                <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                  <ExternalLink className="h-3 w-3" />View
+                                </a>
+                              ) : (
+                                <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                  <CheckCircle2 className="h-3 w-3" />Done
+                                </span>
+                              )
+                            ) : isManual ? (
+                              <button onClick={() => handleCopy(variant)} className="flex items-center gap-1 rounded-md bg-card-hover px-2 py-1 text-[11px] font-medium text-muted transition hover:text-foreground">
+                                <Copy className="h-3 w-3" />
+                                {copiedId === variant.id ? "Copied!" : "Copy"}
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handlePublishVariantNow(variant.id)}
+                                  disabled={publishingId === variant.id}
+                                  className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                                >
+                                  {publishingId === variant.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                                  Now
+                                </button>
+                                <button
+                                  onClick={() => openReschedule(item)}
+                                  className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
+                                >
+                                  <CalendarClock className="h-3 w-3" />
+                                  Move
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
