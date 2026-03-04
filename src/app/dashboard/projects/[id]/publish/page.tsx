@@ -848,7 +848,7 @@ export default function PublishPage() {
                       {([
                         { id: "util" as const, label: "lib/octoboost.ts" },
                         { id: "usage" as const, label: "Usage example" },
-                        { id: "prompt" as const, label: "Cursor Prompt" },
+                        { id: "prompt" as const, label: "Claude Prompt" },
                       ]).map(({ id: tabId, label }) => (
                         <button
                           key={tabId}
@@ -882,7 +882,7 @@ export default function PublishPage() {
                   <div className="space-y-2.5 text-xs text-muted leading-relaxed">
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
-                      <span>Copy the <button onClick={() => setSnippetTab("prompt")} className="text-accent-light hover:underline font-medium">Cursor Prompt</button> and paste it in your IDE — it sets up everything automatically</span>
+                      <span>Copy the <button onClick={() => setSnippetTab("prompt")} className="text-accent-light hover:underline font-medium">Claude Prompt</button> and paste it in your IDE — it sets up everything automatically</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
