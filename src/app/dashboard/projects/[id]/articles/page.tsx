@@ -42,12 +42,6 @@ import DateTimePicker from "@/components/DateTimePicker";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
 
-interface GeneratingInfo {
-  clusterId: string;
-  startedAt: number;
-  estimatedSeconds: number;
-}
-
 interface Cluster {
   id: string;
   topic: string;
@@ -162,8 +156,11 @@ export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
+
+  const [genQueue, setGenQueue] = useState<string[]>([]);
+  const [activeGenId, setActiveGenId] = useState<string | null>(null);
+  const processingRef = useRef(false);
 
   const [view, setView] = useState<View>("list");
   const [previewArticle, setPreviewArticle] = useState<ArticleFull | null>(null);
@@ -190,7 +187,6 @@ export default function ArticlesPage() {
   const [schedulingSite, setSchedulingSite] = useState(false);
   const [siteScheduleDate, setSiteScheduleDate] = useState("");
 
-  const [persistentGenerating, setPersistentGenerating] = useState<GeneratingInfo | null>(null);
   const initialLoadDone = useRef(false);
 
   const loadData = useCallback(async () => {
@@ -252,90 +248,96 @@ export default function ArticlesPage() {
     loadData();
   }, [loadData]);
 
-  // Restore persistent generation state from localStorage
+  // Restore queue from localStorage on first load
   useEffect(() => {
     if (loading || initialLoadDone.current) return;
     initialLoadDone.current = true;
-    const key = `octoboost_gen_${id}`;
+    const key = `octoboost_queue_${id}`;
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try {
-      const data: GeneratingInfo = JSON.parse(raw);
-      const articleExists = articles.some((a) => a.clusterId === data.clusterId);
-      const elapsed = (Date.now() - data.startedAt) / 1000;
-      if (articleExists || elapsed > 300) {
-        localStorage.removeItem(key);
-      } else {
-        setPersistentGenerating(data);
-      }
+      const saved: { queue: string[]; activeId: string | null; startedAt: number } = JSON.parse(raw);
+      const elapsed = (Date.now() - saved.startedAt) / 1000;
+      if (elapsed > 600) { localStorage.removeItem(key); return; }
+      const existingIds = new Set(articles.map((a) => a.clusterId));
+      const remaining = saved.queue.filter((cid) => !existingIds.has(cid));
+      const activeStillPending = saved.activeId && !existingIds.has(saved.activeId);
+      if (activeStillPending) setActiveGenId(saved.activeId);
+      if (remaining.length > 0) setGenQueue(remaining);
     } catch {
       localStorage.removeItem(key);
     }
   }, [loading, id, articles]);
 
-  // Poll for article completion when there's a persistent generation and no active fetch
+  // Persist queue state to localStorage whenever it changes
   useEffect(() => {
-    if (!persistentGenerating || generatingId) return;
-    const interval = setInterval(async () => {
-      await loadData();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [persistentGenerating, generatingId, loadData]);
-
-  // Clear persistent generation when article appears
-  useEffect(() => {
-    if (!persistentGenerating) return;
-    const exists = articles.some((a) => a.clusterId === persistentGenerating.clusterId);
-    if (exists) {
-      localStorage.removeItem(`octoboost_gen_${id}`);
-      setPersistentGenerating(null);
+    const key = `octoboost_queue_${id}`;
+    if (genQueue.length === 0 && !activeGenId) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify({ queue: genQueue, activeId: activeGenId, startedAt: Date.now() }));
     }
-  }, [articles, persistentGenerating, id]);
+  }, [genQueue, activeGenId, id]);
+
+  // Poll for article completion when there's an active generation we're waiting on (restored from localStorage)
+  useEffect(() => {
+    if (!activeGenId || processingRef.current) return;
+    const interval = setInterval(async () => { await loadData(); }, 5000);
+    return () => clearInterval(interval);
+  }, [activeGenId, loadData]);
+
+  // When a generated article appears, clear it from active and process next in queue
+  useEffect(() => {
+    if (!activeGenId) return;
+    const exists = articles.some((a) => a.clusterId === activeGenId);
+    if (exists) setActiveGenId(null);
+  }, [articles, activeGenId]);
+
+  // Queue processor: pick next item when nothing is actively generating
+  useEffect(() => {
+    if (activeGenId || genQueue.length === 0 || processingRef.current || !realProjectId) return;
+    const nextId = genQueue[0];
+    if (articles.some((a) => a.clusterId === nextId)) {
+      setGenQueue((q) => q.slice(1));
+      return;
+    }
+    processingRef.current = true;
+    setActiveGenId(nextId);
+    setGenQueue((q) => q.slice(1));
+
+    (async () => {
+      try {
+        const res = await fetch(fetchUrl("/api/articles/generate"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clusterId: nextId, projectId: realProjectId }),
+        });
+        if (res.ok) {
+          await loadData();
+        } else if (res.status === 409) {
+          await loadData();
+        } else {
+          const data = await res.json();
+          toast(data.error || "Generation failed");
+        }
+      } catch {
+        // server may still be generating
+      } finally {
+        setActiveGenId(null);
+        processingRef.current = false;
+      }
+    })();
+  }, [activeGenId, genQueue, realProjectId, articles, fetchUrl, loadData, toast]);
 
   const articleByCluster = new Map(articles.map((a) => [a.clusterId, a]));
 
-  async function handleGenerate(clusterId: string) {
+  function handleGenerate(clusterId: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (isFree) { setShowUpgradeModal(true); return; }
-    if (!realProjectId || generatingId) return;
-    setGeneratingId(clusterId);
-
-    const estimatedSeconds = Math.floor(Math.random() * 61) + 120;
-    const genInfo: GeneratingInfo = { clusterId, startedAt: Date.now(), estimatedSeconds };
-    localStorage.setItem(`octoboost_gen_${id}`, JSON.stringify(genInfo));
-    setPersistentGenerating(genInfo);
-
-    try {
-      const res = await fetch(fetchUrl("/api/articles/generate"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clusterId, projectId: realProjectId }),
-      });
-
-      if (res.status === 409) {
-        const data = await res.json();
-        if (data.articleId) {
-          await openPreview(data.articleId);
-        }
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json();
-        toast(data.error || "Generation failed");
-        return;
-      }
-
-      const data = await res.json();
-      localStorage.removeItem(`octoboost_gen_${id}`);
-      setPersistentGenerating(null);
-      await loadData();
-      await openPreview(data.articleId);
-    } catch {
-      // Don't clear localStorage on error — server may still be generating
-    } finally {
-      setGeneratingId(null);
-    }
+    if (!realProjectId) return;
+    if (activeGenId === clusterId || genQueue.includes(clusterId)) return;
+    if (articleByCluster.has(clusterId)) return;
+    setGenQueue((q) => [...q, clusterId]);
   }
 
   async function openPreview(articleId: string) {
@@ -1266,6 +1268,20 @@ export default function ArticlesPage() {
         </p>
       </div>
 
+      {/* Queue banner */}
+      {(activeGenId || genQueue.length > 0) && (
+        <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+          <Loader2 className="h-4 w-4 animate-spin text-accent-light" />
+          <p className="flex-1 text-sm">
+            <span className="font-medium text-accent-light">
+              {activeGenId ? "Generating 1 article" : ""}
+              {activeGenId && genQueue.length > 0 ? ", " : ""}
+              {genQueue.length > 0 ? `${genQueue.length} queued` : ""}
+            </span>
+          </p>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4">
@@ -1300,8 +1316,8 @@ export default function ArticlesPage() {
               cluster={cluster}
               article={articleByCluster.get(cluster.id)}
               isExpanded={expandedId === cluster.id}
-              isGenerating={generatingId === cluster.id}
-              generatingInfo={null}
+              isGenerating={activeGenId === cluster.id}
+              queuePosition={genQueue.indexOf(cluster.id)}
               onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
               onGenerate={() => handleGenerate(cluster.id)}
               onPreview={(aid) => openPreview(aid)}
@@ -1349,10 +1365,8 @@ export default function ArticlesPage() {
                 cluster={cluster}
                 article={undefined}
                 isExpanded={expandedId === cluster.id}
-                isGenerating={generatingId === cluster.id}
-                generatingInfo={
-                  persistentGenerating?.clusterId === cluster.id ? persistentGenerating : null
-                }
+                isGenerating={activeGenId === cluster.id}
+                queuePosition={genQueue.indexOf(cluster.id)}
                 onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
                 onGenerate={() => handleGenerate(cluster.id)}
                 onPreview={() => {}}
@@ -1396,7 +1410,7 @@ function ArticleCard({
   article,
   isExpanded,
   isGenerating,
-  generatingInfo,
+  queuePosition,
   onToggle,
   onGenerate,
   onPreview,
@@ -1406,37 +1420,39 @@ function ArticleCard({
   article: Article | undefined;
   isExpanded: boolean;
   isGenerating: boolean;
-  generatingInfo: GeneratingInfo | null;
+  queuePosition: number;
   onToggle: () => void;
   onGenerate: () => void;
   onPreview: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const showGenerating = isGenerating || !!generatingInfo;
+  const isQueued = queuePosition >= 0;
+  const showGenerating = isGenerating;
+  const showBusy = showGenerating || isQueued;
   const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
 
   useEffect(() => {
-    if (!showGenerating) { setElapsed(0); return; }
-    const start = generatingInfo?.startedAt ?? Date.now();
-    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    if (!showGenerating) { setElapsed(0); startRef.current = Date.now(); return; }
+    startRef.current = Date.now();
+    const tick = () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [showGenerating, generatingInfo?.startedAt]);
+  }, [showGenerating]);
 
-  const estimatedSeconds = generatingInfo?.estimatedSeconds ?? 150;
+  const estimatedSeconds = 150;
   const progress = Math.min(elapsed / estimatedSeconds, 0.95);
-  const remainingSeconds = Math.max(estimatedSeconds - elapsed, 0);
-  const remainingMin = Math.floor(remainingSeconds / 60);
-  const remainingSec = remainingSeconds % 60;
 
   return (
     <div className={`overflow-hidden rounded-xl border bg-card transition ${
       showGenerating
         ? "border-accent/40 ring-1 ring-accent/20"
-        : article
-          ? "border-accent/20 hover:border-accent/20"
-          : "border-border hover:border-accent/20"
+        : isQueued
+          ? "border-amber-500/30 ring-1 ring-amber-500/10"
+          : article
+            ? "border-accent/20 hover:border-accent/20"
+            : "border-border hover:border-accent/20"
     }`}>
       {showGenerating && (
         <div className="relative h-1 bg-accent/10">
@@ -1447,6 +1463,9 @@ function ArticleCard({
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
         </div>
       )}
+      {isQueued && (
+        <div className="h-1 bg-amber-500/20" />
+      )}
 
       <button
         onClick={onToggle}
@@ -1455,12 +1474,16 @@ function ArticleCard({
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-sm font-bold ${
           showGenerating
             ? "bg-accent/20"
-            : article
-              ? "bg-accent/20 text-accent-light"
-              : "bg-accent/10 text-accent-light"
+            : isQueued
+              ? "bg-amber-500/15 text-amber-400"
+              : article
+                ? "bg-accent/20 text-accent-light"
+                : "bg-accent/10 text-accent-light"
         }`}>
           {showGenerating ? (
             <Loader2 className="h-5 w-5 animate-spin text-accent-light" />
+          ) : isQueued ? (
+            <Clock className="h-5 w-5" />
           ) : article ? (
             <FileText className="h-5 w-5" />
           ) : (
@@ -1496,10 +1519,15 @@ function ArticleCard({
             <div className="text-right">
               <p className="text-xs font-medium text-accent-light">Generating...</p>
               <p className="text-[10px] text-muted">
-                {remainingSeconds > 0
-                  ? `~${remainingMin}m ${String(remainingSec).padStart(2, "0")}s left`
+                {elapsed < estimatedSeconds
+                  ? `~${Math.floor((estimatedSeconds - elapsed) / 60)}m ${String((estimatedSeconds - elapsed) % 60).padStart(2, "0")}s left`
                   : "Almost done..."}
               </p>
+            </div>
+          ) : isQueued ? (
+            <div className="text-right">
+              <p className="text-xs font-medium text-amber-400">Queued</p>
+              <p className="text-[10px] text-muted">#{queuePosition + 1} in line</p>
             </div>
           ) : article ? (
             <span className={`rounded-md px-2.5 py-1 text-xs font-medium ${statusConfig[article.status]?.color ?? "text-muted bg-card-hover"}`}>
@@ -1562,10 +1590,14 @@ function ArticleCard({
                   </span>
                 </div>
               </div>
+            ) : isQueued ? (
+              <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-sm">
+                <Clock className="h-4 w-4 text-amber-400" />
+                <span className="font-medium text-amber-400">Queued — #{queuePosition + 1} in line</span>
+              </div>
             ) : (
               <button
                 onClick={onGenerate}
-                disabled={isGenerating}
                 className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
               >
                 <PenTool className="h-4 w-4" />

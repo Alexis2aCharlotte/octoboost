@@ -239,10 +239,16 @@ export interface KeywordCluster {
   difficulty: string;
 }
 
+export interface CompetitorRef {
+  name: string;
+  url: string;
+}
+
 export async function clusterKeywords(
   keywords: KeywordForClustering[],
   productContext: string,
-  existingTopics?: string[]
+  existingTopics?: string[],
+  competitors?: CompetitorRef[]
 ): Promise<KeywordCluster[]> {
   if (keywords.length === 0) return [];
 
@@ -255,6 +261,14 @@ export async function clusterKeywords(
 
   const dedupeRule = existingTopics && existingTopics.length > 0
     ? `\n- CRITICAL: The following articles have ALREADY been written. Do NOT create clusters that overlap with these topics. Propose only NEW, fresh angles:\n${existingTopics.map((t) => `  • "${t}"`).join("\n")}`
+    : "";
+
+  const competitorBlock = competitors && competitors.length > 0
+    ? `\n\nDirect competitors of this product:\n${competitors.map((c) => `- ${c.name} (${c.url})`).join("\n")}`
+    : "";
+
+  const competitorRule = competitors && competitors.length > 0
+    ? `\n- MANDATORY: Include at least 1-2 comparison clusters that directly pit the product against a named competitor (e.g., "[Product] vs [Competitor]: Which Is Better in 2026?" or "[Product] vs [Competitor] Compared"). Pick the most well-known competitors for maximum search volume. These comparison articles should highlight why the product is a strong alternative.`
     : "";
 
   const { object } = await generateObject({
@@ -274,10 +288,10 @@ Rules:
 - Order clusters by ranking potential (easiest to rank with most traffic first)
 - Include a mix of article types: standard informational, but also comparison ("X vs Y"), listicle ("Top 5..."), and how-to guides
 - For each cluster, assign an articleType: "informational" for deep dives, "comparison" for X vs Y or alternatives articles, "listicle" for Top N or Best X for Y articles, "how-to" for step-by-step guides
-- Aim for at least 2-3 comparison clusters, 2-3 listicle clusters, and 2-3 how-to clusters. The rest can be informational.
+- Aim for at least 2-3 comparison clusters, 2-3 listicle clusters, and 2-3 how-to clusters. The rest can be informational.${competitorRule}
 - NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.
 - When a year appears in any title or text, it MUST be 2026. No exceptions.${dedupeRule}`,
-    prompt: `Product context: ${productContext}
+    prompt: `Product context: ${productContext}${competitorBlock}
 
 Group these keywords into topic clusters. Each cluster = 1 article to write.
 

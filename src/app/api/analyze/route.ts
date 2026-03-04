@@ -412,7 +412,8 @@ export async function POST(req: NextRequest) {
             intent: k.intent,
           })),
           productContext,
-          existingTopics
+          existingTopics,
+          analysis.competitors.slice(0, 5).map((c) => ({ name: c.name, url: c.url }))
         );
       } catch (e) {
         console.error("Clustering error (continuing):", e);

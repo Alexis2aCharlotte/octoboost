@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ProjectCache {
@@ -17,15 +17,14 @@ const ProjectCacheContext = createContext<ProjectCache>({
 });
 
 const cache = new Map<string, { data: any; ts: number }>();
-const CACHE_TTL = 30_000;
 
 export function ProjectCacheProvider({ children }: { children: React.ReactNode }) {
   const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const [data, setData] = useState<any | null>(() => {
     if (!id) return null;
     const cached = cache.get(id);
-    if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
-    return null;
+    return cached?.data ?? null;
   });
   const [loading, setLoading] = useState(!data);
   const fetchingRef = useRef(false);
@@ -49,14 +48,14 @@ export function ProjectCacheProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!id) return;
     const cached = cache.get(id);
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    if (cached) {
       setData(cached.data);
       setLoading(false);
-      return;
+    } else {
+      setLoading(true);
     }
-    setLoading(true);
     fetchData();
-  }, [id, fetchData]);
+  }, [id, pathname, fetchData]);
 
   const refresh = useCallback(async () => {
     if (id) cache.delete(id);
