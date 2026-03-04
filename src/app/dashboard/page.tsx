@@ -107,7 +107,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: data.error ?? "Analysis failed", variant: "error" });
+        toast(data.error ?? "Analysis failed", "error");
         return;
       }
       if (data.analysisId) {
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         }
       }
     } catch {
-      toast({ title: "Something went wrong", variant: "error" });
+      toast("Something went wrong", "error");
     } finally {
       setAnalyzing(false);
     }
