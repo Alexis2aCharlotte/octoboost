@@ -625,7 +625,7 @@ export default function ArticlesPage() {
 
     return (
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => { setView("preview"); setVariantPreview(null); }}
             className="flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
@@ -650,8 +650,8 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between">
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${vMeta?.color ?? "text-muted"} ${vMeta?.bgColor ?? "bg-card-hover"}`}>
@@ -675,7 +675,7 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card px-8 py-10 sm:px-12">
+        <div className="rounded-xl border border-border bg-card px-4 py-8 sm:px-8 sm:py-10 lg:px-12">
           <div
             className="prose prose-invert prose-lg max-w-none
               prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
@@ -707,7 +707,7 @@ export default function ArticlesPage() {
 
     return (
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => { setView("list"); setPreviewArticle(null); setVariants([]); cancelEditing(); }}
             className="flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
@@ -715,7 +715,7 @@ export default function ArticlesPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to articles
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {editing ? (
               <>
                 <button
@@ -760,8 +760,8 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between">
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-medium ${statusConfig[previewArticle.status]?.color ?? "text-muted bg-card"}`}>
                 {previewArticle.status === "published"
@@ -968,15 +968,17 @@ export default function ArticlesPage() {
                         const meta = platformMeta[v.platformType];
                         const Icon = meta?.icon ?? Radio;
                         return (
-                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border bg-card-hover p-3">
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
-                              <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
+                          <div key={v.id} className="flex flex-col gap-2 rounded-lg border border-border bg-card-hover p-3 sm:flex-row sm:items-center sm:gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
+                                <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{v.title}</p>
+                                <p className="text-xs text-muted">{meta?.label} · {v.wordCount} words</p>
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium">{v.title}</p>
-                              <p className="text-xs text-muted">{meta?.label} · {v.wordCount} words</p>
-                            </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               {v.status === "published" ? (
                                 <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
                                   <ExternalLink className="h-3 w-3" />
@@ -1092,15 +1094,17 @@ export default function ArticlesPage() {
                         const meta = platformMeta[v.platformType];
                         const Icon = meta?.icon ?? Radio;
                         return (
-                          <div key={v.id} className="flex items-center gap-3 rounded-lg border border-border bg-card-hover p-3">
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
-                              <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
+                          <div key={v.id} className="flex flex-col gap-2 rounded-lg border border-border bg-card-hover p-3 sm:flex-row sm:items-center sm:gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta?.bgColor ?? "bg-accent/10"}`}>
+                                <Icon className={`h-4 w-4 ${meta?.color ?? "text-accent-light"}`} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{v.title}</p>
+                                <p className="text-xs text-muted">{meta?.label} · {v.wordCount} words</p>
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium">{v.title}</p>
-                              <p className="text-xs text-muted">{meta?.label} · {v.wordCount} words</p>
-                            </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <button
                                 onClick={async () => {
                                   const res = await fetch(fetchUrl(`/api/articles/variants/${v.id}`));
@@ -1164,7 +1168,7 @@ export default function ArticlesPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card px-8 py-10 sm:px-12">
+          <div className="rounded-xl border border-border bg-card px-4 py-8 sm:px-8 sm:py-10 lg:px-12">
             <div
               className="prose prose-invert prose-lg max-w-none
                 prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
@@ -1263,7 +1267,7 @@ export default function ArticlesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4">
           <span className="text-sm text-muted">Ideas</span>
           <p className="mt-2 text-2xl font-bold">{clusters.length}</p>
@@ -1637,7 +1641,7 @@ function ArticlesSkeleton() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Shimmer className="h-7 w-32" />
           <Shimmer className="mt-2 h-4 w-48" />
@@ -1646,7 +1650,7 @@ function ArticlesSkeleton() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-4">
             <Shimmer className="h-4 w-20" />

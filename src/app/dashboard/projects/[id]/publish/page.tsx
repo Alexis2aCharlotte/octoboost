@@ -517,7 +517,7 @@ export default function PublishPage() {
         </p>
       </div>
 
-      {/* Tabs */}
+          {/* Tabs */}
       <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
         {([
           { id: "site" as const, label: "My Site", icon: Plug, badge: connection?.status === "connected" ? "Connected" : undefined },
@@ -527,14 +527,15 @@ export default function PublishPage() {
           <button
             key={tabId}
             onClick={() => setTab(tabId as PublishTab)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2.5 text-xs transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
               tab === tabId ? "bg-accent/15 font-medium text-accent-light" : "text-muted hover:text-foreground"
             }`}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{label.split(" ")[0]}</span>
             {badge && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+              <span className={`hidden rounded-full px-1.5 py-0.5 text-[10px] font-medium sm:inline ${
                 tab === tabId ? "bg-accent/20 text-accent-light" : "bg-white/[0.06] text-muted"
               }`}>
                 {badge}
@@ -550,22 +551,22 @@ export default function PublishPage() {
 
           {/* ── Connected status banner ── */}
           {apiKey && (
-            <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-5">
-              <div className="flex items-center justify-between">
+            <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
                     <CheckCircle2 className="h-5 w-5 text-green-400" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-base font-semibold text-green-400">Site connected</p>
-                    <p className="text-sm text-muted">Your API key is active. Published articles are available on your site.</p>
+                    <p className="text-sm text-muted">Your API key is active.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-green-400/80 font-mono">
+                  <code className="truncate rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-green-400/80 font-mono">
                     {apiKey.slice(0, 8)}{"•".repeat(16)}
                   </code>
-                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
+                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
                     {copiedApiKey ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                   </button>
                 </div>
@@ -574,12 +575,12 @@ export default function PublishPage() {
               {/* Compact endpoints */}
               <div className="mt-4 flex flex-wrap gap-3">
                 <div className="flex items-center gap-2 rounded-lg bg-[#0d1117] px-3 py-1.5 text-xs">
-                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                  <code className="text-muted">/api/public/articles</code>
+                  <span className="shrink-0 rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                  <code className="truncate text-muted">/api/public/articles</code>
                 </div>
                 <div className="flex items-center gap-2 rounded-lg bg-[#0d1117] px-3 py-1.5 text-xs">
-                  <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                  <code className="text-muted">/api/public/articles/[slug]</code>
+                  <span className="shrink-0 rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                  <code className="truncate text-muted">/api/public/articles/[slug]</code>
                 </div>
               </div>
             </div>
@@ -620,8 +621,8 @@ export default function PublishPage() {
                     API Key
                   </label>
                   {apiKey ? (
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90 font-mono">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <code className="min-w-0 flex-1 truncate rounded-lg border border-border bg-[#0d1117] px-4 py-2.5 text-sm text-green-400/90 font-mono">
                         {apiKey}
                       </code>
                       <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs text-muted transition hover:text-foreground">
@@ -640,17 +641,17 @@ export default function PublishPage() {
                 </div>
 
                 {/* API Endpoints */}
-                <div className="rounded-lg border border-border bg-[#0d1117] p-4 space-y-2">
+                <div className="overflow-hidden rounded-lg border border-border bg-[#0d1117] p-4 space-y-2">
                   <p className="text-xs font-semibold text-muted/70 uppercase tracking-wider">Endpoints</p>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                      <code className="text-green-400/80">https://octoboost.app/api/public/articles?key=YOUR_KEY</code>
+                      <span className="shrink-0 rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                      <code className="truncate text-green-400/80">https://octoboost.app/api/public/articles?key=YOUR_KEY</code>
                     </div>
-                    <p className="pl-11 text-xs text-muted/50">Returns all published articles (title, slug, metaDescription, tags)</p>
+                    <p className="pl-11 text-xs text-muted/50">Returns all published articles</p>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
-                      <code className="text-green-400/80">https://octoboost.app/api/public/articles/[slug]?key=YOUR_KEY</code>
+                      <span className="shrink-0 rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
+                      <code className="truncate text-green-400/80">https://octoboost.app/api/public/articles/[slug]?key=YOUR_KEY</code>
                     </div>
                     <p className="pl-11 text-xs text-muted/50">Returns a single article with full markdown content</p>
                   </div>
@@ -679,7 +680,7 @@ export default function PublishPage() {
                     </div>
                   </div>
                   <div className="relative">
-                    <pre className="max-h-[350px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90">
+                    <pre className="max-h-[350px] overflow-auto rounded-lg border border-border bg-[#0d1117] p-4 text-xs leading-relaxed text-green-400/90 whitespace-pre-wrap break-words sm:whitespace-pre">
                       <code>{snippet}</code>
                     </pre>
                     <button
@@ -733,12 +734,12 @@ export default function PublishPage() {
             {showCustomApi && (
               <div className="border-t border-border p-5 space-y-5">
                 {connection?.type === "github" && connection.status === "connected" ? (
-                  <div className="flex items-center justify-between rounded-lg border border-green-500/30 bg-green-500/5 p-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-400" />
-                      <div>
+                  <div className="flex flex-col gap-3 rounded-lg border border-green-500/30 bg-green-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-green-400">GitHub connected</p>
-                        <p className="text-xs text-muted">{connection.repo_owner}/{connection.repo_name} · /{connection.content_dir || "root"} · .{connection.file_format}</p>
+                        <p className="truncate text-xs text-muted">{connection.repo_owner}/{connection.repo_name} · /{connection.content_dir || "root"} · .{connection.file_format}</p>
                       </div>
                     </div>
                     <button onClick={handleDisconnect} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-red-500/50 hover:text-red-400">
@@ -992,15 +993,17 @@ export default function PublishPage() {
                   const Icon = meta?.icon ?? Radio;
                   const hasApiKey = !!(channel.config as Record<string, unknown>)?.apiKey;
                   return (
-                    <div key={channel.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-accent/20">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta?.bgColor ?? "bg-accent/10"}`}>
-                        <Icon className={`h-5 w-5 ${meta?.color ?? "text-accent-light"}`} />
+                    <div key={channel.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition hover:border-accent/20 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta?.bgColor ?? "bg-accent/10"}`}>
+                          <Icon className={`h-5 w-5 ${meta?.color ?? "text-accent-light"}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold">{channel.name}</p>
+                          <p className="text-sm text-muted">{meta?.description}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{channel.name}</p>
-                        <p className="text-sm text-muted">{meta?.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {meta?.connectionType === "api_key" && (() => {
                           const cfg = channel.config as Record<string, unknown>;
                           const hasPub = channel.platformType === "hashnode" ? !!cfg?.publicationId : true;
@@ -1081,15 +1084,17 @@ export default function PublishPage() {
                   const cfg = channel.config as Record<string, unknown>;
                   const profileUrl = cfg?.profileUrl as string | undefined;
                   return (
-                    <div key={channel.id} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-accent/20">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta?.bgColor ?? "bg-accent/10"}`}>
-                        <Icon className={`h-5 w-5 ${meta?.color ?? "text-accent-light"}`} />
+                    <div key={channel.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition hover:border-accent/20 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta?.bgColor ?? "bg-accent/10"}`}>
+                          <Icon className={`h-5 w-5 ${meta?.color ?? "text-accent-light"}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold">{channel.name}</p>
+                          <p className="text-sm text-muted">{meta?.description}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{channel.name}</p>
-                        <p className="text-sm text-muted">{meta?.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {profileUrl ? (
                           <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-light transition hover:bg-accent/20">
                             <ExternalLink className="h-3 w-3" />
@@ -1131,7 +1136,7 @@ export default function PublishPage() {
       {/* ════════ SCHEDULE TAB ════════ */}
       {tab === "schedule" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-end gap-3 text-sm">
+          <div className="flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
             <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-1.5 text-blue-400">
               <Clock className="h-3.5 w-3.5" />
               <span>{totalScheduled} scheduled</span>

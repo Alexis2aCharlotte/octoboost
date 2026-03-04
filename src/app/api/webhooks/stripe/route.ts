@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
+import { notifyTelegram } from "@/lib/services/telegram";
+import { sendUpgradeEmail } from "@/lib/services/email";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -35,7 +37,17 @@ export async function POST(req: NextRequest) {
         session.subscription as string
       );
       const userId = subscription.metadata.supabase_user_id;
-      if (!userId) break;
+      if (!userId) {
+        // Guest checkout — account linking happens in /api/auth/create-account
+        const guestPlan = subscription.metadata.plan ?? "explore";
+        const guestInterval = subscription.metadata.interval ?? "monthly";
+        const guestAmount = session.amount_total
+          ? `$${(session.amount_total / 100).toFixed(0)}`
+          : "—";
+        const guestLabel = guestPlan.charAt(0).toUpperCase() + guestPlan.slice(1);
+        notifyTelegram(`💳 ${guestLabel} ${guestInterval} — ${guestAmount}\nAccount pending ⏳`).catch(() => {});
+        break;
+      }
 
       const item = subscription.items.data[0];
       const periodStart = item?.current_period_start;
@@ -54,6 +66,20 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "user_id" }
       );
+
+      const planRaw = subscription.metadata.plan ?? "explore";
+      const planLabel = planRaw.charAt(0).toUpperCase() + planRaw.slice(1);
+      const intervalRaw = subscription.metadata.interval ?? "monthly";
+      const amount = session.amount_total ? `$${(session.amount_total / 100).toFixed(0)}` : "—";
+
+      const customerEmail = session.customer_details?.email ?? session.customer_email;
+      if (customerEmail) {
+        sendUpgradeEmail(customerEmail, planRaw, intervalRaw, amount).catch((err) =>
+          console.error("Failed to send upgrade email:", err)
+        );
+      }
+
+      notifyTelegram(`💳 ${planLabel} ${intervalRaw} — ${amount}\nConfirmation email sent ✅`).catch(() => {});
       break;
     }
 

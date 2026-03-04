@@ -505,7 +505,7 @@ function OverviewSkeleton() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Shimmer className="h-8 w-48" />
           <Shimmer className="mt-2 h-5 w-56" />

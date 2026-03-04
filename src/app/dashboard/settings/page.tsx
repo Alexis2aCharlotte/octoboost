@@ -197,13 +197,13 @@ export default function SettingsPage() {
 
       {/* ── Section 1: Profile ── */}
       <section className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="border-b border-border bg-card px-6 py-4">
+        <div className="border-b border-border bg-card px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <User className="h-4 w-4 text-accent-light" />
             Profile
           </div>
         </div>
-        <form onSubmit={handleSaveProfile} className="space-y-5 p-6">
+        <form onSubmit={handleSaveProfile} className="space-y-5 p-4 sm:p-6">
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted">
               <Mail className="h-3 w-3" /> Email
@@ -247,14 +247,14 @@ export default function SettingsPage() {
 
       {/* ── Section 2: Plan & Billing ── */}
       <section className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="border-b border-border bg-card px-6 py-4">
+        <div className="border-b border-border bg-card px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <CreditCard className="h-4 w-4 text-accent-light" />
             Plan & Billing
           </div>
         </div>
-        <div className="p-6">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${planConfig.bg}`}>
                 {isFree ? (
@@ -327,7 +327,7 @@ export default function SettingsPage() {
 
       {/* ── Section 3: Security ── */}
       <section className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="border-b border-border bg-card px-6 py-4">
+        <div className="border-b border-border bg-card px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-sm font-semibold">
             {hasPassword ? (
               <Lock className="h-4 w-4 text-accent-light" />
@@ -344,7 +344,7 @@ export default function SettingsPage() {
         </div>
         <form
           onSubmit={handleChangePassword}
-          className={`space-y-5 p-6 ${!hasPassword ? "bg-accent/[0.02]" : ""}`}
+          className={`space-y-5 p-4 sm:p-6 ${!hasPassword ? "bg-accent/[0.02]" : ""}`}
         >
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted">
@@ -396,14 +396,14 @@ export default function SettingsPage() {
 
       {/* ── Section 4: Danger Zone ── */}
       <section className="overflow-hidden rounded-xl border border-red-500/20 bg-card">
-        <div className="border-b border-red-500/20 px-6 py-4">
+        <div className="border-b border-red-500/20 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-sm font-semibold text-red-400">
             <AlertTriangle className="h-4 w-4" />
             Danger Zone
           </div>
         </div>
-        <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+        <div className="space-y-4 p-4 sm:p-6">
+          <div className="flex flex-col gap-3 rounded-lg border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium">Sign out</p>
               <p className="text-xs text-muted">Sign out of your account on this device</p>
@@ -417,7 +417,7 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-red-500/10 bg-red-500/[0.02] px-4 py-3">
+          <div className="flex flex-col gap-3 rounded-lg border border-red-500/10 bg-red-500/[0.02] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium text-red-400">Delete account</p>
               <p className="text-xs text-muted">Permanently delete your account and all data</p>

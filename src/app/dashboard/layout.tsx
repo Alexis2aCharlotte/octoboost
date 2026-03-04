@@ -259,7 +259,7 @@ export default function DashboardLayout({
               style={{ zIndex: 1 }}
             >
               <TopBar onMenuToggle={toggleSidebar} />
-              <main className="px-4 py-4 md:px-8 md:py-6">
+              <main className="min-w-0 overflow-x-hidden px-4 py-4 md:px-8 md:py-6">
                 <SetPasswordBanner />
                 {children}
               </main>

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getWelcomeEmailHTML } from "./welcome-template";
+import { getUpgradeEmailHTML } from "./upgrade-template";
 
 let resend: Resend | null = null;
 
@@ -30,6 +31,29 @@ export async function sendWelcomeEmail(toEmail: string): Promise<void> {
 
   if (error) {
     console.error("Error sending welcome email:", error);
+    throw error;
+  }
+}
+
+export async function sendUpgradeEmail(
+  toEmail: string,
+  plan: string,
+  interval: string,
+  amount: string
+): Promise<void> {
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+  const html = getUpgradeEmailHTML(plan, interval, amount);
+
+  const { error } = await getResendClient().emails.send({
+    from: NEWSLETTER_FROM,
+    replyTo: NEWSLETTER_REPLY_TO,
+    to: toEmail,
+    subject: `Welcome to OctoBoost ${planLabel} 🎉`,
+    html,
+  });
+
+  if (error) {
+    console.error("Error sending upgrade email:", error);
     throw error;
   }
 }

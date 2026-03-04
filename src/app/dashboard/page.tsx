@@ -241,16 +241,16 @@ export default function DashboardPage() {
               >
                 <Link
                   href={`${basePath}/projects/${project.slug || project.id}/overview`}
-                  className="flex flex-1 items-center gap-3.5"
+                  className="flex min-w-0 flex-1 items-center gap-3.5"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
                     <Globe className="h-5 w-5 text-accent-light" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-base font-medium">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium">
                       {project.name || project.url}
                     </p>
-                    <p className="text-sm text-muted">{project.url}</p>
+                    <p className="truncate text-sm text-muted">{project.url}</p>
                   </div>
                   {hasAnalysis && (
                     isDemo ? (
@@ -310,7 +310,7 @@ function DashboardSkeleton() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Shimmer className="h-8 w-40" />
           <Shimmer className="mt-2 h-5 w-56" />

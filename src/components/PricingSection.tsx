@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check, ArrowRight, Lock, ShieldCheck, Loader2 } from "lucide-react";
 
 const plans = [
@@ -55,24 +54,35 @@ const plans = [
 export function PricingSection() {
   const [yearly, setYearly] = useState(true);
   const [loading, setLoading] = useState<string | null>(null);
-  const router = useRouter();
 
   async function handleCheckout(plan: string) {
     setLoading(plan);
     try {
+      const payload = JSON.stringify({
+        plan: plan.toLowerCase(),
+        interval: yearly ? "yearly" : "monthly",
+      });
+      const headers = { "Content-Type": "application/json" };
+
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: plan.toLowerCase(), interval: yearly ? "yearly" : "monthly" }),
+        headers,
+        body: payload,
       });
-      const data = await res.json();
+
       if (res.status === 401) {
-        router.push(`/login?next=/pricing`);
+        const guestRes = await fetch("/api/checkout/guest", {
+          method: "POST",
+          headers,
+          body: payload,
+        });
+        const guestData = await guestRes.json();
+        if (guestData.url) window.location.href = guestData.url;
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
-      }
+
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
     } finally {
       setLoading(null);
     }

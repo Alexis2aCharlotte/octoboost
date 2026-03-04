@@ -333,14 +333,14 @@ export default function SchedulePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Schedule</h1>
           <p className="mt-1 text-sm text-muted">
             Publication schedule for your articles and variants
           </p>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm sm:gap-3">
           <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-1.5 text-blue-400">
             <Clock className="h-3.5 w-3.5" />
             <span>{totalScheduled} scheduled</span>

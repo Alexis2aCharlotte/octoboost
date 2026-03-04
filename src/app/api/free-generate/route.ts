@@ -642,9 +642,7 @@ export async function POST(req: NextRequest) {
     after(async () => {
       try {
         await sendWelcomeEmail(normalizedEmail);
-        await notifyTelegram(
-          `🆓 Free generation!\nEmail: ${normalizedEmail}\nURL: ${normalizedUrl}\nArticle: ${articleResult?.title ?? "none"}`
-        );
+        await notifyTelegram(`Free Generation 🆓`);
       } catch (e) {
         console.error("Post-generation async error:", e);
       }
