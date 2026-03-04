@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, url")
+    .select("id, name, url, site_connection")
     .eq("api_key", key)
     .single();
 
@@ -34,6 +34,14 @@ export async function GET(req: NextRequest) {
       { status: 401, headers: CORS_HEADERS }
     );
   }
+
+  // Track API usage for connection verification (fire-and-forget)
+  const conn = (project.site_connection as Record<string, unknown>) ?? {};
+  void supabase
+    .from("projects")
+    .update({ site_connection: { ...conn, last_api_call_at: new Date().toISOString() } })
+    .eq("id", project.id)
+    .then(() => {});
 
   const limit = Math.min(
     parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10),

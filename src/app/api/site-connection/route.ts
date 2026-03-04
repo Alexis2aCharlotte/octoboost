@@ -126,6 +126,24 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ connection: updated });
   }
 
+  if (action === "verify-api") {
+    const lastCall = (conn as Record<string, unknown> | null)?.last_api_call_at as string | undefined;
+    if (!lastCall) {
+      return NextResponse.json(
+        { valid: false, error: "No API call detected yet. Add the key to your site, visit a page that fetches articles, then try again." },
+        { status: 200 }
+      );
+    }
+    const updated: SiteConnection = {
+      ...(conn ?? { type: "custom_api" }),
+      status: "connected",
+      last_tested_at: new Date().toISOString(),
+    };
+    (updated as Record<string, unknown>).last_api_call_at = lastCall;
+    await supabase.from("projects").update({ site_connection: updated }).eq("id", project.id);
+    return NextResponse.json({ valid: true, connection: updated });
+  }
+
   if (action === "test") {
     if (conn?.type === "github") {
       if (!conn.github_token || !conn.repo_owner || !conn.repo_name)

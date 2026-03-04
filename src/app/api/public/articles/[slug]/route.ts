@@ -30,7 +30,7 @@ export async function GET(
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, url")
+    .select("id, name, url, site_connection")
     .eq("api_key", key)
     .single();
 
@@ -40,6 +40,13 @@ export async function GET(
       { status: 401, headers: CORS_HEADERS }
     );
   }
+
+  const conn = (project.site_connection as Record<string, unknown>) ?? {};
+  void supabase
+    .from("projects")
+    .update({ site_connection: { ...conn, last_api_call_at: new Date().toISOString() } })
+    .eq("id", project.id)
+    .then(() => {});
 
   const { data: article } = await supabase
     .from("articles")
