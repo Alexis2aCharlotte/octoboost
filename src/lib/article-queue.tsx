@@ -14,6 +14,7 @@ import { useToast } from "@/components/Toast";
 
 interface QueueCtx {
   activeGenId: string | null;
+  activeStartedAt: number | null;
   queue: string[];
   enqueue: (clusterId: string) => void;
   isActive: (clusterId: string) => boolean;
@@ -23,6 +24,7 @@ interface QueueCtx {
 
 const ArticleQueueContext = createContext<QueueCtx>({
   activeGenId: null,
+  activeStartedAt: null,
   queue: [],
   enqueue: () => {},
   isActive: () => false,
@@ -37,6 +39,7 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
 
   const [queue, setQueue] = useState<string[]>([]);
   const [activeGenId, setActiveGenId] = useState<string | null>(null);
+  const [activeStartedAt, setActiveStartedAt] = useState<number | null>(null);
   const processingRef = useRef(false);
   const initRef = useRef(false);
 
@@ -52,12 +55,15 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
     const raw = localStorage.getItem(key);
     if (!raw) return;
     try {
-      const saved: { queue: string[]; activeId: string | null; startedAt: number } = JSON.parse(raw);
+      const saved: { queue: string[]; activeId: string | null; startedAt: number; activeStartedAt?: number } = JSON.parse(raw);
       const elapsed = (Date.now() - saved.startedAt) / 1000;
       if (elapsed > 600) { localStorage.removeItem(key); return; }
       const remaining = saved.queue.filter((cid) => !articleClusterIds.has(cid));
       const activeStillPending = saved.activeId && !articleClusterIds.has(saved.activeId);
-      if (activeStillPending) setActiveGenId(saved.activeId);
+      if (activeStillPending) {
+        setActiveGenId(saved.activeId);
+        setActiveStartedAt(saved.activeStartedAt ?? saved.startedAt);
+      }
       if (remaining.length > 0) setQueue(remaining);
     } catch {
       localStorage.removeItem(key);
@@ -72,9 +78,9 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
     if (queue.length === 0 && !activeGenId) {
       localStorage.removeItem(key);
     } else {
-      localStorage.setItem(key, JSON.stringify({ queue, activeId: activeGenId, startedAt: Date.now() }));
+      localStorage.setItem(key, JSON.stringify({ queue, activeId: activeGenId, startedAt: Date.now(), activeStartedAt }));
     }
-  }, [queue, activeGenId, id]);
+  }, [queue, activeGenId, activeStartedAt, id]);
 
   // Poll for completion when waiting on a restored active generation
   useEffect(() => {
@@ -98,7 +104,9 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
       return;
     }
     processingRef.current = true;
+    const now = Date.now();
     setActiveGenId(nextId);
+    setActiveStartedAt(now);
     setQueue((q) => q.slice(1));
 
     (async () => {
@@ -118,6 +126,7 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
         // server may still be generating
       } finally {
         setActiveGenId(null);
+        setActiveStartedAt(null);
         processingRef.current = false;
       }
     })();
@@ -136,7 +145,7 @@ export function ArticleQueueProvider({ children }: { children: React.ReactNode }
   const queuePosition = useCallback((clusterId: string) => queue.indexOf(clusterId), [queue]);
 
   return (
-    <ArticleQueueContext.Provider value={{ activeGenId, queue, enqueue, isActive, isQueued, queuePosition }}>
+    <ArticleQueueContext.Provider value={{ activeGenId, activeStartedAt, queue, enqueue, isActive, isQueued, queuePosition }}>
       {children}
     </ArticleQueueContext.Provider>
   );

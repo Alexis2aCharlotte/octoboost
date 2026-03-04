@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useDemo } from "@/lib/demo/context";
@@ -152,7 +152,7 @@ export default function ArticlesPage() {
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const { isFree } = usePlan();
-  const { activeGenId, queue: genQueue, enqueue, isActive, isQueued, queuePosition } = useArticleQueue();
+  const { activeGenId, activeStartedAt, queue: genQueue, enqueue, isActive, isQueued, queuePosition } = useArticleQueue();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -1231,6 +1231,7 @@ export default function ArticlesPage() {
               article={articleByCluster.get(cluster.id)}
               isExpanded={expandedId === cluster.id}
               isGenerating={isActive(cluster.id)}
+              genStartedAt={isActive(cluster.id) ? activeStartedAt : null}
               queuePosition={queuePosition(cluster.id)}
               onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
               onGenerate={() => handleGenerate(cluster.id)}
@@ -1280,6 +1281,7 @@ export default function ArticlesPage() {
                 article={undefined}
                 isExpanded={expandedId === cluster.id}
                 isGenerating={isActive(cluster.id)}
+                genStartedAt={isActive(cluster.id) ? activeStartedAt : null}
                 queuePosition={queuePosition(cluster.id)}
                 onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
                 onGenerate={() => handleGenerate(cluster.id)}
@@ -1324,6 +1326,7 @@ function ArticleCard({
   article,
   isExpanded,
   isGenerating,
+  genStartedAt,
   queuePosition,
   onToggle,
   onGenerate,
@@ -1334,6 +1337,7 @@ function ArticleCard({
   article: Article | undefined;
   isExpanded: boolean;
   isGenerating: boolean;
+  genStartedAt: number | null;
   queuePosition: number;
   onToggle: () => void;
   onGenerate: () => void;
@@ -1344,16 +1348,14 @@ function ArticleCard({
   const showGenerating = isGenerating;
   const showBusy = showGenerating || isQueued;
   const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(Date.now());
 
   useEffect(() => {
-    if (!showGenerating) { setElapsed(0); startRef.current = Date.now(); return; }
-    startRef.current = Date.now();
-    const tick = () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    if (!showGenerating || !genStartedAt) { setElapsed(0); return; }
+    const tick = () => setElapsed(Math.floor((Date.now() - genStartedAt) / 1000));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [showGenerating]);
+  }, [showGenerating, genStartedAt]);
 
   const estimatedSeconds = 150;
   const progress = Math.min(elapsed / estimatedSeconds, 0.95);
