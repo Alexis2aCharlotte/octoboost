@@ -127,19 +127,21 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === "verify-api") {
-    const lastCall = (conn as Record<string, unknown> | null)?.last_api_call_at as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = conn as any;
+    const lastCall: string | undefined = raw?.last_api_call_at;
     if (!lastCall) {
       return NextResponse.json(
         { valid: false, error: "No API call detected yet. Add the key to your site, visit a page that fetches articles, then try again." },
         { status: 200 }
       );
     }
-    const updated: SiteConnection = {
-      ...(conn ?? { type: "custom_api" }),
-      status: "connected",
+    const updated = {
+      ...(conn ?? { type: "custom_api" as const }),
+      status: "connected" as const,
       last_tested_at: new Date().toISOString(),
+      last_api_call_at: lastCall,
     };
-    (updated as Record<string, unknown>).last_api_call_at = lastCall;
     await supabase.from("projects").update({ site_connection: updated }).eq("id", project.id);
     return NextResponse.json({ valid: true, connection: updated });
   }
