@@ -31,3 +31,12 @@ export const PRICE_IDS = {
 
 export type PlanName = keyof typeof PRICE_IDS;
 export type BillingInterval = "monthly" | "yearly";
+
+export function resolvePlanFromPriceId(priceId: string): { plan: PlanName; interval: BillingInterval } | null {
+  for (const [plan, intervals] of Object.entries(PRICE_IDS)) {
+    for (const [interval, id] of Object.entries(intervals)) {
+      if (id === priceId) return { plan: plan as PlanName, interval: interval as BillingInterval };
+    }
+  }
+  return null;
+}

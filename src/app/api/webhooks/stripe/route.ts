@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, resolvePlanFromPriceId } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyTelegram } from "@/lib/services/telegram";
 import { sendUpgradeEmail } from "@/lib/services/email";
@@ -53,13 +53,15 @@ export async function POST(req: NextRequest) {
       const periodStart = item?.current_period_start;
       const periodEnd = item?.current_period_end;
 
+      const resolved = item?.price?.id ? resolvePlanFromPriceId(item.price.id) : null;
+
       await supabase.from("profiles").upsert(
         {
           user_id: userId,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: subscription.id,
-          plan: subscription.metadata.plan ?? "explore",
-          interval: subscription.metadata.interval ?? "monthly",
+          plan: resolved?.plan ?? subscription.metadata.plan ?? "explore",
+          interval: resolved?.interval ?? subscription.metadata.interval ?? "monthly",
           status: subscription.status,
           ...(periodStart && { current_period_start: new Date(periodStart * 1000).toISOString() }),
           ...(periodEnd && { current_period_end: new Date(periodEnd * 1000).toISOString() }),
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
         { onConflict: "user_id" }
       );
 
-      const planRaw = subscription.metadata.plan ?? "explore";
+      const planRaw = resolved?.plan ?? subscription.metadata.plan ?? "explore";
       const planLabel = planRaw.charAt(0).toUpperCase() + planRaw.slice(1);
       const intervalRaw = subscription.metadata.interval ?? "monthly";
       const amount = session.amount_total ? `$${(session.amount_total / 100).toFixed(0)}` : "—";
@@ -92,12 +94,14 @@ export async function POST(req: NextRequest) {
       const periodStart = item?.current_period_start;
       const periodEnd = item?.current_period_end;
 
+      const resolved = item?.price?.id ? resolvePlanFromPriceId(item.price.id) : null;
+
       await supabase
         .from("profiles")
         .update({
           status: subscription.status,
-          plan: subscription.metadata.plan ?? undefined,
-          interval: subscription.metadata.interval ?? undefined,
+          plan: resolved?.plan ?? subscription.metadata.plan ?? undefined,
+          interval: resolved?.interval ?? subscription.metadata.interval ?? undefined,
           ...(periodStart && { current_period_start: new Date(periodStart * 1000).toISOString() }),
           ...(periodEnd && { current_period_end: new Date(periodEnd * 1000).toISOString() }),
         })
