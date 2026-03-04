@@ -21,7 +21,6 @@ import {
   CalendarClock,
   AlertCircle,
   Check,
-  GripVertical,
 } from "lucide-react";
 import DateTimePicker from "@/components/DateTimePicker";
 import {
@@ -89,19 +88,13 @@ const platformMeta: Record<
 function DraggableItem({ id, disabled, children }: { id: string; disabled?: boolean; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled });
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.3 : 1 }} className="transition-opacity">
-      <div className="flex items-center gap-1.5">
-        {!disabled && (
-          <button
-            {...listeners}
-            {...attributes}
-            className="-ml-1 shrink-0 cursor-grab touch-none rounded p-1 text-muted/70 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        )}
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+    <div
+      ref={setNodeRef}
+      {...(disabled ? {} : { ...listeners, ...attributes })}
+      style={{ opacity: isDragging ? 0.3 : 1 }}
+      className={`transition-opacity ${disabled ? "" : "cursor-grab active:cursor-grabbing"}`}
+    >
+      {children}
     </div>
   );
 }
