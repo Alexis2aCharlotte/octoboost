@@ -452,46 +452,52 @@ export default function Home() {
 
           {/* AI referral sources */}
           <div className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-2xl border border-border bg-white/5 p-1.5 shadow-[0_0_60px_-15px_rgba(108,92,231,0.15)]">
-            <div className="rounded-xl bg-card/80 px-8 py-6">
-              <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-muted/60">Also cited by AI tools</p>
-              <div className="grid grid-cols-3 gap-4 sm:grid-cols-5 sm:gap-6">
-                {[
+            <div className="flex flex-col gap-6 rounded-xl bg-card/80 px-8 py-8 sm:gap-8 sm:py-10">
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-muted/60">Also cited by AI tools</p>
+              {[
+                [
                   { name: "Google", logo: "/logos/google.svg", visits: 311, invert: false },
                   { name: "ChatGPT", logo: "/logos/chatgpt.svg", visits: 46, invert: false },
                   { name: "Perplexity", logo: "/logos/perplexity.webp", visits: 18, invert: true },
+                ],
+                [
                   { name: "Claude", logo: "/logos/claude.png", visits: 12, invert: false },
                   { name: "Gemini", logo: "/logos/Google_Gemini_icon_2025.svg.png", visits: 11, invert: false },
-                ].map((ai) => (
-                  <div key={ai.name} className="flex flex-col items-center gap-2.5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-white/5">
-                      <Image src={ai.logo} alt={ai.name} width={28} height={28} className={`h-7 w-7 object-contain${ai.invert ? " brightness-0 invert" : ""}`} />
+                ],
+              ].map((row, i) => (
+                <div key={i} className="flex justify-center gap-14 sm:gap-16">
+                  {row.map((ai) => (
+                    <div key={ai.name} className="flex flex-col items-center gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-border/60 bg-white/5">
+                        <Image src={ai.logo} alt={ai.name} width={32} height={32} className={`h-8 w-8 object-contain${ai.invert ? " brightness-0 invert" : ""}`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold leading-tight">{ai.visits}</p>
+                        <p className="mt-0.5 text-xs text-muted">{ai.name}</p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold leading-tight">{ai.visits}</p>
-                      <p className="mt-0.5 text-xs text-muted">{ai.name}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-center">
+          <div className="mt-8 grid grid-cols-2 gap-6 text-center sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-8">
             <div>
               <p className="text-2xl font-bold md:text-3xl">43.3k</p>
               <p className="text-xs text-muted">Impressions</p>
             </div>
-            <div className="h-8 w-px bg-border" />
+            <div className="hidden h-8 w-px bg-border sm:block" />
             <div>
               <p className="text-2xl font-bold md:text-3xl">355</p>
               <p className="text-xs text-muted">Clicks</p>
             </div>
-            <div className="h-8 w-px bg-border" />
+            <div className="hidden h-8 w-px bg-border sm:block" />
             <div>
               <p className="text-2xl font-bold md:text-3xl">6.3</p>
               <p className="text-xs text-muted">Avg. position</p>
             </div>
-            <div className="h-8 w-px bg-border" />
+            <div className="hidden h-8 w-px bg-border sm:block" />
             <div>
               <p className="text-2xl font-bold md:text-3xl">2 mo</p>
               <p className="text-xs text-muted">From launch</p>

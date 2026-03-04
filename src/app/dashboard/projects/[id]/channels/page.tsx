@@ -336,10 +336,10 @@ export default function ProjectChannelsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Channels
         </h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-base text-muted">
           {channels.length} connected · {autoChannels.length} auto-publish · {manualChannels.length} copy/paste
         </p>
       </div>

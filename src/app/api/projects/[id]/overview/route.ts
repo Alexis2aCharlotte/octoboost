@@ -134,7 +134,7 @@ export async function GET(
     keywordsFound: keywordCount > 0,
     articlesGenerated: articles.length > 0,
     channelsConfigured: channels.length > 0,
-    published: publishedVariants.length > 0,
+    published: publishedVariants.length > 0 || articles.some((a) => a.status === "published"),
   };
 
   return NextResponse.json({

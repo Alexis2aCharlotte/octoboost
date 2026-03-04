@@ -53,7 +53,6 @@ export async function GET(req: NextRequest) {
       .from("articles")
       .select("id, title, status, scheduled_at, slug, canonical_url")
       .eq("project_id", resolvedId)
-      .not("scheduled_at", "is", null)
       .in("status", ["scheduled", "published"])
       .order("scheduled_at", { ascending: true }),
   ]);

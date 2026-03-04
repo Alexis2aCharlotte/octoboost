@@ -70,7 +70,6 @@ export async function GET(
         .from("articles")
         .select("id, title, status, scheduled_at, slug, canonical_url")
         .eq("project_id", projectId)
-        .not("scheduled_at", "is", null)
         .in("status", ["scheduled", "published"])
         .order("scheduled_at", { ascending: true }),
     ]);
@@ -154,7 +153,7 @@ export async function GET(
       pipeline: {
         siteConnected, analysisComplete: !!latestAnalysisId,
         keywordsFound: keywords.length > 0, articlesGenerated: articles.length > 0,
-        channelsConfigured: channels.length > 0, published: publishedVariants.length > 0,
+        channelsConfigured: channels.length > 0, published: publishedVariants.length > 0 || articles.some((a) => a.status === "published"),
       },
       recentArticles: articles.slice(0, 5).map((a) => ({
         id: a.id, title: a.title, status: a.status, wordCount: a.wordCount, createdAt: a.createdAt,

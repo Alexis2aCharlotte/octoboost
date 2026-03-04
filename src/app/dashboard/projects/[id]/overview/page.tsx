@@ -179,7 +179,7 @@ export default function ProjectOverviewPage() {
   const nextStep = pipelineSteps.find((s) => !s.done);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-5 sm:space-y-8">
       {/* Free plan banner */}
       {isFree && (
         <UpgradeCTA
@@ -190,7 +190,7 @@ export default function ProjectOverviewPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">
             {project.name || project.url}
@@ -276,11 +276,12 @@ export default function ProjectOverviewPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <StatCard
           icon={Target}
           label="Keywords"
           value={stats.keywords}
+          color="text-accent-light"
           href={`${basePath}/projects/${id}/research`}
         />
         <StatCard
@@ -293,6 +294,7 @@ export default function ProjectOverviewPage() {
           icon={FileText}
           label="Articles"
           value={stats.articles}
+          color="text-orange-400"
           sub={
             stats.articlesPublished > 0
               ? `${stats.articlesPublished} published`
@@ -303,10 +305,14 @@ export default function ProjectOverviewPage() {
         <StatCard
           icon={Send}
           label="Published"
-          value={stats.variantsPublished}
+          value={stats.articlesPublished + stats.variantsPublished}
+          color="text-green-400"
           sub={
-            stats.variantsTotal > 0
-              ? `of ${stats.variantsTotal} variants`
+            stats.articlesPublished > 0 || stats.variantsPublished > 0
+              ? [
+                  stats.articlesPublished > 0 && `${stats.articlesPublished} article${stats.articlesPublished > 1 ? "s" : ""}`,
+                  stats.variantsPublished > 0 && `${stats.variantsPublished} variant${stats.variantsPublished > 1 ? "s" : ""}`,
+                ].filter(Boolean).join(" + ")
               : undefined
           }
           href={`${basePath}/projects/${id}/publish`}
@@ -314,7 +320,7 @@ export default function ProjectOverviewPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <QuickAction
           href={`${basePath}/projects/${id}/research`}
           icon={Search}
@@ -336,20 +342,20 @@ export default function ProjectOverviewPage() {
       </div>
 
       {/* Recent content */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Recent articles */}
         <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
             <h3 className="text-sm font-semibold">Recent Articles</h3>
             <Link
               href={`${basePath}/projects/${id}/articles`}
-              className="text-sm text-accent-light hover:underline"
+              className="text-xs text-accent-light hover:underline sm:text-sm"
             >
               View all
             </Link>
           </div>
           {recentArticles.length === 0 ? (
-            <div className="px-5 py-8 text-center text-base text-muted/60">
+            <div className="px-4 py-6 text-center text-sm text-muted/60 sm:px-5 sm:text-base">
               No articles yet
             </div>
           ) : (
@@ -357,12 +363,12 @@ export default function ProjectOverviewPage() {
               {recentArticles.map((article) => (
                 <div
                   key={article.id}
-                  className="flex items-center gap-3 px-5 py-3"
+                  className="flex items-start gap-2.5 px-4 py-2.5 sm:items-center sm:gap-3 sm:px-5 sm:py-3"
                 >
-                  <FileText className="h-4 w-4 shrink-0 text-muted/40" />
+                  <FileText className="hidden h-4 w-4 shrink-0 text-muted/40 sm:block" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base">{article.title}</p>
-                    <p className="text-sm text-muted/50">
+                    <p className="line-clamp-2 text-sm leading-snug sm:truncate sm:text-base">{article.title}</p>
+                    <p className="mt-0.5 text-xs text-muted/50 sm:mt-0 sm:text-sm">
                       {article.wordCount.toLocaleString()} words
                     </p>
                   </div>
@@ -375,17 +381,17 @@ export default function ProjectOverviewPage() {
 
         {/* Recent published */}
         <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
             <h3 className="text-sm font-semibold">Recent Publications</h3>
             <Link
               href={`${basePath}/projects/${id}/publish`}
-              className="text-sm text-accent-light hover:underline"
+              className="text-xs text-accent-light hover:underline sm:text-sm"
             >
               View all
             </Link>
           </div>
           {recentPublished.length === 0 ? (
-            <div className="px-5 py-8 text-center text-base text-muted/60">
+            <div className="px-4 py-6 text-center text-sm text-muted/60 sm:px-5 sm:text-base">
               No publications yet
             </div>
           ) : (
@@ -393,12 +399,12 @@ export default function ProjectOverviewPage() {
               {recentPublished.map((pub) => (
                 <div
                   key={pub.id}
-                  className="flex items-center gap-3 px-5 py-3"
+                  className="flex items-start gap-2.5 px-4 py-2.5 sm:items-center sm:gap-3 sm:px-5 sm:py-3"
                 >
-                  <Globe className="h-4 w-4 shrink-0 text-muted/40" />
+                  <Globe className="hidden h-4 w-4 shrink-0 text-muted/40 sm:block" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base">{pub.title}</p>
-                    <p className="text-sm text-muted/50">
+                    <p className="line-clamp-2 text-sm leading-snug sm:truncate sm:text-base">{pub.title}</p>
+                    <p className="mt-0.5 text-xs text-muted/50 sm:mt-0 sm:text-sm">
                       {platformLabels[pub.platform] ?? pub.platform}
                       {pub.publishedAt &&
                         ` · ${new Date(pub.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
@@ -430,24 +436,26 @@ function StatCard({
   value,
   sub,
   href,
+  color,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
   sub?: string;
   href: string;
+  color?: string;
 }) {
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
+      className="group rounded-xl border border-border bg-card p-3 transition-colors hover:bg-card-hover sm:p-4"
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted">{label}</span>
-        <Icon className="h-4 w-4 text-muted/40" />
+        <span className="text-xs text-muted sm:text-sm">{label}</span>
+        <Icon className="hidden h-4 w-4 text-muted/40 sm:block" />
       </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
-      {sub && <p className="mt-0.5 text-sm text-muted/50">{sub}</p>}
+      <p className={`mt-1 text-2xl font-semibold tabular-nums sm:mt-2 sm:text-3xl ${color ?? ""}`}>{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted/50 sm:text-sm">{sub}</p>}
     </Link>
   );
 }
@@ -466,17 +474,17 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-card-hover"
+      className="group flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:bg-card-hover sm:flex-row sm:items-start sm:gap-3 sm:p-4 sm:text-left"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
         <Icon className="h-4 w-4 text-accent-light" />
       </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-1.5">
-          <p className="text-base font-medium">{label}</p>
-          <ArrowRight className="h-3 w-3 text-muted/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-center gap-1.5 sm:justify-start">
+          <p className="text-sm font-medium sm:text-base">{label}</p>
+          <ArrowRight className="hidden h-3 w-3 text-muted/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted sm:block" />
         </div>
-        <p className="mt-0.5 text-sm text-muted/60">{description}</p>
+        <p className="mt-0.5 hidden text-sm text-muted/60 sm:block">{description}</p>
       </div>
     </Link>
   );
@@ -503,7 +511,7 @@ function Shimmer({ className }: { className?: string }) {
 
 function OverviewSkeleton() {
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-5 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -528,28 +536,26 @@ function OverviewSkeleton() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <Shimmer className="h-4 w-20" />
-              <Shimmer className="h-4 w-4" />
-            </div>
-            <Shimmer className="mt-3 h-8 w-12" />
-            <Shimmer className="mt-1 h-3 w-24" />
+          <div key={i} className="rounded-xl border border-border bg-card p-3 sm:p-4">
+            <Shimmer className="h-4 w-16 sm:w-20" />
+            <Shimmer className="mt-2 h-7 w-10 sm:mt-3 sm:h-8 sm:w-12" />
+            <Shimmer className="mt-1 h-3 w-20 sm:w-24" />
           </div>
         ))}
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+          <div key={i} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-start sm:gap-3 sm:p-4">
             <Shimmer className="h-9 w-9 rounded-lg" />
-            <div className="flex-1">
+            <div className="hidden flex-1 sm:block">
               <Shimmer className="h-4 w-24" />
               <Shimmer className="mt-1.5 h-3 w-40" />
             </div>
+            <Shimmer className="h-3 w-12 sm:hidden" />
           </div>
         ))}
       </div>

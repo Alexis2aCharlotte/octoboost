@@ -413,8 +413,8 @@ export default function ResearchPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Research</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-3xl font-bold tracking-tight">Research</h1>
+          <p className="mt-1 text-base text-muted">
             {keywords.length} keywords · {clusters.length} clusters ·{" "}
             {fromCompetitors} from competitors
           </p>
@@ -944,7 +944,7 @@ function AnalysisSchedule({
   }
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4">
+    <div className="hidden items-center gap-3 sm:flex sm:gap-4">
       <div className="text-right">
         {canReanalyze ? (
           <p className="text-xs text-green-400">New analysis available</p>

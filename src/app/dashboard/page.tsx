@@ -151,8 +151,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted sm:text-base">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-base text-muted">
             {totalProjects === 0
               ? "Start by adding your first site."
               : `${totalProjects} project${totalProjects > 1 ? "s" : ""} · ${withAnalysis} analyzed`}
@@ -160,39 +160,26 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Global stats */}
+      {/* Compact stats */}
       {totalProjects > 0 && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted">Projects</span>
-              <Globe className="h-4 w-4 text-muted/40" />
-            </div>
-            <p className="mt-2 text-3xl font-semibold tabular-nums">
-              {totalProjects}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted">Analyzed</span>
-              <Search className="h-4 w-4 text-muted/40" />
-            </div>
-            <p className="mt-2 text-3xl font-semibold tabular-nums">
-              {withAnalysis}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted">Ready</span>
-              <BarChart3 className="h-4 w-4 text-muted/40" />
-            </div>
-            <p className="mt-2 text-3xl font-semibold tabular-nums">
-              {withAnalysis}
-              <span className="ml-1 text-base font-normal text-muted">
-                / {totalProjects}
-              </span>
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+            <Globe className="h-3.5 w-3.5 text-muted/50" />
+            <span className="tabular-nums font-medium">{totalProjects}</span>
+            <span className="text-muted">project{totalProjects > 1 ? "s" : ""}</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+            <Search className="h-3.5 w-3.5 text-muted/50" />
+            <span className="tabular-nums font-medium">{withAnalysis}</span>
+            <span className="text-muted">analyzed</span>
+          </span>
+          {withAnalysis > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-1.5 text-sm text-green-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span className="tabular-nums font-medium">{withAnalysis}/{totalProjects}</span>
+              <span>ready</span>
+            </span>
+          )}
         </div>
       )}
 
