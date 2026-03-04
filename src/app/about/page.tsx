@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 const stats = [
   { value: "43.3k+", label: "Impressions in 2 months" },
   { value: "11", label: "Publishing platforms" },
-  { value: "89+", label: "Founders on the waitlist" },
+  { value: "67+", label: "Founders on the waitlist" },
   { value: "5", label: "Free SEO tools" },
 ];
 

@@ -306,7 +306,7 @@ Creatives statiques Meta (4 en rotation) :
 | Before/After | 1:1 feed | "0 → 43,000 impressions. Without writing a word." + screenshot GSC |
 | Pain point | 1:1 feed | "You're paying $5/click on ads. What if Google sent you traffic for free?" |
 | How it works | Carrousel 3 slides | Slide 1: Paste URL → Slide 2: AI writes articles → Slide 3: Published on 11 platforms |
-| Social proof | 9:16 Stories | "89 founders already on the waitlist. Here's why." + stat key |
+| Social proof | 9:16 Stories | "67 founders already on the waitlist. Here's why." + stat key |
 
 Budget : $10-15/jour. Optimiser pour conversions (signup/trial).
 
