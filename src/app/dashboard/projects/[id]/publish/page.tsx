@@ -37,6 +37,7 @@ import {
   GitBranch,
   FolderOpen,
   ChevronDown,
+  GripVertical,
 } from "lucide-react";
 import {
   generateSnippetFetchUtil,
@@ -180,6 +181,11 @@ export default function PublishPage() {
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
   const [scheduledArticles, setScheduledArticles] = useState<ScheduledArticle[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Drag & drop state
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTargetDay, setDropTargetDay] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (isDemo) {
@@ -526,6 +532,66 @@ export default function PublishPage() {
     setCopiedId(variant.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  /* ── Drag & Drop handler ── */
+
+  function dragItemToEntry(itemId: string) {
+    if (itemId.startsWith("art-")) {
+      const a = scheduledArticles.find((x) => x.id === itemId.slice(4));
+      return a ? { type: "article" as const, data: a } : null;
+    }
+    if (itemId.startsWith("var-")) {
+      const v = variants.find((x) => x.id === itemId.slice(4));
+      return v ? { type: "variant" as const, data: v } : null;
+    }
+    return null;
+  }
+
+  async function handleDrop(targetDay: string) {
+    setDropTargetDay(null);
+    if (!draggedId) return;
+
+    const entry = dragItemToEntry(draggedId);
+    setDraggedId(null);
+    if (!entry) return;
+
+    const currentDay = entry.data.scheduled_at.slice(0, 10);
+    if (currentDay === targetDay) return;
+
+    const originalTime = entry.data.scheduled_at.slice(11);
+    const newDateISO = new Date(`${targetDay}T${originalTime}`).toISOString();
+
+    setMovingId(draggedId);
+
+    try {
+      if (entry.type === "variant") {
+        const valRes = await fetch(fetchUrl(`/api/variants/${entry.data.id}/schedule?date=${encodeURIComponent(newDateISO)}`));
+        const valData = await valRes.json();
+        if (!valData.valid) { toast(valData.reason ?? "This day is full"); return; }
+        const res = await fetch(fetchUrl(`/api/variants/${entry.data.id}/schedule`), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scheduledAt: newDateISO }),
+        });
+        if (!res.ok) { const d = await res.json(); toast(d.error ?? "Reschedule failed"); return; }
+      } else {
+        const valRes = await fetch(fetchUrl(`/api/schedule/validate?projectId=${realProjectId}&date=${encodeURIComponent(newDateISO)}&isMain=true&excludeArticleId=${entry.data.id}`));
+        const valData = await valRes.json();
+        if (!valData.valid) { toast(valData.reason ?? "This day is full"); return; }
+        const res = await fetch(fetchUrl(`/api/articles/${entry.data.id}`), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scheduled_at: newDateISO, status: "scheduled" }),
+        });
+        if (!res.ok) { const d = await res.json(); toast(d.error ?? "Reschedule failed"); return; }
+      }
+      await loadData();
+    } catch {
+      toast("Something went wrong");
+    } finally {
+      setMovingId(null);
+    }
+  }
 
   /* ── Derived data ── */
 
@@ -1293,15 +1359,37 @@ export default function PublishPage() {
                         {dayEntries.length}
                       </span>
                     </div>
-                    <div className="ml-2.5 border-l border-border pb-2 pl-5">
+                    <div
+                      className={`ml-2.5 border-l pb-2 pl-5 transition-colors ${dropTargetDay === dayKey ? "border-accent bg-accent/5 rounded-lg" : "border-border"}`}
+                      onDragOver={(e) => { e.preventDefault(); setDropTargetDay(dayKey); }}
+                      onDragLeave={() => setDropTargetDay((prev) => prev === dayKey ? null : prev)}
+                      onDrop={(e) => { e.preventDefault(); handleDrop(dayKey); }}
+                    >
                       <div className="space-y-2">
                         {dayEntries.map((entry) => {
                           if (entry.type === "article") {
                             const article = entry.data;
                             const isPublished = article.status === "published";
+                            const dragId = `art-${article.id}`;
                             const time = new Date(article.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
                             return (
-                              <div key={`art-${article.id}`} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20">
+                              <div key={dragId} className="flex items-center gap-1.5">
+                                {!isPublished && (
+                                  <div
+                                    draggable
+                                    onDragStart={(e) => {
+                                      const card = e.currentTarget.nextElementSibling as HTMLElement;
+                                      if (card) e.dataTransfer.setDragImage(card, 20, 20);
+                                      e.dataTransfer.effectAllowed = "move";
+                                      setDraggedId(dragId);
+                                    }}
+                                    onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                                    className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted/60 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </div>
+                                )}
+                                <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${draggedId === dragId ? "opacity-30" : ""} ${movingId === dragId ? "animate-pulse" : ""}`}>
                                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs text-accent-light">
                                   <Globe className="h-3.5 w-3.5" />
                                 </span>
@@ -1330,6 +1418,7 @@ export default function PublishPage() {
                                   </span>
                                 )}
                               </div>
+                              </div>
                             );
                           }
                           const variant = entry.data as ScheduledVariant;
@@ -1337,9 +1426,27 @@ export default function PublishPage() {
                           const isManual = platform?.connectionType === "manual";
                           const isPublished = variant.status === "published";
                           const isFailed = variant.status === "failed";
+                          const dragId = `var-${variant.id}`;
                           const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                          const canDrag = !isPublished && !isFailed;
                           return (
-                            <div key={variant.id} className={`flex items-center gap-3 rounded-lg border p-3 transition hover:border-accent/20 ${isFailed ? "border-red-500/30 bg-red-500/5" : "border-border bg-card"}`}>
+                            <div key={dragId} className="flex items-center gap-1.5">
+                              {canDrag && (
+                                <div
+                                  draggable
+                                  onDragStart={(e) => {
+                                    const card = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (card) e.dataTransfer.setDragImage(card, 20, 20);
+                                    e.dataTransfer.effectAllowed = "move";
+                                    setDraggedId(dragId);
+                                  }}
+                                  onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                                  className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted/60 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
+                                >
+                                  <GripVertical className="h-4 w-4" />
+                                </div>
+                              )}
+                              <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border p-3 transition hover:border-accent/20 ${isFailed ? "border-red-500/30 bg-red-500/5" : "border-border bg-card"} ${draggedId === dragId ? "opacity-30" : ""} ${movingId === dragId ? "animate-pulse" : ""}`}>
                               <span
                                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
                                 style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
@@ -1380,6 +1487,7 @@ export default function PublishPage() {
                                   <Radio className="h-3 w-3" />Auto
                                 </span>
                               )}
+                            </div>
                             </div>
                           );
                         })}
