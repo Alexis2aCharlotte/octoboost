@@ -67,7 +67,10 @@ SEO rules:
 - Use supporting keywords naturally throughout
 - Write content that directly answers the search query
 - Include 3-6 internal links to other pages on the site where contextually relevant
-- Internal links should use descriptive anchor text and feel natural in the sentence`;
+- Internal links should use descriptive anchor text and feel natural in the sentence
+- ONLY use links from the "Internal pages" list provided. NEVER invent URLs or link to external websites.
+- When mentioning product features or tools, link to the matching internal page, not to an external domain.
+- Every link in the article must point to a path from the internal pages list (or the product's own URL). Zero external links.`;
 
 const FAQ_RULES = `FAQ section (MANDATORY):
 - End the article with a "## Frequently Asked Questions" section BEFORE the conclusion
@@ -217,9 +220,16 @@ export async function generateArticle(
     ...cluster.supportingKeywords,
   ];
 
+  const siteOrigin = (() => {
+    try { return new URL(productContext.url).origin; } catch { return ""; }
+  })();
+
   const internalLinksBlock = sitePages && sitePages.length > 0
-    ? `\n\nInternal pages on the site (use these for internal linking where relevant):
-${sitePages.map((p) => `- [${p.title}](${p.path}): ${p.description}`).join("\n")}`
+    ? `\n\nInternal pages on the site (use ONLY these for links — never invent URLs):
+${sitePages.map((p) => {
+  const fullUrl = p.path.startsWith("http") ? p.path : `${siteOrigin}${p.path}`;
+  return `- [${p.title}](${fullUrl}): ${p.description}`;
+}).join("\n")}`
     : "";
 
   const keyToolsBlock = productContext.keyTools && productContext.keyTools.length > 0
