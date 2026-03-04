@@ -72,6 +72,14 @@ interface ScheduledVariant {
   articles: { title: string; pillar_keyword: string };
 }
 
+interface ScheduledArticle {
+  id: string;
+  title: string;
+  status: string;
+  scheduled_at: string;
+  canonical_url: string | null;
+}
+
 type ConnectionType = "api_key" | "oauth" | "manual";
 
 interface PlatformInfo {
@@ -170,6 +178,7 @@ export default function PublishPage() {
 
   // Schedule state
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
+  const [scheduledArticles, setScheduledArticles] = useState<ScheduledArticle[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -181,6 +190,7 @@ export default function PublishPage() {
         setConnection({ status: "connected", type: "custom_api" } as SiteConnection);
         setChannels(demoData.channels);
         setVariants(demoData.schedule.variants ?? []);
+        setScheduledArticles(demoData.schedule.articles ?? []);
         setTab((prev) => prev ?? "schedule");
       }
       setLoading(false);
@@ -192,6 +202,7 @@ export default function PublishPage() {
       if (cachedData.connection) setConnection(cachedData.connection);
       setChannels(cachedData.channels);
       setVariants(cachedData.schedule.variants ?? []);
+      setScheduledArticles(cachedData.schedule.articles ?? []);
       setTab((prev) => prev ?? "schedule");
       setLoading(false);
       return;
@@ -231,6 +242,7 @@ export default function PublishPage() {
       if (schedRes.ok) {
         const schedData = await schedRes.json();
         setVariants(schedData.variants ?? []);
+        setScheduledArticles(schedData.articles ?? []);
       }
 
       setTab((prev) => prev ?? ((conn?.status === "connected" || key) ? "schedule" : "site"));
@@ -497,17 +509,28 @@ export default function PublishPage() {
   const availableAuto = autoPublishPlatforms.filter((p) => !usedPlatforms.has(p));
   const availableManual = manualPlatforms.filter((p) => !usedPlatforms.has(p));
 
-  const variantsByDay = new Map<string, ScheduledVariant[]>();
+  type ScheduleEntry =
+    | { type: "variant"; data: ScheduledVariant }
+    | { type: "article"; data: ScheduledArticle };
+
+  const entriesByDay = new Map<string, ScheduleEntry[]>();
   for (const v of variants) {
     if (!v.scheduled_at) continue;
     const key = v.scheduled_at.slice(0, 10);
-    const arr = variantsByDay.get(key) ?? [];
-    arr.push(v);
-    variantsByDay.set(key, arr);
+    const arr = entriesByDay.get(key) ?? [];
+    arr.push({ type: "variant", data: v });
+    entriesByDay.set(key, arr);
   }
-  const sortedDays = [...variantsByDay.keys()].sort();
-  const totalScheduled = variants.filter((v) => v.status === "scheduled").length;
-  const totalPublished = variants.filter((v) => v.status === "published").length;
+  for (const a of scheduledArticles) {
+    if (!a.scheduled_at) continue;
+    const key = a.scheduled_at.slice(0, 10);
+    const arr = entriesByDay.get(key) ?? [];
+    arr.push({ type: "article", data: a });
+    entriesByDay.set(key, arr);
+  }
+  const sortedDays = [...entriesByDay.keys()].sort();
+  const totalScheduled = variants.filter((v) => v.status === "scheduled").length + scheduledArticles.filter((a) => a.status === "scheduled").length;
+  const totalPublished = variants.filter((v) => v.status === "published").length + scheduledArticles.filter((a) => a.status === "published").length;
   const totalFailed = variants.filter((v) => v.status === "failed").length;
 
   const snippet = snippetTab === "util"
@@ -1218,18 +1241,18 @@ export default function PublishPage() {
           </div>
 
           {/* Timeline */}
-          {variants.length === 0 ? (
+          {variants.length === 0 && scheduledArticles.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
               <Calendar className="mx-auto h-10 w-10 text-muted/30" />
-              <p className="mt-3 text-sm text-muted">No variants scheduled</p>
+              <p className="mt-3 text-sm text-muted">Nothing scheduled yet</p>
               <p className="mt-1 text-xs text-muted/60">
-                Generate variants from an article — they will be automatically scheduled here.
+                Schedule articles or generate variants — they will appear here.
               </p>
             </div>
           ) : (
             <div className="space-y-0">
               {sortedDays.map((dayKey) => {
-                const dayVariants = variantsByDay.get(dayKey) ?? [];
+                const dayEntries = entriesByDay.get(dayKey) ?? [];
                 return (
                   <div key={dayKey}>
                     <div className="flex items-center gap-3 py-3">
@@ -1241,12 +1264,49 @@ export default function PublishPage() {
                       </span>
                       <div className="h-px flex-1 bg-border" />
                       <span className="rounded-md bg-card-hover px-2 py-0.5 text-[10px] font-medium text-muted">
-                        {dayVariants.length}
+                        {dayEntries.length}
                       </span>
                     </div>
                     <div className="ml-2.5 border-l border-border pb-2 pl-5">
                       <div className="space-y-2">
-                        {dayVariants.map((variant) => {
+                        {dayEntries.map((entry) => {
+                          if (entry.type === "article") {
+                            const article = entry.data;
+                            const isPublished = article.status === "published";
+                            const time = new Date(article.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                            return (
+                              <div key={`art-${article.id}`} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20">
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs text-accent-light">
+                                  <Globe className="h-3.5 w-3.5" />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-sm font-medium">{article.title}</p>
+                                    <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-light">
+                                      My Site
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                                {isPublished ? (
+                                  article.canonical_url ? (
+                                    <a href={article.canonical_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                      <ExternalLink className="h-3 w-3" />View
+                                    </a>
+                                  ) : (
+                                    <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                      <CheckCircle2 className="h-3 w-3" />Published
+                                    </span>
+                                  )
+                                ) : (
+                                  <span className="flex items-center gap-1 rounded-md bg-blue-500/10 px-2 py-1 text-[11px] font-medium text-blue-400">
+                                    <Clock className="h-3 w-3" />Scheduled
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                          const variant = entry.data as ScheduledVariant;
                           const platform = schedulePlatformMeta[variant.channels.platform_type];
                           const isManual = platform?.connectionType === "manual";
                           const isPublished = variant.status === "published";
