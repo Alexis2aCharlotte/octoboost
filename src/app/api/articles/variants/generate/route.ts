@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { adaptArticle } from "@/lib/engine/variant-adapter";
 import { computeNextSlot } from "@/lib/engine/scheduler";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();

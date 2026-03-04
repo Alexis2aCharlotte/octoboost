@@ -4,7 +4,7 @@ import { publishVariant } from "@/lib/engine/publisher";
 import { publishToSite, type SiteConnection } from "@/lib/custom-api";
 import { publishArticleToGitHub, getValidToken, type GitHubSiteConnection } from "@/lib/github";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function verifyAuth(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
