@@ -237,7 +237,8 @@ export interface KeywordCluster {
 
 export async function clusterKeywords(
   keywords: KeywordForClustering[],
-  productContext: string
+  productContext: string,
+  existingTopics?: string[]
 ): Promise<KeywordCluster[]> {
   if (keywords.length === 0) return [];
 
@@ -247,6 +248,10 @@ export async function clusterKeywords(
         `- "${k.keyword}" (vol: ${k.searchVolume}, comp: ${Math.round(k.competition * 100)}%, opp: ${k.opportunityScore}, intent: ${k.intent})`
     )
     .join("\n");
+
+  const dedupeRule = existingTopics && existingTopics.length > 0
+    ? `\n- CRITICAL: The following articles have ALREADY been written. Do NOT create clusters that overlap with these topics. Propose only NEW, fresh angles:\n${existingTopics.map((t) => `  • "${t}"`).join("\n")}`
+    : "";
 
   const { object } = await generateObject({
     model: openai("gpt-4o"),
@@ -264,7 +269,7 @@ Rules:
 - Include a mix of article types: standard informational, but also comparison ("X vs Y"), listicle ("Top 5..."), and how-to guides
 - For each cluster, assign an articleType: "informational" for deep dives, "comparison" for X vs Y or alternatives articles, "listicle" for Top N or Best X for Y articles, "how-to" for step-by-step guides
 - Aim for at least 2-3 comparison clusters, 2-3 listicle clusters, and 2-3 how-to clusters. The rest can be informational.
-- NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.`,
+- NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.${dedupeRule}`,
     prompt: `Product context: ${productContext}
 
 Group these keywords into topic clusters. Each cluster = 1 article to write.

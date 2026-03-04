@@ -136,14 +136,15 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (existingAnalysis) {
-        const ageHours =
+        const ageDays =
           (Date.now() - new Date(existingAnalysis.created_at).getTime()) /
-          (1000 * 60 * 60);
+          (1000 * 60 * 60 * 24);
 
-        if (ageHours < 24) {
+        if (ageDays < 30) {
           return NextResponse.json({
             analysisId: existingAnalysis.id,
             cached: true,
+            nextRefreshAt: new Date(new Date(existingAnalysis.created_at).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           });
         }
       }
@@ -385,6 +386,23 @@ export async function POST(req: NextRequest) {
 
     if (keywordsForClustering.length >= 5) {
       try {
+        let existingTopics: string[] | undefined;
+        if (existingProject) {
+          const { data: prevClusters } = await supabase
+            .from("keyword_clusters")
+            .select("article_title")
+            .eq("analysis_id", (await supabase
+              .from("analyses")
+              .select("id")
+              .eq("project_id", existingProject.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single()).data?.id ?? "");
+          if (prevClusters && prevClusters.length > 0) {
+            existingTopics = prevClusters.map((c) => c.article_title);
+          }
+        }
+
         clusters = await clusterKeywords(
           keywordsForClustering.map((k) => ({
             keyword: k.keyword,
@@ -393,7 +411,8 @@ export async function POST(req: NextRequest) {
             opportunityScore: k.opportunityScore,
             intent: k.intent,
           })),
-          productContext
+          productContext,
+          existingTopics
         );
       } catch (e) {
         console.error("Clustering error (continuing):", e);
