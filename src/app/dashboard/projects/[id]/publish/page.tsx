@@ -133,7 +133,7 @@ export default function PublishPage() {
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
-  const { data: cachedData, loading: cacheLoading } = useProjectCache();
+  const { data: cachedData, loading: cacheLoading, refresh } = useProjectCache();
   const { isFree } = usePlan();
   const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
@@ -411,8 +411,24 @@ export default function PublishPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: realProjectId, platformType, name: meta?.label ?? platformType, config }),
       });
-      if (res.ok) { await loadData(); setApiKeyInput(null); setProfileUrlInput(null); }
-      else { const err = await res.json(); toast(err.error ?? "Error"); }
+      if (res.ok) {
+        const created = await res.json();
+        setChannels((prev) => [...prev, {
+          id: created.id,
+          projectId: realProjectId,
+          platformType: created.platformType ?? platformType,
+          name: created.name ?? meta?.label ?? platformType,
+          config: config as Record<string, unknown>,
+          constraints: {},
+          createdAt: created.createdAt ?? new Date().toISOString(),
+        }]);
+        setApiKeyInput(null);
+        setProfileUrlInput(null);
+        refresh();
+      } else {
+        const err = await res.json();
+        toast(err.error ?? "Error");
+      }
     } finally { setAdding(null); }
   }
 
@@ -459,8 +475,18 @@ export default function PublishPage() {
         }),
       });
       if (res.ok) {
-        await loadData();
+        const created = await res.json();
+        setChannels((prev) => [...prev, {
+          id: created.id,
+          projectId: realProjectId,
+          platformType: "wordpress",
+          name: created.name ?? "WordPress",
+          config: { siteUrl: wpInput.siteUrl.trim(), username: wpInput.username.trim() },
+          constraints: {},
+          createdAt: created.createdAt ?? new Date().toISOString(),
+        }]);
         setWpInput(null);
+        refresh();
       } else {
         const err = await res.json();
         toast(err.error ?? "Error");
