@@ -1205,7 +1205,7 @@ export default function ArticlesPage() {
               </div>
               <h2 className="text-xl font-bold">Upgrade to unlock</h2>
               <p className="mt-2 text-sm text-muted">
-                Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $29/mo.
+                Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $19/mo.
               </p>
               <div className="mt-6 flex gap-3">
                 <button onClick={() => setShowUpgradeModal(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition hover:text-foreground">
@@ -1372,7 +1372,7 @@ export default function ArticlesPage() {
             </div>
             <h2 className="text-xl font-bold">Upgrade to unlock</h2>
             <p className="mt-2 text-sm text-muted">
-              Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $29/mo.
+              Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $19/mo.
             </p>
             <div className="mt-6 flex gap-3">
               <button onClick={() => setShowUpgradeModal(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition hover:text-foreground">

@@ -18,7 +18,7 @@ export function SetPasswordBanner() {
       return;
     }
 
-    if (sessionStorage.getItem("ob_pw_banner_dismissed")) {
+    if (localStorage.getItem("ob_pw_banner_dismissed")) {
       setChecking(false);
       return;
     }
@@ -31,7 +31,9 @@ export function SetPasswordBanner() {
           .select("has_password")
           .eq("user_id", user.id)
           .single();
-        if (profile && !profile.has_password) {
+        if (profile?.has_password) {
+          localStorage.setItem("ob_pw_banner_dismissed", "1");
+        } else if (profile && !profile.has_password) {
           setVisible(true);
         }
       }
@@ -42,7 +44,7 @@ export function SetPasswordBanner() {
   if (checking || !visible) return null;
 
   function dismiss() {
-    sessionStorage.setItem("ob_pw_banner_dismissed", "1");
+    localStorage.setItem("ob_pw_banner_dismissed", "1");
     setVisible(false);
   }
 

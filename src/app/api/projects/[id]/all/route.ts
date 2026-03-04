@@ -119,10 +119,10 @@ export async function GET(
     : null;
 
   const siteConn = project.site_connection as Record<string, unknown> | null;
-  const hasApiKey = !!project.api_key;
   const hasGitHub = siteConn?.type === "github" && siteConn?.status === "connected";
   const hasCustomApi = siteConn?.status === "connected" && !!siteConn?.endpoint_url;
-  const siteConnected = hasApiKey || !!hasGitHub || !!hasCustomApi;
+  const apiKeyVerified = siteConn?.status === "connected" && !!siteConn?.last_api_call_at;
+  const siteConnected = !!apiKeyVerified || !!hasGitHub || !!hasCustomApi;
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const analysesLast30d = sortedAnalyses.filter(

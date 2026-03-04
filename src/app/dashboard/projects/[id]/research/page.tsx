@@ -826,7 +826,7 @@ export default function ResearchPage() {
             </div>
             <h2 className="text-xl font-bold">Upgrade to unlock</h2>
             <p className="mt-2 text-sm text-muted">
-              Re-analyze your site, generate unlimited articles, and access all keyword data. Plans start at $29/mo.
+              Re-analyze your site, generate unlimited articles, and access all keyword data. Plans start at $19/mo.
             </p>
             <div className="mt-6 flex gap-3">
               <button onClick={() => setShowUpgradeModal(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition hover:text-foreground">

@@ -117,14 +117,16 @@ export async function GET(
     string,
     unknown
   > | null;
-  const hasApiKey = !!project.api_key;
   const hasGitHub =
     siteConnection?.type === "github" &&
     siteConnection?.status === "connected";
   const hasCustomApi =
     siteConnection?.status === "connected" &&
     !!siteConnection?.endpoint_url;
-  const siteConnected = hasApiKey || hasGitHub || hasCustomApi;
+  const apiKeyVerified =
+    siteConnection?.status === "connected" &&
+    !!siteConnection?.last_api_call_at;
+  const siteConnected = !!apiKeyVerified || hasGitHub || hasCustomApi;
 
   const pipeline = {
     siteConnected,
