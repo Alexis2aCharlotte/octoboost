@@ -882,7 +882,7 @@ export default function PublishPage() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
-                      Import and merge OctoBoost articles with your existing blog posts
+                      Call <code className="rounded bg-white/[0.06] px-1 py-0.5">getOctoArticles()</code> in your blog page to display articles
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>

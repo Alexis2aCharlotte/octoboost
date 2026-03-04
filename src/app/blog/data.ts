@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getOctoArticles, getOctoArticle, type OctoArticle } from "@/lib/octoboost";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,15 +23,56 @@ export interface BlogPost {
   meta_title: string | null;
   meta_description: string | null;
   views: number;
+  source: "supabase" | "octoboost";
+}
+
+function octoToBlogPost(a: OctoArticle): BlogPost {
+  return {
+    id: `octo-${a.slug}`,
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.metaDescription,
+    content: a.content,
+    cover_image: null,
+    category: a.tags?.[0] || null,
+    tags: a.tags,
+    author: "Tobby",
+    published: true,
+    published_at: a.publishedAt,
+    created_at: a.publishedAt,
+    updated_at: a.publishedAt,
+    meta_title: a.title,
+    meta_description: a.metaDescription,
+    views: 0,
+    source: "octoboost",
+  };
 }
 
 export async function fetchAllPosts(): Promise<BlogPost[]> {
-  const { data } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("published", true)
-    .order("published_at", { ascending: false });
-  return data || [];
+  const [supabaseResult, octoArticles] = await Promise.all([
+    supabase
+      .from("blog_posts")
+      .select("*")
+      .eq("published", true)
+      .order("published_at", { ascending: false }),
+    getOctoArticles(),
+  ]);
+
+  const supabasePosts: BlogPost[] = (supabaseResult.data || []).map((p) => ({
+    ...p,
+    source: "supabase" as const,
+  }));
+
+  const supabaseSlugs = new Set(supabasePosts.map((p) => p.slug));
+  const octoPosts = octoArticles
+    .filter((a) => !supabaseSlugs.has(a.slug))
+    .map(octoToBlogPost);
+
+  return [...supabasePosts, ...octoPosts].sort((a, b) => {
+    const da = a.published_at ? new Date(a.published_at).getTime() : 0;
+    const db = b.published_at ? new Date(b.published_at).getTime() : 0;
+    return db - da;
+  });
 }
 
 export async function fetchPostBySlug(
@@ -48,8 +90,11 @@ export async function fetchPostBySlug(
       .from("blog_posts")
       .update({ views: (data.views || 0) + 1 })
       .eq("id", data.id);
-    return data;
+    return { ...data, source: "supabase" as const };
   }
+
+  const octoArticle = await getOctoArticle(slug);
+  if (octoArticle) return octoToBlogPost(octoArticle);
 
   return null;
 }
