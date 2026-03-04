@@ -84,6 +84,40 @@ export async function POST(req: NextRequest) {
 
     const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
 
+    // ── Plan-based site limit ────────────────────────────────
+    const SITE_LIMITS: Record<string, number> = { free: 1, explore: 1, pro: 5 };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("user_id", user.id)
+      .single();
+
+    const plan = profile?.plan ?? "free";
+    const maxSites = SITE_LIMITS[plan] ?? 1;
+
+    const { count: projectCount } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    const existingCount = projectCount ?? 0;
+
+    // Allow if the URL is already one of the user's projects (re-analysis)
+    const { data: ownedProject } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("url", normalizedUrl)
+      .maybeSingle();
+
+    if (!ownedProject && existingCount >= maxSites) {
+      return NextResponse.json(
+        { error: `Your ${plan === "free" ? "free" : plan.charAt(0).toUpperCase() + plan.slice(1)} plan allows ${maxSites} site${maxSites > 1 ? "s" : ""}. Upgrade to add more.` },
+        { status: 403 }
+      );
+    }
+
     // ── Cache check ─────────────────────────────────────────
     const { data: existingProject } = await supabase
       .from("projects")

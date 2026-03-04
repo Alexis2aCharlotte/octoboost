@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useToast } from "@/components/Toast";
 import { useDemo } from "@/lib/demo/context";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -49,6 +50,7 @@ interface Project {
 
 export default function DashboardPage() {
   const { confirm } = useConfirm();
+  const { toast } = useToast();
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const { isFree } = usePlan();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -104,6 +106,10 @@ export default function DashboardPage() {
         body: JSON.stringify({ url: newUrl.trim() }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        toast({ title: data.error ?? "Analysis failed", variant: "error" });
+        return;
+      }
       if (data.analysisId) {
         const projRes = await fetch("/api/projects");
         const projData = await projRes.json();
@@ -119,7 +125,7 @@ export default function DashboardPage() {
         }
       }
     } catch {
-      // silent
+      toast({ title: "Something went wrong", variant: "error" });
     } finally {
       setAnalyzing(false);
     }
