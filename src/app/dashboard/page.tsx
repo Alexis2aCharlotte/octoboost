@@ -22,7 +22,16 @@ import {
   Megaphone,
   BarChart3,
   Plug,
+  CheckCircle2,
 } from "lucide-react";
+
+const ANALYSIS_STEPS = [
+  { label: "Crawling your site", icon: Globe },
+  { label: "Analyzing keywords", icon: Search },
+  { label: "Spying on competitors", icon: BarChart3 },
+  { label: "Clustering topics", icon: Sparkles },
+  { label: "Generating your first article", icon: FileText },
+];
 
 interface Project {
   id: string;
@@ -46,6 +55,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,10 +82,21 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [fetchUrl, isDemo, demoData, demoLoading]);
 
+  useEffect(() => {
+    if (!analyzing) return;
+    const interval = setInterval(() => {
+      setAnalysisStep((prev) =>
+        prev < ANALYSIS_STEPS.length - 1 ? prev + 1 : prev
+      );
+    }, 18000);
+    return () => clearInterval(interval);
+  }, [analyzing]);
+
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
     if (!newUrl.trim() || analyzing) return;
     setAnalyzing(true);
+    setAnalysisStep(0);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -182,7 +203,7 @@ export default function DashboardPage() {
           onSubmit={handleAnalyze}
           className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 sm:flex-row sm:items-center sm:gap-3"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted/60">
               <Search className="h-4 w-4" />
             </div>
@@ -216,8 +237,51 @@ export default function DashboardPage() {
         </form>
       )}
 
+      {/* Analysis progress */}
+      {analyzing && (
+        <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10">
+              <Sparkles className="h-7 w-7 animate-pulse text-accent-light" />
+            </div>
+            <h2 className="text-lg font-bold">Building your SEO engine</h2>
+            <p className="mt-1 text-sm text-muted">
+              This takes about 2 minutes. Sit tight!
+            </p>
+          </div>
+          <div className="mx-auto max-w-sm space-y-2.5">
+            {ANALYSIS_STEPS.map((s, i) => {
+              const Icon = s.icon;
+              const isDone = i < analysisStep;
+              const isActive = i === analysisStep;
+              return (
+                <div
+                  key={s.label}
+                  className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-all ${
+                    isDone
+                      ? "border-green-500/30 bg-green-500/5 text-green-400"
+                      : isActive
+                        ? "border-accent/30 bg-accent/5 text-accent-light"
+                        : "border-border bg-background text-muted/40"
+                  }`}
+                >
+                  {isDone ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : isActive ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  ) : (
+                    <Icon className="h-4 w-4 shrink-0" />
+                  )}
+                  <span>{s.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Projects list */}
-      {projects.length === 0 ? (
+      {!analyzing && projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
             <Sparkles className="h-5 w-5 text-accent-light" />

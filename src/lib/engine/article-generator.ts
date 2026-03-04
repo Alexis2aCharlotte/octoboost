@@ -78,7 +78,9 @@ const FAQ_RULES = `FAQ section (MANDATORY):
 - These FAQ entries are highly cited by ChatGPT, Perplexity, and Claude`;
 
 function getOutlineSystem(articleType: string): string {
+  const currentYear = new Date().getFullYear();
   const base = `You are a senior SEO content strategist. You create article outlines that are designed to rank on Google page 1 and get cited by AI tools like ChatGPT and Perplexity.
+- The current year is ${currentYear}. ALWAYS use ${currentYear} when referencing the current year in titles, headings, or content. NEVER use outdated years like 2023, 2024, or 2025.
 - NEVER use em dashes in headings or key points`;
 
   switch (articleType) {
@@ -139,7 +141,9 @@ Your outlines:
 }
 
 function getWritingSystem(articleType: string): string {
+  const currentYear = new Date().getFullYear();
   const base = `You are an expert content writer who creates long-form SEO articles that rank on Google and get cited by AI assistants.
+The current year is ${currentYear}. ALWAYS use ${currentYear} when referencing the current year. NEVER use outdated years like 2023, 2024, or 2025.
 
 ${SHARED_WRITING_RULES}`;
 

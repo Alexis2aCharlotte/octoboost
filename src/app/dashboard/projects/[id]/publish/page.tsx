@@ -520,7 +520,7 @@ export default function PublishPage() {
           {/* Tabs */}
       <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
         {([
-          { id: "site" as const, label: "My Site", icon: Plug, badge: connection?.status === "connected" ? "Connected" : undefined },
+          { id: "site" as const, label: "My Site", icon: Plug, badge: (connection?.status === "connected") ? "Connected" : apiKey ? "Setup" : undefined },
           { id: "channels" as const, label: "Channels", icon: Radio, badge: channels.length > 0 ? `${channels.length}` : undefined },
           { id: "schedule" as const, label: "Schedule", icon: Calendar, badge: totalScheduled > 0 ? `${totalScheduled}` : undefined },
         ]).map(({ id: tabId, label, icon: Icon, badge }) => (
@@ -550,7 +550,7 @@ export default function PublishPage() {
         <div className="space-y-6">
 
           {/* ── Connected status banner ── */}
-          {apiKey && (
+          {apiKey && connection?.status === "connected" && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
@@ -559,7 +559,7 @@ export default function PublishPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-green-400">Site connected</p>
-                    <p className="text-sm text-muted">Your API key is active.</p>
+                    <p className="text-sm text-muted">Your API key is active and verified.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -581,6 +581,31 @@ export default function PublishPage() {
                 <div className="flex items-center gap-2 rounded-lg bg-[#0d1117] px-3 py-1.5 text-xs">
                   <span className="shrink-0 rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-blue-400">GET</span>
                   <code className="truncate text-muted">/api/public/articles/[slug]</code>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── API key ready but not tested ── */}
+          {apiKey && connection?.status !== "connected" && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                    <Key className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-amber-400">API key ready</p>
+                    <p className="text-sm text-muted">Add the key to your site, then test the connection.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="truncate rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-amber-400/80 font-mono">
+                    {apiKey.slice(0, 8)}{"•".repeat(16)}
+                  </code>
+                  <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
+                    {copiedApiKey ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                  </button>
                 </div>
               </div>
             </div>
