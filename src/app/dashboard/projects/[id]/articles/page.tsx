@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useDemo } from "@/lib/demo/context";
 import { useProjectCache } from "@/lib/project-cache";
+import { useArticleQueue } from "@/lib/article-queue";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
@@ -151,16 +152,13 @@ export default function ArticlesPage() {
   const { toast } = useToast();
   const { confirm } = useConfirm();
   const { isFree } = usePlan();
+  const { activeGenId, queue: genQueue, enqueue, isActive, isQueued, queuePosition } = useArticleQueue();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
-
-  const [genQueue, setGenQueue] = useState<string[]>([]);
-  const [activeGenId, setActiveGenId] = useState<string | null>(null);
-  const processingRef = useRef(false);
 
   const [view, setView] = useState<View>("list");
   const [previewArticle, setPreviewArticle] = useState<ArticleFull | null>(null);
@@ -186,8 +184,6 @@ export default function ArticlesPage() {
   const [showSitePublishMenu, setShowSitePublishMenu] = useState(false);
   const [schedulingSite, setSchedulingSite] = useState(false);
   const [siteScheduleDate, setSiteScheduleDate] = useState("");
-
-  const initialLoadDone = useRef(false);
 
   const loadData = useCallback(async () => {
     if (isDemo) {
@@ -248,96 +244,14 @@ export default function ArticlesPage() {
     loadData();
   }, [loadData]);
 
-  // Restore queue from localStorage on first load
-  useEffect(() => {
-    if (loading || initialLoadDone.current) return;
-    initialLoadDone.current = true;
-    const key = `octoboost_queue_${id}`;
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    try {
-      const saved: { queue: string[]; activeId: string | null; startedAt: number } = JSON.parse(raw);
-      const elapsed = (Date.now() - saved.startedAt) / 1000;
-      if (elapsed > 600) { localStorage.removeItem(key); return; }
-      const existingIds = new Set(articles.map((a) => a.clusterId));
-      const remaining = saved.queue.filter((cid) => !existingIds.has(cid));
-      const activeStillPending = saved.activeId && !existingIds.has(saved.activeId);
-      if (activeStillPending) setActiveGenId(saved.activeId);
-      if (remaining.length > 0) setGenQueue(remaining);
-    } catch {
-      localStorage.removeItem(key);
-    }
-  }, [loading, id, articles]);
-
-  // Persist queue state to localStorage whenever it changes
-  useEffect(() => {
-    const key = `octoboost_queue_${id}`;
-    if (genQueue.length === 0 && !activeGenId) {
-      localStorage.removeItem(key);
-    } else {
-      localStorage.setItem(key, JSON.stringify({ queue: genQueue, activeId: activeGenId, startedAt: Date.now() }));
-    }
-  }, [genQueue, activeGenId, id]);
-
-  // Poll for article completion when there's an active generation we're waiting on (restored from localStorage)
-  useEffect(() => {
-    if (!activeGenId || processingRef.current) return;
-    const interval = setInterval(async () => { await loadData(); }, 5000);
-    return () => clearInterval(interval);
-  }, [activeGenId, loadData]);
-
-  // When a generated article appears, clear it from active and process next in queue
-  useEffect(() => {
-    if (!activeGenId) return;
-    const exists = articles.some((a) => a.clusterId === activeGenId);
-    if (exists) setActiveGenId(null);
-  }, [articles, activeGenId]);
-
-  // Queue processor: pick next item when nothing is actively generating
-  useEffect(() => {
-    if (activeGenId || genQueue.length === 0 || processingRef.current || !realProjectId) return;
-    const nextId = genQueue[0];
-    if (articles.some((a) => a.clusterId === nextId)) {
-      setGenQueue((q) => q.slice(1));
-      return;
-    }
-    processingRef.current = true;
-    setActiveGenId(nextId);
-    setGenQueue((q) => q.slice(1));
-
-    (async () => {
-      try {
-        const res = await fetch(fetchUrl("/api/articles/generate"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clusterId: nextId, projectId: realProjectId }),
-        });
-        if (res.ok) {
-          await loadData();
-        } else if (res.status === 409) {
-          await loadData();
-        } else {
-          const data = await res.json();
-          toast(data.error || "Generation failed");
-        }
-      } catch {
-        // server may still be generating
-      } finally {
-        setActiveGenId(null);
-        processingRef.current = false;
-      }
-    })();
-  }, [activeGenId, genQueue, realProjectId, articles, fetchUrl, loadData, toast]);
-
   const articleByCluster = new Map(articles.map((a) => [a.clusterId, a]));
 
   function handleGenerate(clusterId: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     if (isFree) { setShowUpgradeModal(true); return; }
     if (!realProjectId) return;
-    if (activeGenId === clusterId || genQueue.includes(clusterId)) return;
     if (articleByCluster.has(clusterId)) return;
-    setGenQueue((q) => [...q, clusterId]);
+    enqueue(clusterId);
   }
 
   async function openPreview(articleId: string) {
@@ -1316,8 +1230,8 @@ export default function ArticlesPage() {
               cluster={cluster}
               article={articleByCluster.get(cluster.id)}
               isExpanded={expandedId === cluster.id}
-              isGenerating={activeGenId === cluster.id}
-              queuePosition={genQueue.indexOf(cluster.id)}
+              isGenerating={isActive(cluster.id)}
+              queuePosition={queuePosition(cluster.id)}
               onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
               onGenerate={() => handleGenerate(cluster.id)}
               onPreview={(aid) => openPreview(aid)}
@@ -1365,8 +1279,8 @@ export default function ArticlesPage() {
                 cluster={cluster}
                 article={undefined}
                 isExpanded={expandedId === cluster.id}
-                isGenerating={activeGenId === cluster.id}
-                queuePosition={genQueue.indexOf(cluster.id)}
+                isGenerating={isActive(cluster.id)}
+                queuePosition={queuePosition(cluster.id)}
                 onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
                 onGenerate={() => handleGenerate(cluster.id)}
                 onPreview={() => {}}
