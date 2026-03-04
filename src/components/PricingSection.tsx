@@ -58,29 +58,14 @@ export function PricingSection() {
   async function handleCheckout(plan: string) {
     setLoading(plan);
     try {
-      const payload = JSON.stringify({
-        plan: plan.toLowerCase(),
-        interval: yearly ? "yearly" : "monthly",
-      });
-      const headers = { "Content-Type": "application/json" };
-
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers,
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: plan.toLowerCase(),
+          interval: yearly ? "yearly" : "monthly",
+        }),
       });
-
-      if (res.status === 401) {
-        const guestRes = await fetch("/api/checkout/guest", {
-          method: "POST",
-          headers,
-          body: payload,
-        });
-        const guestData = await guestRes.json();
-        if (guestData.url) window.location.href = guestData.url;
-        return;
-      }
-
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } finally {

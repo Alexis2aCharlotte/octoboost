@@ -4,6 +4,39 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { sendUpgradeEmail } from "@/lib/services/email";
 import { notifyTelegram } from "@/lib/services/telegram";
 
+export async function GET(request: NextRequest) {
+  const sessionId = request.nextUrl.searchParams.get("session_id");
+
+  if (!sessionId) {
+    return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    });
+
+    const customerEmail =
+      session.customer_details?.email ?? session.customer_email;
+    const subscription =
+      typeof session.subscription === "object" ? session.subscription : null;
+
+    return NextResponse.json({
+      email: customerEmail,
+      plan: subscription?.metadata?.plan ?? "explore",
+      interval: subscription?.metadata?.interval ?? "monthly",
+      amount: session.amount_total
+        ? `$${(session.amount_total / 100).toFixed(0)}`
+        : null,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to retrieve session" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password, sessionId } = (await request.json()) as {

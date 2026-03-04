@@ -9,8 +9,6 @@ import { createClient } from "@/lib/supabase/client";
 
 interface SessionData {
   email: string | null;
-  customerId: string | null;
-  subscriptionId: string | null;
   plan: string;
   interval: string;
   amount: string | null;
@@ -34,7 +32,7 @@ function SuccessContent() {
       setLoading(false);
       return;
     }
-    fetch(`/api/stripe/session?session_id=${sessionId}`)
+    fetch(`/api/auth/create-account?session_id=${sessionId}`)
       .then((res) => res.json())
       .then((data) => {
         setSessionData(data);
