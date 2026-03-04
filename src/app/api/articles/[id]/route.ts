@@ -63,6 +63,7 @@ export async function GET(
     supportingKeywords: article.supporting_keywords,
     metaDescription: article.meta_description,
     status: article.status,
+    scheduledAt: article.scheduled_at,
     modelUsed: article.model_used,
     createdAt: article.created_at,
     updatedAt: article.updated_at,

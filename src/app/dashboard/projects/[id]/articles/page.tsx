@@ -77,6 +77,7 @@ interface ArticleFull {
   wordCount: number;
   metaDescription: string;
   status: string;
+  scheduledAt: string | null;
 }
 
 interface Channel {
@@ -478,7 +479,8 @@ export default function ArticlesPage() {
     setSiteSlotValidating(true);
     try {
       const isoDate = new Date(dateValue).toISOString();
-      const res = await fetch(fetchUrl(`/api/schedule/validate?projectId=${realProjectId}&date=${encodeURIComponent(isoDate)}&isMain=true`));
+      const excludeParam = previewArticle?.status === "scheduled" ? `&excludeArticleId=${previewArticle.id}` : "";
+      const res = await fetch(fetchUrl(`/api/schedule/validate?projectId=${realProjectId}&date=${encodeURIComponent(isoDate)}&isMain=true${excludeParam}`));
       const data = await res.json();
       setSiteSlotValidation(data);
     } catch {
@@ -499,7 +501,7 @@ export default function ArticlesPage() {
       });
       if (res.ok) {
         await loadData();
-        if (previewArticle) setPreviewArticle({ ...previewArticle, status: "scheduled" });
+        if (previewArticle) setPreviewArticle({ ...previewArticle, status: "scheduled", scheduledAt });
         setShowSitePublishMenu(false);
         setSiteSlotValidation(null);
       } else {
@@ -838,22 +840,100 @@ export default function ArticlesPage() {
           </div>
         )}
         {previewArticle.status === "scheduled" && (
-          <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-              <CalendarClock className="h-4 w-4 text-blue-400" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                <CalendarClock className="h-4 w-4 text-blue-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-blue-400">Scheduled for your website</p>
+                <p className="text-xs text-muted">
+                  {previewArticle.scheduledAt
+                    ? new Date(previewArticle.scheduledAt).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                    : "Will be automatically published by the scheduler"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (isFree) { setShowUpgradeModal(true); return; }
+                    const current = previewArticle.scheduledAt
+                      ? new Date(previewArticle.scheduledAt).toISOString().slice(0, 16)
+                      : (() => { const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(10, 0, 0, 0); return t.toISOString().slice(0, 16); })();
+                    setSiteScheduleDate(current);
+                    setSiteSlotValidation(null);
+                    if (!showSitePublishMenu) handleValidateSiteSlot(current);
+                    setShowSitePublishMenu(!showSitePublishMenu);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20"
+                >
+                  <CalendarClock className="h-3 w-3" />
+                  Reschedule
+                </button>
+                <button
+                  onClick={() => isFree ? setShowUpgradeModal(true) : handlePublishToSite(previewArticle.id)}
+                  disabled={publishingToSite}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                >
+                  {publishingToSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  Publish Now
+                </button>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-blue-400">Scheduled for your website</p>
-              <p className="text-xs text-muted">Will be automatically published by the scheduler</p>
-            </div>
-            <button
-              onClick={() => isFree ? setShowUpgradeModal(true) : handlePublishToSite(previewArticle.id)}
-              disabled={publishingToSite}
-              className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-            >
-              {publishingToSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-              Publish Now
-            </button>
+            {showSitePublishMenu && (
+              <div className="space-y-3 rounded-lg border border-border bg-card-hover p-3">
+                <label className="block text-[11px] font-medium text-muted">New publication date & time</label>
+                <DateTimePicker value={siteScheduleDate} onChange={handleValidateSiteSlot} />
+
+                {siteSlotValidating && (
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Validating...
+                  </div>
+                )}
+
+                {siteSlotValidation && !siteSlotValidating && (
+                  <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+                    siteSlotValidation.valid
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                  }`}>
+                    {siteSlotValidation.valid ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    {siteSlotValidation.valid ? "Slot available" : siteSlotValidation.reason}
+                  </div>
+                )}
+
+                {siteSlotValidation && !siteSlotValidation.valid && siteSlotValidation.suggestedSlot && (
+                  <button
+                    onClick={() => {
+                      const suggested = new Date(siteSlotValidation.suggestedSlot!).toISOString().slice(0, 16);
+                      handleValidateSiteSlot(suggested);
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    Use suggested: {new Date(siteSlotValidation.suggestedSlot).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </button>
+                )}
+
+                <div className="rounded-lg bg-card px-3 py-2 text-[11px] text-muted/70">
+                  Max 2 publications per day · Max 2 blog articles per week
+                </div>
+
+                <button
+                  onClick={() => handleScheduleToSite(previewArticle.id, new Date(siteScheduleDate).toISOString())}
+                  disabled={schedulingSite || !siteScheduleDate || !siteSlotValidation?.valid}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {schedulingSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarClock className="h-3 w-3" />}
+                  Confirm Reschedule
+                </button>
+              </div>
+            )}
           </div>
         )}
 
