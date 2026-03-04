@@ -74,6 +74,8 @@ export async function analyzeSite(
     schema: analysisSchema,
     system: `You are a world-class SEO strategist who specializes in finding keywords that are easy to rank for while still having meaningful search volume. Your goal is to find "golden keywords": terms that real people type into Google, that have decent volume, and where competition is low enough to rank on page 1 within 3-6 months.
 
+CRITICAL: The current year is 2026. We are in 2026. Any title, keyword, or reference that mentions a year MUST use 2026. NEVER use 2023, 2024, or 2025. Always write "in 2026", "for 2026", "2026 guide", etc.
+
 You think like someone who would actually search Google. You avoid jargon-heavy terms that nobody types. You prioritize:
 - Questions people ask ("how to...", "what is the best...", "why do...")
 - Comparison queries ("X vs Y", "X alternatives", "best X for Y")
@@ -169,7 +171,9 @@ export async function classifyKeywords(
     const { object } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: classificationSchema,
-      system: `You classify SEO keywords. For each keyword, determine:
+      system: `You classify SEO keywords. The current year is 2026. If any keyword contains an outdated year (2023, 2024, 2025), update it to 2026 in your output.
+
+For each keyword, determine:
 - intent: informational (learning), commercial (researching products), transactional (ready to buy/use), navigational (looking for specific site)
 - relevance: how relevant is this keyword to the product described? high/medium/low
 - category: broad (generic industry term), niche (domain-specific), question (starts with how/what/why/etc), comparison (vs, alternatives, best X for Y)`,
@@ -258,6 +262,8 @@ export async function clusterKeywords(
     schema: clusterSchema,
     system: `You are an SEO content strategist. You group keywords into topic clusters where each cluster represents ONE article to write. The goal is to maximize ranking potential and AI citability.
 
+CRITICAL: The current year is 2026. We are in 2026. Every article title that includes a year MUST use 2026. NEVER use 2023, 2024, or 2025. Write "in 2026", "for 2026", "2026 guide", etc.
+
 Rules:
 - Each cluster should have 1 pillar keyword (highest volume/opportunity) and 3-10 supporting keywords
 - Group by semantic similarity and search intent
@@ -269,7 +275,8 @@ Rules:
 - Include a mix of article types: standard informational, but also comparison ("X vs Y"), listicle ("Top 5..."), and how-to guides
 - For each cluster, assign an articleType: "informational" for deep dives, "comparison" for X vs Y or alternatives articles, "listicle" for Top N or Best X for Y articles, "how-to" for step-by-step guides
 - Aim for at least 2-3 comparison clusters, 2-3 listicle clusters, and 2-3 how-to clusters. The rest can be informational.
-- NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.${dedupeRule}`,
+- NEVER use em dashes in article titles or any output. Use commas, colons, or hyphens instead.
+- When a year appears in any title or text, it MUST be 2026. No exceptions.${dedupeRule}`,
     prompt: `Product context: ${productContext}
 
 Group these keywords into topic clusters. Each cluster = 1 article to write.
