@@ -357,20 +357,24 @@ export default function PublishPage() {
   }
 
   async function handleTestConnection() {
-    if (!realProjectId || !apiKey) return;
+    if (!realProjectId) return;
+    if (!connection?.endpoint_url && connection?.type !== "github") {
+      setTestError("Configure your endpoint URL or connect GitHub first.");
+      return;
+    }
     setTesting(true);
     setTestError(null);
     try {
-      const res = await fetch(`https://octoboost.app/api/public/articles?key=${apiKey}`);
-      if (res.ok) {
-        setConnection({ type: "custom_api", status: "connected" } as SiteConnection);
-        await fetch(fetchUrl("/api/site-connection"), {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: realProjectId, action: "init" }),
-        });
+      const res = await fetch(fetchUrl("/api/site-connection"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: realProjectId, action: "test" }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setConnection(data.connection);
       } else {
-        setTestError("Could not reach the API. Make sure articles are published.");
+        setTestError(data.error || "Connection test failed.");
       }
     } catch {
       setTestError("Connection failed. Check your network and try again.");
@@ -545,7 +549,7 @@ export default function PublishPage() {
           {/* Tabs */}
       <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
         {([
-          { id: "site" as const, label: "My Site", icon: Plug, badge: (connection?.status === "connected") ? "Connected" : apiKey ? "Setup" : undefined },
+          { id: "site" as const, label: "My Site", icon: Plug, badge: (connection?.status === "connected") ? "Connected" : (connection?.endpoint_url || connection?.type === "github") ? "Setup" : undefined },
           { id: "channels" as const, label: "Channels", icon: Radio, badge: channels.length > 0 ? `${channels.length}` : undefined },
           { id: "schedule" as const, label: "Schedule", icon: Calendar, badge: totalScheduled > 0 ? `${totalScheduled}` : undefined },
         ]).map(({ id: tabId, label, icon: Icon, badge }) => (
@@ -611,38 +615,40 @@ export default function PublishPage() {
             </div>
           )}
 
-          {/* ── API key ready but not tested ── */}
+          {/* ── API key ready — not yet connected ── */}
           {apiKey && connection?.status !== "connected" && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5">
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                    <Key className="h-5 w-5 text-amber-400" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
+                    <Key className="h-5 w-5 text-accent-light" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-semibold text-amber-400">API key ready</p>
-                    <p className="text-sm text-muted">Add the key to your site, then test the connection.</p>
+                    <p className="text-base font-semibold">API key ready</p>
+                    <p className="text-sm text-muted">Use the integration details below to connect your site.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="truncate rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-amber-400/80 font-mono">
+                  <code className="truncate rounded-lg border border-border bg-[#0d1117] px-3 py-1.5 text-xs text-accent-light/80 font-mono">
                     {apiKey.slice(0, 8)}{"•".repeat(16)}
                   </code>
                   <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
                     {copiedApiKey ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                   </button>
+                </div>
+              </div>
+              {(connection?.endpoint_url || connection?.type === "github") && (
+                <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={handleTestConnection}
                     disabled={testing}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-black transition hover:bg-amber-400 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
                   >
                     {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                    {testing ? "Testing..." : "Test"}
+                    {testing ? "Testing..." : "Test connection"}
                   </button>
+                  {testError && <p className="text-xs text-red-400">{testError}</p>}
                 </div>
-              </div>
-              {testError && (
-                <p className="mt-3 text-xs text-red-400">{testError}</p>
               )}
             </div>
           )}
