@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { isDemoRequest, createDemoClient, getDemoUserId } from "@/lib/demo/helpers";
+import { validateSlot, computeNextSlot } from "@/lib/engine/scheduler";
 
 export async function GET(
   _req: NextRequest,
@@ -115,6 +117,18 @@ export async function PATCH(
 
   if (!project) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  if (body.status === "scheduled" && body.scheduled_at) {
+    const svc = createServiceClient();
+    const slot = await validateSlot(svc, article.project_id, body.scheduled_at, true, undefined, undefined, id);
+    if (!slot.valid) {
+      const next = await computeNextSlot(svc, article.project_id, "site", true);
+      return NextResponse.json(
+        { error: slot.reason, suggestedSlot: next },
+        { status: 409 }
+      );
+    }
   }
 
   const { error } = await supabase

@@ -37,6 +37,7 @@ import {
   CalendarClock,
   RefreshCw,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import PublishDialog from "@/components/PublishDialog";
 import DateTimePicker from "@/components/DateTimePicker";
@@ -184,6 +185,8 @@ export default function ArticlesPage() {
   const [showSitePublishMenu, setShowSitePublishMenu] = useState(false);
   const [schedulingSite, setSchedulingSite] = useState(false);
   const [siteScheduleDate, setSiteScheduleDate] = useState("");
+  const [siteSlotValidation, setSiteSlotValidation] = useState<{ valid: boolean; reason?: string; suggestedSlot?: string } | null>(null);
+  const [siteSlotValidating, setSiteSlotValidating] = useState(false);
 
   const loadData = useCallback(async () => {
     if (isDemo) {
@@ -468,6 +471,23 @@ export default function ArticlesPage() {
     }
   }
 
+  async function handleValidateSiteSlot(dateValue: string) {
+    setSiteScheduleDate(dateValue);
+    setSiteSlotValidation(null);
+    if (!dateValue || !realProjectId) return;
+    setSiteSlotValidating(true);
+    try {
+      const isoDate = new Date(dateValue).toISOString();
+      const res = await fetch(fetchUrl(`/api/schedule/validate?projectId=${realProjectId}&date=${encodeURIComponent(isoDate)}&isMain=true`));
+      const data = await res.json();
+      setSiteSlotValidation(data);
+    } catch {
+      setSiteSlotValidation({ valid: false, reason: "Validation failed" });
+    } finally {
+      setSiteSlotValidating(false);
+    }
+  }
+
   async function handleScheduleToSite(articleId: string, scheduledAt: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
     setSchedulingSite(true);
@@ -481,9 +501,17 @@ export default function ArticlesPage() {
         await loadData();
         if (previewArticle) setPreviewArticle({ ...previewArticle, status: "scheduled" });
         setShowSitePublishMenu(false);
+        setSiteSlotValidation(null);
       } else {
         const data = await res.json();
-        toast(data.error ?? "Schedule failed");
+        if (data.suggestedSlot) {
+          const suggested = new Date(data.suggestedSlot);
+          setSiteScheduleDate(suggested.toISOString().slice(0, 16));
+          setSiteSlotValidation({ valid: false, reason: data.error });
+          toast(`Slot unavailable. Suggested: ${suggested.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`);
+        } else {
+          toast(data.error ?? "Schedule failed");
+        }
       }
     } catch {
       toast("Something went wrong");
@@ -740,7 +768,10 @@ export default function ArticlesPage() {
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     tomorrow.setHours(10, 0, 0, 0);
-                    setSiteScheduleDate(tomorrow.toISOString().slice(0, 16));
+                    const dateStr = tomorrow.toISOString().slice(0, 16);
+                    setSiteScheduleDate(dateStr);
+                    setSiteSlotValidation(null);
+                    if (!showSitePublishMenu) handleValidateSiteSlot(dateStr);
                     setShowSitePublishMenu(!showSitePublishMenu);
                   }}
                   className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent/50 hover:text-foreground"
@@ -753,10 +784,50 @@ export default function ArticlesPage() {
             {showSitePublishMenu && (
               <div className="mt-3 space-y-3 rounded-lg bg-card-hover p-3">
                 <label className="block text-[11px] font-medium text-muted">Publication date & time</label>
-                <DateTimePicker value={siteScheduleDate} onChange={setSiteScheduleDate} />
+                <DateTimePicker value={siteScheduleDate} onChange={handleValidateSiteSlot} />
+
+                {siteSlotValidating && (
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Validating...
+                  </div>
+                )}
+
+                {siteSlotValidation && !siteSlotValidating && (
+                  <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+                    siteSlotValidation.valid
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                  }`}>
+                    {siteSlotValidation.valid ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    {siteSlotValidation.valid ? "Slot available" : siteSlotValidation.reason}
+                  </div>
+                )}
+
+                {siteSlotValidation && !siteSlotValidation.valid && siteSlotValidation.suggestedSlot && (
+                  <button
+                    onClick={() => {
+                      const suggested = new Date(siteSlotValidation.suggestedSlot!).toISOString().slice(0, 16);
+                      handleValidateSiteSlot(suggested);
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    Use suggested: {new Date(siteSlotValidation.suggestedSlot).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </button>
+                )}
+
+                <div className="rounded-lg bg-card px-3 py-2 text-[11px] text-muted/70">
+                  Max 2 publications per day · Max 2 blog articles per week
+                </div>
+
                 <button
                   onClick={() => handleScheduleToSite(previewArticle.id, new Date(siteScheduleDate).toISOString())}
-                  disabled={schedulingSite || !siteScheduleDate}
+                  disabled={schedulingSite || !siteScheduleDate || !siteSlotValidation?.valid}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
                 >
                   {schedulingSite ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarClock className="h-3 w-3" />}

@@ -114,7 +114,8 @@ export async function validateSlot(
   date: string,
   isMainArticle: boolean,
   platformType?: string,
-  excludeVariantId?: string
+  excludeVariantId?: string,
+  excludeArticleId?: string
 ): Promise<{ valid: boolean; reason?: string }> {
   const { data: variantRows } = await supabase
     .from("article_variants")
@@ -147,7 +148,7 @@ export async function validateSlot(
   }
 
   for (const a of articleRows ?? []) {
-    if (!a.scheduled_at) continue;
+    if (!a.scheduled_at || (excludeArticleId && a.id === excludeArticleId)) continue;
     if (a.scheduled_at.slice(0, 10) === dayStr) dayTotal++;
   }
 
@@ -163,7 +164,7 @@ export async function validateSlot(
     const week = getISOWeek(dayStr);
     let weekMain = 0;
     for (const a of articleRows ?? []) {
-      if (!a.scheduled_at) continue;
+      if (!a.scheduled_at || (excludeArticleId && a.id === excludeArticleId)) continue;
       if (getISOWeek(a.scheduled_at.slice(0, 10)) === week) weekMain++;
     }
     if (weekMain >= MAX_MAIN_PER_WEEK) {

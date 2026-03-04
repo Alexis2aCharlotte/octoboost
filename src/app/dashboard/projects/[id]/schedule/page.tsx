@@ -99,7 +99,7 @@ export default function SchedulePage() {
 
   const [rescheduleItem, setRescheduleItem] = useState<ScheduleItem | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleValidation, setRescheduleValidation] = useState<{ valid: boolean; reason?: string } | null>(null);
+  const [rescheduleValidation, setRescheduleValidation] = useState<{ valid: boolean; reason?: string; suggestedSlot?: string } | null>(null);
   const [rescheduleValidating, setRescheduleValidating] = useState(false);
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
 
@@ -238,13 +238,15 @@ export default function SchedulePage() {
 
     setRescheduleValidating(true);
     try {
+      const isoDate = new Date(dateValue).toISOString();
       if (rescheduleItem.type === "variant") {
-        const isoDate = new Date(dateValue).toISOString();
         const res = await fetch(fetchUrl(`/api/variants/${rescheduleItem.data.id}/schedule?date=${encodeURIComponent(isoDate)}`));
         const data = await res.json();
         setRescheduleValidation(data);
       } else {
-        setRescheduleValidation({ valid: true });
+        const res = await fetch(fetchUrl(`/api/schedule/validate?projectId=${realProjectId}&date=${encodeURIComponent(isoDate)}&isMain=true&excludeArticleId=${rescheduleItem.data.id}`));
+        const data = await res.json();
+        setRescheduleValidation(data);
       }
     } catch {
       setRescheduleValidation({ valid: false, reason: "Validation failed" });
@@ -279,7 +281,13 @@ export default function SchedulePage() {
         });
         if (!res.ok) {
           const data = await res.json();
-          toast(data.error ?? "Reschedule failed");
+          if (data.suggestedSlot) {
+            const suggested = new Date(data.suggestedSlot).toISOString().slice(0, 16);
+            setRescheduleDate(suggested);
+            setRescheduleValidation({ valid: false, reason: data.error });
+          } else {
+            toast(data.error ?? "Reschedule failed");
+          }
           return;
         }
       }
@@ -549,6 +557,19 @@ export default function SchedulePage() {
                   )}
                   {rescheduleValidation.valid ? "This slot is available" : rescheduleValidation.reason}
                 </div>
+              )}
+
+              {rescheduleValidation && !rescheduleValidation.valid && rescheduleValidation.suggestedSlot && (
+                <button
+                  onClick={() => {
+                    const suggested = new Date(rescheduleValidation.suggestedSlot!).toISOString().slice(0, 16);
+                    handleValidateReschedule(suggested);
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                >
+                  <CalendarClock className="h-3 w-3" />
+                  Use suggested: {new Date(rescheduleValidation.suggestedSlot).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </button>
               )}
 
               <div className="rounded-lg bg-card-hover px-3 py-2 text-[11px] text-muted/70">
