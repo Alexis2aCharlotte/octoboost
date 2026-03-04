@@ -144,6 +144,8 @@ export default function PublishPage() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [apiKeyLoading, setApiKeyLoading] = useState(false);
   const [copiedApiKey, setCopiedApiKey] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
 
   // GitHub connection state
   const [ghRepos, setGhRepos] = useState<GitHubRepo[]>([]);
@@ -351,6 +353,29 @@ export default function PublishPage() {
       }
     } finally {
       setApiKeyLoading(false);
+    }
+  }
+
+  async function handleTestConnection() {
+    if (!realProjectId || !apiKey) return;
+    setTesting(true);
+    setTestError(null);
+    try {
+      const res = await fetch(`https://octoboost.app/api/public/articles?key=${apiKey}`);
+      if (res.ok) {
+        setConnection({ type: "custom_api", status: "connected" } as SiteConnection);
+        await fetch(fetchUrl("/api/site-connection"), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: realProjectId, action: "init" }),
+        });
+      } else {
+        setTestError("Could not reach the API. Make sure articles are published.");
+      }
+    } catch {
+      setTestError("Connection failed. Check your network and try again.");
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -606,8 +631,19 @@ export default function PublishPage() {
                   <button onClick={() => copyToClipboard(apiKey, "apikey")} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted transition hover:text-foreground">
                     {copiedApiKey ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                   </button>
+                  <button
+                    onClick={handleTestConnection}
+                    disabled={testing}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-black transition hover:bg-amber-400 disabled:opacity-50"
+                  >
+                    {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                    {testing ? "Testing..." : "Test"}
+                  </button>
                 </div>
               </div>
+              {testError && (
+                <p className="mt-3 text-xs text-red-400">{testError}</p>
+              )}
             </div>
           )}
 

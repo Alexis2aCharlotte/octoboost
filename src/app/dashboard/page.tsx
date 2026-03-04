@@ -307,7 +307,15 @@ export default function DashboardPage() {
                   href={`${basePath}/projects/${project.slug || project.id}/overview`}
                   className="flex min-w-0 flex-1 items-center gap-3.5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${new URL(project.url).hostname}&sz=64`}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 shrink-0 rounded-lg bg-accent/10 object-contain p-1"
+                    onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }}
+                  />
+                  <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
                     <Globe className="h-5 w-5 text-accent-light" />
                   </div>
                   <div className="min-w-0 flex-1">
