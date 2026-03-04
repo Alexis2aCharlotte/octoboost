@@ -35,9 +35,12 @@ import {
   ExternalLink,
   CalendarClock,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import PublishDialog from "@/components/PublishDialog";
 import DateTimePicker from "@/components/DateTimePicker";
+import { usePlan } from "@/lib/hooks/use-plan";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 
 interface GeneratingInfo {
   clusterId: string;
@@ -153,6 +156,8 @@ export default function ArticlesPage() {
   const { data: cachedData, loading: cacheLoading } = useProjectCache();
   const { toast } = useToast();
   const { confirm } = useConfirm();
+  const { isFree } = usePlan();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,6 +296,7 @@ export default function ArticlesPage() {
 
   async function handleGenerate(clusterId: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
+    if (isFree) { setShowUpgradeModal(true); return; }
     if (!realProjectId || generatingId) return;
     setGeneratingId(clusterId);
 
@@ -449,6 +455,7 @@ export default function ArticlesPage() {
 
   async function handlePublishToSite(articleId: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
+    if (isFree) { setShowUpgradeModal(true); return; }
     if (publishingToSite) return;
     setPublishingToSite(true);
     try {
@@ -511,6 +518,7 @@ export default function ArticlesPage() {
 
   async function handlePublishVariantNow(variantId: string) {
     if (isDemo) { toast("This feature is disabled in demo mode"); return; }
+    if (isFree) { setShowUpgradeModal(true); return; }
     const res = await fetch(fetchUrl("/api/publish"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -803,7 +811,7 @@ export default function ArticlesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handlePublishToSite(previewArticle.id)}
+                  onClick={() => isFree ? setShowUpgradeModal(true) : handlePublishToSite(previewArticle.id)}
                   disabled={publishingToSite}
                   className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
                 >
@@ -812,6 +820,7 @@ export default function ArticlesPage() {
                 </button>
                 <button
                   onClick={() => {
+                    if (isFree) { setShowUpgradeModal(true); return; }
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     tomorrow.setHours(10, 0, 0, 0);
@@ -851,7 +860,7 @@ export default function ArticlesPage() {
               <p className="text-xs text-muted">Will be automatically published by the scheduler</p>
             </div>
             <button
-              onClick={() => handlePublishToSite(previewArticle.id)}
+              onClick={() => isFree ? setShowUpgradeModal(true) : handlePublishToSite(previewArticle.id)}
               disabled={publishingToSite}
               className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
             >
@@ -1183,6 +1192,28 @@ export default function ArticlesPage() {
             onClose={() => setPublishDialogVariant(null)}
           />
         )}
+
+        {showUpgradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)}>
+            <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10">
+                <Sparkles className="h-7 w-7 text-accent-light" />
+              </div>
+              <h2 className="text-xl font-bold">Upgrade to unlock</h2>
+              <p className="mt-2 text-sm text-muted">
+                Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $29/mo.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => setShowUpgradeModal(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition hover:text-foreground">
+                  Maybe later
+                </button>
+                <a href="/pricing" className="btn-glow flex-1 rounded-lg px-4 py-2.5 text-center text-sm font-medium">
+                  View plans
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1283,22 +1314,71 @@ export default function ArticlesPage() {
             <PenTool className="h-4 w-4" />
             To Generate ({ideas.length})
           </h2>
-          {ideas.map((cluster) => (
-            <ArticleCard
-              key={cluster.id}
-              cluster={cluster}
-              article={undefined}
-              isExpanded={expandedId === cluster.id}
-              isGenerating={generatingId === cluster.id}
-              generatingInfo={
-                persistentGenerating?.clusterId === cluster.id ? persistentGenerating : null
-              }
-              onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
-              onGenerate={() => handleGenerate(cluster.id)}
-              onPreview={() => {}}
-              onDelete={() => {}}
-            />
-          ))}
+          {isFree ? (
+            <UpgradeCTA
+              title="Unlock all article ideas"
+              description={`${ideas.length} more article ideas are waiting. Upgrade to generate them all.`}
+            >
+              <div className="space-y-3">
+                {ideas.slice(0, 4).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                        <PenTool className="h-5 w-5 text-accent-light" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/4 rounded bg-muted/20" />
+                        <div className="flex gap-2">
+                          <div className="h-3 w-16 rounded bg-muted/10" />
+                          <div className="h-3 w-20 rounded bg-muted/10" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </UpgradeCTA>
+          ) : (
+            ideas.map((cluster) => (
+              <ArticleCard
+                key={cluster.id}
+                cluster={cluster}
+                article={undefined}
+                isExpanded={expandedId === cluster.id}
+                isGenerating={generatingId === cluster.id}
+                generatingInfo={
+                  persistentGenerating?.clusterId === cluster.id ? persistentGenerating : null
+                }
+                onToggle={() => setExpandedId(expandedId === cluster.id ? null : cluster.id)}
+                onGenerate={() => handleGenerate(cluster.id)}
+                onPreview={() => {}}
+                onDelete={() => {}}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Upgrade modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)}>
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10">
+              <Sparkles className="h-7 w-7 text-accent-light" />
+            </div>
+            <h2 className="text-xl font-bold">Upgrade to unlock</h2>
+            <p className="mt-2 text-sm text-muted">
+              Generate unlimited articles, publish everywhere, and access all keyword data. Plans start at $29/mo.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setShowUpgradeModal(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition hover:text-foreground">
+                Maybe later
+              </button>
+              <a href="/pricing" className="btn-glow flex-1 rounded-lg px-4 py-2.5 text-center text-sm font-medium">
+                View plans
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

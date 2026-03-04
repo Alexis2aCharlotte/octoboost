@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useDemo } from "@/lib/demo/context";
 import { useProjectCache } from "@/lib/project-cache";
+import { usePlan } from "@/lib/hooks/use-plan";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 import Link from "next/link";
 import {
   Loader2,
@@ -80,6 +82,7 @@ export default function ProjectOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: cachedData, loading: cacheLoading } = useProjectCache();
+  const { isFree } = usePlan();
   const [pipelineOpen, setPipelineOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -177,6 +180,15 @@ export default function ProjectOverviewPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
+      {/* Free plan banner */}
+      {isFree && (
+        <UpgradeCTA
+          variant="banner"
+          title="You're on the free plan"
+          description="Generate unlimited articles, publish everywhere, and unlock competitor insights."
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { useDemo } from "@/lib/demo/context";
 import { useProjectCache } from "@/lib/project-cache";
+import { usePlan } from "@/lib/hooks/use-plan";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 import {
   Calendar,
   Copy,
@@ -88,6 +90,7 @@ export default function SchedulePage() {
   const { toast } = useToast();
   const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
   const { data: cachedData, loading: cacheLoading } = useProjectCache();
+  const { isFree } = usePlan();
   const [variants, setVariants] = useState<ScheduledVariant[]>([]);
   const [scheduledArticles, setScheduledArticles] = useState<ScheduledArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -308,6 +311,24 @@ export default function SchedulePage() {
   }
 
   /* ── Render ── */
+
+  if (isFree) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Schedule</h1>
+          <p className="mt-1 text-sm text-muted">
+            Publication schedule for your articles and variants
+          </p>
+        </div>
+        <UpgradeCTA
+          variant="inline"
+          title="Auto-schedule your publications"
+          description="Upgrade to auto-publish articles across 11 platforms on a smart schedule."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

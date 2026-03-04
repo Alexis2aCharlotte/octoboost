@@ -139,67 +139,97 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 - [x] Fix Supabase joined relation types on publish, variants, generate
 - [x] Settings page: profile + password change
 
+### Publication — Remaining Connectors
+- [x] WordPress self-hosted connector (REST API + Application Passwords)
+- [x] Medium moved to manual/copy-paste (API deprecated since 2023)
+
+### Clean Syndication
+- [x] Reddit moved to manual/copy-paste (like Indie Hackers, Hacker News)
+- [x] Systematic canonical_url on all variants (Dev.to, Hashnode native; Telegraph, Blogger via footer)
+- [x] Hashnode: fixed GraphQL mutation to pass `originalArticleURL`
+- [x] Per-platform syndication type: `full_canonical` vs `summary_link`
+- [x] Variant adapter prompt adapts based on syndication type
+
+### Article Enrichment
+- [x] Extract site tools/features at analysis time (`keyTools`)
+- [x] Store `key_tools` in analyses table (JSONB)
+- [x] Inject tools in product context for article generation prompts
+- [x] JSON-LD schema (Article + FAQPage structured data)
+
+### GEO — Generative Engine Optimization
+- [x] GEO content angles (comparison, listicle, FAQ-style, "best X for Y")
+- [x] FAQ section auto-generation (3-5 Q&A per article)
+- [x] Em dash ban enforced across all prompts
+- [x] FAQ schema JSON-LD for AI engine parsing
+- [x] Listicle/comparison/how-to article templates
+- [x] Reinforced product mentions in variant adapter
+- [x] Article schema JSON-LD with author, datePublished
+
+### Analytics
+- [x] Analytics API: live stats from Dev.to and Hashnode
+- [x] Analytics page: real performance data per platform
+- [x] Engagement rate calculation
+
+### Demo Mode
+- [x] Supabase seed with demo user and Niches Hunter data
+- [x] Demo constants, API route bypass, demo layout
+- [x] Demo pages with shared components via DemoContext
+- [x] Block destructive actions in demo
+- [x] "Try the Demo" link on landing page
+
+### Billing & Payments
+- [x] Stripe integration (subscriptions, webhooks, customer portal)
+- [x] Pricing page: monthly ($19/$39) and yearly ($15/$31) toggle
+- [x] Checkout flow via `/api/checkout`
+- [x] Stripe webhook handling (`/api/webhooks/stripe`)
+- [x] Subscription status tracking in Supabase
+
+### Windows & Cross-browser Fixes
+- [x] Fix Windows nav interaction and harden login fallback
+- [x] Windows safe mode for nav and overlay effects
+- [x] Make navbar dropdowns work without client JS
+- [x] Close navbar dropdowns on leave and make login JS-independent
+
+### Mobile Responsive
+- [x] Mobile-friendly dashboard layout
+- [x] Mobile-friendly landing page
+
+### ICP & Strategy
+- [x] ICP definition document (Ideal Customer Profile: vibe coder positioning)
+- [x] Ad distribution strategy (Google Search + Reddit + Meta retargeting)
+- [x] Business model & unit economics
+- [x] Messaging & positioning guidelines
+
+### Forgot Password
+- [x] Password reset API route (`/api/auth/password`)
+
 ---
 
 ## To Do
 
-### Publication — wire remaining connectors (done)
-- [x] WordPress self-hosted connector (REST API + Application Passwords)
-- [x] Medium moved to manual/copy-paste (API deprecated since 2023)
+### P0 — Critical (from ICP)
+- [ ] Rewrite landing page messaging (vibe coder-centric, result-oriented)
+- [ ] Free tier: 1 analysis + 1 article free (wow moment for funnel)
+- [ ] Email infrastructure (hello@/newsletter@/support@ via Resend — plan ready, code not implemented)
 
-### Clean syndication (done)
-- [x] Reddit moved to manual/copy-paste (like Indie Hackers, Hacker News)
-- [x] Systematic canonical_url on all variants (Dev.to, Hashnode native; Telegraph, Blogger via footer)
-- [x] Hashnode: fixed GraphQL mutation to pass `originalArticleURL`
-- [x] Per-platform syndication type: `full_canonical` (Dev.to, Hashnode, Medium, WordPress, Telegraph, Blogger, Substack) vs `summary_link` (Reddit, Indie Hackers, Hacker News, Quora)
-- [x] Variant adapter prompt adapts based on syndication type (full article vs summary+link)
-
-### Article enrichment
-- [x] Extract site tools/features at analysis time (`keyTools` in LLM analysis schema)
-- [x] Store `key_tools` in analyses table (JSONB)
-- [x] Inject tools in product context for article generation prompts
-- [x] JSON-LD schema (Article + FAQPage structured data for SEO & AI citations)
-
-### GEO — Generative Engine Optimization (AI visibility)
-- [x] GEO content angles in `llm-analyzer.ts` - comparison, listicle, FAQ-style, "best X for Y" article types optimized for AI citations
-- [x] FAQ section in `article-generator.ts` - auto-generate 3-5 FAQ Q&A at the end of each article
-- [x] Em dash ban enforced across all prompts (analyzer, generator, variant adapter)
-- [x] FAQ schema JSON-LD - inject `FAQPage` structured data so AI engines can parse and cite answers
-- [x] Listicle/comparison/how-to article templates in `article-generator.ts` with type-specific prompts for outline and writing
-- [x] Reinforced product mentions in `variant-adapter.ts` - stronger natural mentions for Reddit, Quora, Medium + syndication rules
-- [x] Article schema JSON-LD - `Article` structured data with author, datePublished for AI crawlers
-- [ ] (Optional) AI citation monitoring — track if ChatGPT/Perplexity/Claude cite the product
-
-### Analytics
-- [x] Analytics API: pull live stats from Dev.to (views, reactions, comments) and Hashnode (views, reactions, comments)
-- [x] Analytics page: real performance data per platform, per article
-- [x] Engagement rate calculation (reactions+comments / views)
-- [ ] (Optional) Google Search Console integration for client site impressions
-
-### Demo Mode
-- [x] **Step 1 — Supabase seed**: create demo user (`demo@octoboost.com`) in Supabase Auth, duplicate Niches Hunter data (project, analyses, keywords, clusters, articles, channels, variants) under demo `user_id`
-- [x] **Step 2 — Demo constants**: `src/lib/demo/constants.ts` with hardcoded `DEMO_PROJECT_ID` and `DEMO_PROJECT_SLUG`
-- [x] **Step 3 — Demo mode in API routes**: add `?demo=true` bypass in existing API routes (service role + demo user_id, skip auth) — 8 routes modified
-- [x] **Step 4 — Demo layout**: `/demo/layout.tsx` — same sidebar/topbar as dashboard + sticky "Demo Mode" banner + "Sign up free" CTA, no auth check
-- [x] **Step 5 — Demo pages**: `/demo/page.tsx` + `/demo/projects/[id]/` pages — shared components via DemoContext (no code duplication)
-- [x] **Step 6 — Block actions**: Delete button hidden in demo, form hidden in demo dashboard
-- [x] **Step 7 — Landing page**: "Try the Demo" link in hero + navbar
-- [ ] **Step 8 — Polish**: test full flow, verify all pages load, refine CTA placement
-
-### Billing & Usage Limits
-- [ ] Stripe integration (subscriptions, webhooks, customer portal)
-- [ ] Plan-based article generation quotas tied to Stripe subscription (Explore: 8 master articles/mo, Pro: 15/mo per site)
+### Billing — Usage Limits
+- [ ] Plan-based article generation quotas tied to Stripe subscription
 - [ ] Monthly generation counter per project (reset on billing cycle via Stripe webhook)
 - [ ] Block generation when quota reached (UI warning + API guard)
-- [ ] Schedule window limit - publications only within current billing period
+- [ ] Schedule window limit — publications only within current billing period
 
-### Design (low priority)
-- [ ] Mobile responsive
+### Demo Mode — Polish
+- [ ] Test full flow, verify all pages load, refine CTA placement
+
+### Optional / Later
+- [ ] AI citation monitoring — track if ChatGPT/Perplexity/Claude cite the product
+- [ ] Google Search Console integration for client site impressions
 - [ ] OctoBoost octopus logo
+- [ ] Tracking pixels (Meta + Reddit Conversion Pixel)
 
 ---
 
-## Suggested Order
+## Suggested Order (updated)
 
 1. ~~**Channels** — platform config~~ ✅
 2. ~~**Adaptation** — per-platform variants from master article~~ ✅
@@ -210,10 +240,16 @@ Automated SEO article publishing SaaS for promoting SaaS products on blogs and c
 7. ~~**Clean syndication** — systematic canonical URLs + per-platform logic~~ ✅
 8. ~~**WordPress connector** — largest market~~ ✅
 9. ~~**Analytics** — live stats from Dev.to + Hashnode~~ ✅
-10. **Demo Mode** — interactive demo with real Niches Hunter data ← **NEXT**
-11. Billing & Stripe
-12. Mobile responsive + logo
+10. ~~**Demo Mode** — interactive demo with real Niches Hunter data~~ ✅
+11. ~~**Billing & Stripe** — subscriptions, webhooks, pricing~~ ✅
+12. ~~**Mobile responsive**~~ ✅
+13. ~~**ICP & Strategy document**~~ ✅
+14. **Landing page rewrite** — vibe coder messaging ← **NEXT**
+15. **Free tier** — wow moment for ad funnel
+16. **Email infrastructure** — transactional + newsletter separation
+17. **Usage limits** — quotas per plan
+18. **Tracking pixels** — Meta + Reddit for ad campaigns
 
 ---
 
-*Last updated: February 23, 2026*
+*Last updated: March 4, 2026*

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useDemo } from "@/lib/demo/context";
+import { usePlan } from "@/lib/hooks/use-plan";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 import Link from "next/link";
 import {
   Search,
@@ -39,6 +41,7 @@ interface Project {
 export default function DashboardPage() {
   const { confirm } = useConfirm();
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
+  const { isFree } = usePlan();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
@@ -167,7 +170,14 @@ export default function DashboardPage() {
       )}
 
       {/* Add new site */}
-      {!isDemo && (
+      {!isDemo && isFree && (
+        <UpgradeCTA
+          variant="banner"
+          title="Want to add more projects?"
+          description="Upgrade to analyze multiple sites and generate unlimited articles."
+        />
+      )}
+      {!isDemo && !isFree && (
         <form
           onSubmit={handleAnalyze}
           className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 sm:flex-row sm:items-center sm:gap-3"

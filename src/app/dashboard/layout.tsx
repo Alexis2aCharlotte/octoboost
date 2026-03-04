@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
+import { PlanProvider, usePlan } from "@/lib/hooks/use-plan";
+import { SetPasswordBanner } from "@/components/SetPasswordBanner";
+import { Lock } from "lucide-react";
 
 const globalNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -55,6 +58,8 @@ function Sidebar({
 }) {
   const pathname = usePathname();
   const projectId = useProjectId();
+  const { isFree, loading: planLoading } = usePlan();
+  const lockedSegments = isFree && !planLoading ? new Set(["publish"]) : new Set<string>();
 
   useEffect(() => {
     onClose();
@@ -134,6 +139,20 @@ function Sidebar({
                 {projectNavItems.map(({ segment, icon: Icon, label }) => {
                   const href = `/dashboard/projects/${projectId}/${segment}`;
                   const isActive = pathname.startsWith(href);
+                  const isLocked = lockedSegments.has(segment);
+
+                  if (isLocked) {
+                    return (
+                      <div
+                        key={segment}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted/30 cursor-not-allowed"
+                      >
+                        <Icon className="h-4 w-4" />
+                        {label}
+                        <Lock className="ml-auto h-3 w-3" />
+                      </div>
+                    );
+                  }
 
                   return (
                     <Link
@@ -229,20 +248,25 @@ export default function DashboardLayout({
   }, [sidebarOpen]);
 
   return (
-    <ToastProvider>
-      <ConfirmProvider>
-        <div className="min-h-screen bg-background text-foreground">
-          <div className="grid-bg" />
-          <Sidebar mobileOpen={sidebarOpen} onClose={closeSidebar} />
-          <div
-            className="relative md:pl-60"
-            style={{ zIndex: 1 }}
-          >
-            <TopBar onMenuToggle={toggleSidebar} />
-            <main className="px-4 py-4 md:px-8 md:py-6">{children}</main>
+    <PlanProvider>
+      <ToastProvider>
+        <ConfirmProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <div className="grid-bg" />
+            <Sidebar mobileOpen={sidebarOpen} onClose={closeSidebar} />
+            <div
+              className="relative md:pl-60"
+              style={{ zIndex: 1 }}
+            >
+              <TopBar onMenuToggle={toggleSidebar} />
+              <main className="px-4 py-4 md:px-8 md:py-6">
+                <SetPasswordBanner />
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-      </ConfirmProvider>
-    </ToastProvider>
+        </ConfirmProvider>
+      </ToastProvider>
+    </PlanProvider>
   );
 }

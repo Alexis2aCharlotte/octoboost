@@ -1,74 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 
 export function WaitlistForm() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
+    const trimmed = url.trim();
+    if (!trimmed) return;
 
-      if (!res.ok) {
-        let errorMsg = "Something went wrong. Please try again.";
-        try {
-          const data = await res.json();
-          if (data.error) errorMsg = data.error;
-        } catch {
-          // Response wasn't JSON
-        }
-        setError(errorMsg);
-      } else {
-        setSubmitted(true);
-      }
-    } catch {
-      setError("Connection error. Please check your network and try again.");
-    } finally {
-      setLoading(false);
+    let normalized = trimmed;
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`;
     }
-  };
 
-  if (submitted) {
-    return (
-      <div className="mx-auto flex max-w-sm items-center gap-2 text-sm text-green-400">
-        <Check className="h-4 w-4 shrink-0" />
-        <span>You&apos;re on the list! Check your spam folder just in case.</span>
-      </div>
-    );
-  }
+    try {
+      new URL(normalized);
+    } catch {
+      setError("Please enter a valid URL.");
+      return;
+    }
+
+    setError("");
+    router.push(`/generate?url=${encodeURIComponent(normalized)}`);
+  };
 
   return (
     <div>
-      <form onSubmit={handleSubmit} action="/api/waitlist" method="POST" className="mx-auto flex max-w-md gap-2">
+      <form onSubmit={handleSubmit} className="mx-auto flex max-w-md gap-2">
         <input
-          name="email"
-          type="email"
+          name="url"
+          type="url"
           required
           placeholder="https://mysaas.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
           className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus:border-accent/50 focus:outline-none"
-          disabled={loading}
         />
         <button
           type="submit"
-          disabled={loading}
           className="btn-glow flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
         >
-          {loading ? "..." : "Start Generating"}
-          {!loading && <ArrowRight className="h-3.5 w-3.5" />}
+          Start Generating
+          <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </form>
       {error && <p className="mt-3 text-center text-xs text-red-400">{error}</p>}

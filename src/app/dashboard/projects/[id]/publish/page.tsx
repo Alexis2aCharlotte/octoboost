@@ -6,6 +6,8 @@ import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useDemo } from "@/lib/demo/context";
 import { useProjectCache } from "@/lib/project-cache";
+import { usePlan } from "@/lib/hooks/use-plan";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 import {
   Plug,
   Radio,
@@ -124,6 +126,7 @@ export default function PublishPage() {
   const { confirm } = useConfirm();
   const { isDemo, fetchUrl, demoData, demoLoading } = useDemo();
   const { data: cachedData, loading: cacheLoading } = useProjectCache();
+  const { isFree } = usePlan();
   const [tab, setTab] = useState<PublishTab | null>(null);
   const [realProjectId, setRealProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -484,6 +487,24 @@ export default function PublishPage() {
 
   if (loading) {
     return <PublishSkeleton />;
+  }
+
+  if (isFree) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Publish</h1>
+          <p className="mt-1 text-base text-muted">
+            Connect your site, configure channels, and manage your publishing schedule.
+          </p>
+        </div>
+        <UpgradeCTA
+          variant="inline"
+          title="Publish your articles everywhere"
+          description="Upgrade to auto-publish on your site and distribute across 11 platforms with canonical backlinks."
+        />
+      </div>
+    );
   }
 
   return (

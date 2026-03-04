@@ -23,14 +23,13 @@ export async function POST(req: NextRequest) {
 
   const priceId = PRICE_IDS[plan as PlanName][interval as BillingInterval];
 
-  // Reuse existing Stripe customer if we already have one
-  const { data: sub } = await supabase
-    .from("subscriptions")
+  const { data: profile } = await supabase
+    .from("profiles")
     .select("stripe_customer_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  let customerId = sub?.stripe_customer_id;
+  let customerId = profile?.stripe_customer_id;
 
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -38,6 +37,10 @@ export async function POST(req: NextRequest) {
       metadata: { supabase_user_id: user.id },
     });
     customerId = customer.id;
+    await supabase
+      .from("profiles")
+      .update({ stripe_customer_id: customerId })
+      .eq("user_id", user.id);
   }
 
   const session = await stripe.checkout.sessions.create({

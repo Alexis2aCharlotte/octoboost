@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       const periodStart = item?.current_period_start;
       const periodEnd = item?.current_period_end;
 
-      await supabase.from("subscriptions").upsert(
+      await supabase.from("profiles").upsert(
         {
           user_id: userId,
           stripe_customer_id: session.customer as string,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       const periodEnd = item?.current_period_end;
 
       await supabase
-        .from("subscriptions")
+        .from("profiles")
         .update({
           status: subscription.status,
           plan: subscription.metadata.plan ?? undefined,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       if (!userId) break;
 
       await supabase
-        .from("subscriptions")
+        .from("profiles")
         .update({ status: "canceled" })
         .eq("user_id", userId);
       break;
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       if (!userId) break;
 
       await supabase
-        .from("subscriptions")
+        .from("profiles")
         .update({ status: "past_due" })
         .eq("user_id", userId);
       break;
