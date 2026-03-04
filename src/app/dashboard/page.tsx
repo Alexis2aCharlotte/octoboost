@@ -249,6 +249,18 @@ export default function DashboardPage() {
             <Target className="h-4 w-4 text-red-400" />
           </div>
           <p className="flex-1 text-sm text-red-400">{analyzeError}</p>
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/billing/portal", { method: "POST" });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              } catch { /* ignore */ }
+            }}
+            className="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:bg-accent-light"
+          >
+            Upgrade
+          </button>
           <button onClick={() => setAnalyzeError(null)} className="text-red-400/60 transition hover:text-red-400">
             <span className="sr-only">Dismiss</span>&times;
           </button>
