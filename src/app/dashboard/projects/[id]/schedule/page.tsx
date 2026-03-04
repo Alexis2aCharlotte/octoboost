@@ -91,8 +91,8 @@ function DraggableItem({ id, disabled, children }: { id: string; disabled?: bool
     <div
       ref={setNodeRef}
       {...(disabled ? {} : { ...listeners, ...attributes })}
-      style={{ opacity: isDragging ? 0.3 : 1 }}
-      className={`transition-opacity ${disabled ? "" : "cursor-grab active:cursor-grabbing"}`}
+      style={{ opacity: isDragging ? 0.3 : 1, WebkitUserSelect: disabled ? undefined : "none" }}
+      className={`transition-opacity ${disabled ? "" : "touch-none select-none cursor-grab active:cursor-grabbing"}`}
     >
       {children}
     </div>
