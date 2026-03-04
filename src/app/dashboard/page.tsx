@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { useToast } from "@/components/Toast";
 import { useDemo } from "@/lib/demo/context";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -50,7 +49,6 @@ interface Project {
 
 export default function DashboardPage() {
   const { confirm } = useConfirm();
-  const { toast } = useToast();
   const { isDemo, basePath, fetchUrl, demoData, demoLoading } = useDemo();
   const { isFree } = usePlan();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -58,6 +56,7 @@ export default function DashboardPage() {
   const [newUrl, setNewUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -99,6 +98,7 @@ export default function DashboardPage() {
     if (!newUrl.trim() || analyzing) return;
     setAnalyzing(true);
     setAnalysisStep(0);
+    setAnalyzeError(null);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -107,7 +107,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast(data.error ?? "Analysis failed", "error");
+        setAnalyzeError(data.error ?? "Analysis failed");
         return;
       }
       if (data.analysisId) {
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         }
       }
     } catch {
-      toast("Something went wrong", "error");
+      setAnalyzeError("Something went wrong. Please try again.");
     } finally {
       setAnalyzing(false);
     }
@@ -241,6 +241,18 @@ export default function DashboardPage() {
             )}
           </button>
         </form>
+      )}
+
+      {analyzeError && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+            <Target className="h-4 w-4 text-red-400" />
+          </div>
+          <p className="flex-1 text-sm text-red-400">{analyzeError}</p>
+          <button onClick={() => setAnalyzeError(null)} className="text-red-400/60 transition hover:text-red-400">
+            <span className="sr-only">Dismiss</span>&times;
+          </button>
+        </div>
       )}
 
       {/* Analysis progress */}
