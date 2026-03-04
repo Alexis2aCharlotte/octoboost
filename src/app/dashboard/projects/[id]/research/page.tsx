@@ -930,13 +930,10 @@ function AnalysisSchedule({
   if (!project?.latestAnalysis) return null;
 
   const lastDate = new Date(project.latestAnalysis.created_at);
-  const nextDate = new Date(lastDate);
-  nextDate.setMonth(nextDate.getMonth() + 1);
-
-  const maxPerPeriod = 2;
-  const used = project.analysesLast30d ?? 0;
-  const remaining = Math.max(0, maxPerPeriod - used);
-  const canReanalyze = remaining > 0;
+  const nextDate = new Date(lastDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const canReanalyze = now >= nextDate;
+  const daysRemaining = Math.max(0, Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -949,16 +946,20 @@ function AnalysisSchedule({
   return (
     <div className="flex items-center gap-3 sm:gap-4">
       <div className="text-right">
-        <p className="text-xs text-muted">
-          Next analysis · <span className="text-foreground font-medium">{fmt(nextDate)}</span>
-        </p>
-        <p className="mt-0.5 text-xs text-muted/60">
-          {remaining > 0
-            ? `${remaining} re-analysis remaining this month`
-            : "Re-analysis limit reached this month"}
-        </p>
+        {canReanalyze ? (
+          <p className="text-xs text-green-400">New analysis available</p>
+        ) : (
+          <>
+            <p className="text-xs text-muted">
+              Next analysis · <span className="text-foreground font-medium">{fmt(nextDate)}</span>
+            </p>
+            <p className="mt-0.5 text-xs text-muted/60">
+              Available in {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}
+            </p>
+          </>
+        )}
       </div>
-      {canReanalyze && (
+      {canReanalyze ? (
         <button
           onClick={() => setShowConfirm(true)}
           disabled={analyzing}
@@ -967,6 +968,11 @@ function AnalysisSchedule({
           <RefreshCw className={`h-3.5 w-3.5 ${analyzing ? "animate-spin" : ""}`} />
           Re-analyze
         </button>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg border border-border/50 px-3.5 py-2 text-[13px] text-muted/40 cursor-not-allowed">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Re-analyze
+        </div>
       )}
 
       {showConfirm && (
@@ -977,8 +983,8 @@ function AnalysisSchedule({
               <h3 className="text-sm font-semibold">Re-analyze this site?</h3>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              This will use your only re-analysis for this month.
-              Your current keywords and clusters will be replaced with fresh data.
+              This will refresh your keywords and generate new article clusters.
+              Existing articles won&apos;t be affected.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button

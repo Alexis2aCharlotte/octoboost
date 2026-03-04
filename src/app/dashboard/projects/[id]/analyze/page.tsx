@@ -221,15 +221,25 @@ function AnalyzeContent() {
               {hasAnalysis ? "Your site analysis overview" : "Run your first analysis"}
             </p>
           </div>
-          {hasAnalysis && (
-            <button
-              onClick={() => runAnalysis(project?.url || "")}
-              className="flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-[13px] text-muted transition-colors hover:text-foreground"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Re-analyze
-            </button>
-          )}
+          {hasAnalysis && (() => {
+            const lastDate = project?.latestAnalysis?.created_at ? new Date(project.latestAnalysis.created_at) : null;
+            const canRe = lastDate ? (Date.now() - lastDate.getTime()) > 30 * 24 * 60 * 60 * 1000 : false;
+            const daysLeft = lastDate ? Math.max(0, Math.ceil((lastDate.getTime() + 30 * 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+            return canRe ? (
+              <button
+                onClick={() => runAnalysis(project?.url || "")}
+                className="flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-[13px] text-muted transition-colors hover:text-foreground"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Re-analyze
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 px-3.5 py-2 text-[13px] text-muted/40 cursor-not-allowed" title={`Available in ${daysLeft} days`}>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Re-analyze in {daysLeft}d
+              </div>
+            );
+          })()}
         </div>
 
         {projectsLoading ? (
