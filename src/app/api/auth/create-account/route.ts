@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       userId = existingUser.id;
-      await admin.auth.admin.updateUser(userId, { password });
+      await admin.auth.admin.updateUserById(userId, { password });
     } else {
       const { data: newUser, error: createErr } =
         await admin.auth.admin.createUser({
