@@ -89,15 +89,15 @@ const platformMeta: Record<
 function DraggableItem({ id, disabled, children }: { id: string; disabled?: boolean; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled });
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.35 : 1 }} className="transition-opacity">
-      <div className="flex items-center gap-0">
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.3 : 1 }} className="transition-opacity">
+      <div className="flex items-center gap-1.5">
         {!disabled && (
           <button
             {...listeners}
             {...attributes}
-            className="mr-1 cursor-grab touch-none rounded p-0.5 text-muted/40 transition hover:text-muted active:cursor-grabbing"
+            className="-ml-1 shrink-0 cursor-grab touch-none rounded p-1 text-muted/70 transition hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
           >
-            <GripVertical className="h-3.5 w-3.5" />
+            <GripVertical className="h-4 w-4" />
           </button>
         )}
         <div className="min-w-0 flex-1">{children}</div>
