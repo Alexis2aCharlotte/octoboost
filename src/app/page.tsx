@@ -265,7 +265,7 @@ export default function Home() {
                   />
                 ))}
               </div>
-              <span>Already <strong className="text-foreground">67 founders</strong> on the waitlist</span>
+              <span>Already <strong className="text-foreground">67 founders</strong> joined</span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted/50">
               <span className="flex items-center gap-1.5">
@@ -547,7 +547,7 @@ export default function Home() {
                   />
                 ))}
               </div>
-              <span>Already <strong className="text-foreground/70">67 founders</strong> on the waitlist</span>
+              <span>Already <strong className="text-foreground/70">67 founders</strong> joined</span>
             </div>
           </div>
         </div>
