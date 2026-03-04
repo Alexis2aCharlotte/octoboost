@@ -23,17 +23,6 @@ import {
   Check,
 } from "lucide-react";
 import DateTimePicker from "@/components/DateTimePicker";
-import {
-  DndContext,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
-} from "@dnd-kit/core";
 
 interface ScheduledVariant {
   id: string;
@@ -85,29 +74,6 @@ const platformMeta: Record<
   substack: { label: "Substack", color: "#FF6719", icon: "📧", connectionType: "manual" },
 };
 
-function DraggableItem({ id, disabled, children }: { id: string; disabled?: boolean; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled });
-  return (
-    <div
-      ref={setNodeRef}
-      {...(disabled ? {} : { ...listeners, ...attributes })}
-      style={{ opacity: isDragging ? 0.3 : 1, WebkitUserSelect: disabled ? undefined : "none" }}
-      className={`transition-opacity ${disabled ? "" : "touch-none select-none cursor-grab active:cursor-grabbing"}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function DroppableDay({ dayKey, isOver, children }: { dayKey: string; isOver?: boolean; children: React.ReactNode }) {
-  const { setNodeRef, isOver: over } = useDroppable({ id: `day-${dayKey}` });
-  const highlight = isOver ?? over;
-  return (
-    <div ref={setNodeRef} className={`ml-2.5 border-l pb-2 pl-5 transition-colors ${highlight ? "border-accent/60" : "border-border"}`}>
-      {children}
-    </div>
-  );
-}
 
 function timelineLabel(dateKey: string): string {
   const d = new Date(dateKey + "T00:00:00");
@@ -140,12 +106,9 @@ export default function SchedulePage() {
 
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
-  const [activeItem, setActiveItem] = useState<ScheduleItem | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTargetDay, setDropTargetDay] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
 
   const fetchSchedule = useCallback(async () => {
     if (isDemo) {
@@ -360,34 +323,26 @@ export default function SchedulePage() {
     handleValidateReschedule(defaultDate);
   }
 
-  /* ── Drag & Drop ── */
+  /* ── Drag & Drop (native HTML5) ── */
 
   function itemIdToScheduleItem(itemId: string): ScheduleItem | null {
     if (itemId.startsWith("art-")) {
-      const artId = itemId.slice(4);
-      const a = scheduledArticles.find((x) => x.id === artId);
+      const a = scheduledArticles.find((x) => x.id === itemId.slice(4));
       return a ? { type: "article", data: a } : null;
     }
     if (itemId.startsWith("var-")) {
-      const varId = itemId.slice(4);
-      const v = variants.find((x) => x.id === varId);
+      const v = variants.find((x) => x.id === itemId.slice(4));
       return v ? { type: "variant", data: v } : null;
     }
     return null;
   }
 
-  function handleDragStart(event: DragStartEvent) {
-    const item = itemIdToScheduleItem(String(event.active.id));
-    setActiveItem(item);
-  }
+  async function handleNativeDrop(targetDay: string) {
+    setDropTargetDay(null);
+    if (!draggedId) return;
 
-  async function handleDragEnd(event: DragEndEvent) {
-    setActiveItem(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const targetDay = String(over.id).replace("day-", "");
-    const item = itemIdToScheduleItem(String(active.id));
+    const item = itemIdToScheduleItem(draggedId);
+    setDraggedId(null);
     if (!item) return;
 
     const currentDay = item.data.scheduled_at.slice(0, 10);
@@ -395,9 +350,8 @@ export default function SchedulePage() {
 
     const originalTime = item.data.scheduled_at.slice(11);
     const newDateISO = new Date(`${targetDay}T${originalTime}`).toISOString();
-    const itemDisplayId = item.type === "variant" ? `var-${item.data.id}` : `art-${item.data.id}`;
 
-    setMovingId(itemDisplayId);
+    setMovingId(draggedId);
 
     try {
       if (item.type === "variant") {
@@ -496,166 +450,164 @@ export default function SchedulePage() {
           </p>
         </div>
       ) : (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="space-y-0">
-            {sortedDays.map((dayKey) => {
-              const items = itemsByDay.get(dayKey) ?? [];
-              return (
-                <div key={dayKey}>
-                  {/* Day header */}
-                  <div className="flex items-center gap-3 py-3">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15">
-                      <div className="h-2 w-2 rounded-full bg-accent" />
-                    </div>
-                    <span className="text-xs font-semibold text-foreground">
-                      {timelineLabel(dayKey)}
-                    </span>
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="rounded-md bg-card-hover px-2 py-0.5 text-[10px] font-medium text-muted">
-                      {items.length}
-                    </span>
+        <div className="space-y-0">
+          {sortedDays.map((dayKey) => {
+            const items = itemsByDay.get(dayKey) ?? [];
+            const isDropTarget = dropTargetDay === dayKey;
+            return (
+              <div key={dayKey}>
+                {/* Day header */}
+                <div className="flex items-center gap-3 py-3">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15">
+                    <div className="h-2 w-2 rounded-full bg-accent" />
                   </div>
-
-                  {/* Items */}
-                  <DroppableDay dayKey={dayKey}>
-                    <div className="space-y-2">
-                      {items.map((item) => {
-                        if (item.type === "article") {
-                          const article = item.data;
-                          const isPublished = article.status === "published";
-                          const dragId = `art-${article.id}`;
-                          const isMoving = movingId === dragId;
-                          const time = new Date(article.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-                          return (
-                            <DraggableItem key={dragId} id={dragId} disabled={isPublished}>
-                              <div className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${isMoving ? "animate-pulse" : ""}`}>
-                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs">
-                                  <Globe className="h-3.5 w-3.5 text-accent" />
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="truncate text-sm font-medium">{article.title}</p>
-                                    <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">BLOG</span>
-                                  </div>
-                                </div>
-                                <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
-                                {isPublished ? (
-                                  article.canonical_url ? (
-                                    <a href={article.canonical_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
-                                      <ExternalLink className="h-3 w-3" />View
-                                    </a>
-                                  ) : (
-                                    <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
-                                      <CheckCircle2 className="h-3 w-3" />Done
-                                    </span>
-                                  )
-                                ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      onClick={() => handlePublishArticleNow(article.id)}
-                                      disabled={publishingId === article.id}
-                                      className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                                    >
-                                      {publishingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                                      Now
-                                    </button>
-                                    <button
-                                      onClick={() => openReschedule(item)}
-                                      className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
-                                    >
-                                      <CalendarClock className="h-3 w-3" />
-                                      Move
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </DraggableItem>
-                          );
-                        }
-
-                        const variant = item.data;
-                        const platform = platformMeta[variant.channels.platform_type];
-                        const isManual = platform?.connectionType === "manual";
-                        const isPublished = variant.status === "published";
-                        const dragId = `var-${variant.id}`;
-                        const isMoving = movingId === dragId;
-                        const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-
-                        return (
-                          <DraggableItem key={dragId} id={dragId} disabled={isPublished}>
-                            <div className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${isMoving ? "animate-pulse" : ""}`}>
-                              <span
-                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
-                                style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
-                              >
-                                {platform?.icon ?? "📄"}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium">{variant.title}</p>
-                                <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
-                              </div>
-                              <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
-                              {isPublished ? (
-                                variant.published_url ? (
-                                  <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
-                                    <ExternalLink className="h-3 w-3" />View
-                                  </a>
-                                ) : (
-                                  <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
-                                    <CheckCircle2 className="h-3 w-3" />Done
-                                  </span>
-                                )
-                              ) : isManual ? (
-                                <button onClick={() => handleCopy(variant)} className="flex items-center gap-1 rounded-md bg-card-hover px-2 py-1 text-[11px] font-medium text-muted transition hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                  {copiedId === variant.id ? "Copied!" : "Copy"}
-                                </button>
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => handlePublishVariantNow(variant.id)}
-                                    disabled={publishingId === variant.id}
-                                    className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
-                                  >
-                                    {publishingId === variant.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                                    Now
-                                  </button>
-                                  <button
-                                    onClick={() => openReschedule(item)}
-                                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
-                                  >
-                                    <CalendarClock className="h-3 w-3" />
-                                    Move
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </DraggableItem>
-                        );
-                      })}
-                    </div>
-                  </DroppableDay>
+                  <span className="text-xs font-semibold text-foreground">
+                    {timelineLabel(dayKey)}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="rounded-md bg-card-hover px-2 py-0.5 text-[10px] font-medium text-muted">
+                    {items.length}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
 
-          <DragOverlay dropAnimation={null}>
-            {activeItem && (
-              <div className="w-80 rounded-lg border border-accent/40 bg-card p-3 shadow-xl shadow-black/30">
-                <p className="truncate text-sm font-medium">{activeItem.data.title}</p>
-                {activeItem.type === "variant" && (
-                  <p className="mt-0.5 truncate text-[11px] text-muted/50">
-                    {platformMeta[(activeItem.data as ScheduledVariant).channels.platform_type]?.label ?? "Platform"}
-                  </p>
-                )}
-                {activeItem.type === "article" && (
-                  <span className="mt-1 inline-block rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">BLOG</span>
-                )}
+                {/* Items — droppable zone */}
+                <div
+                  className={`ml-2.5 border-l pb-2 pl-5 transition-colors ${isDropTarget ? "border-accent bg-accent/5 rounded-lg" : "border-border"}`}
+                  onDragOver={(e) => { e.preventDefault(); setDropTargetDay(dayKey); }}
+                  onDragLeave={() => setDropTargetDay((prev) => prev === dayKey ? null : prev)}
+                  onDrop={(e) => { e.preventDefault(); handleNativeDrop(dayKey); }}
+                >
+                  <div className="space-y-2">
+                    {items.map((item) => {
+                      if (item.type === "article") {
+                        const article = item.data;
+                        const isPublished = article.status === "published";
+                        const dragId = `art-${article.id}`;
+                        const isMoving = movingId === dragId;
+                        const isDragging = draggedId === dragId;
+                        const time = new Date(article.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                        return (
+                          <div
+                            key={dragId}
+                            draggable={!isPublished}
+                            onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggedId(dragId); }}
+                            onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                            className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${!isPublished ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs">
+                              <Globe className="h-3.5 w-3.5 text-accent" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-medium">{article.title}</p>
+                                <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">BLOG</span>
+                              </div>
+                            </div>
+                            <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                            {isPublished ? (
+                              article.canonical_url ? (
+                                <a href={article.canonical_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                  <ExternalLink className="h-3 w-3" />View
+                                </a>
+                              ) : (
+                                <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                  <CheckCircle2 className="h-3 w-3" />Done
+                                </span>
+                              )
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handlePublishArticleNow(article.id)}
+                                  disabled={publishingId === article.id}
+                                  className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                                >
+                                  {publishingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                                  Now
+                                </button>
+                                <button
+                                  onClick={() => openReschedule(item)}
+                                  className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
+                                >
+                                  <CalendarClock className="h-3 w-3" />
+                                  Move
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      const variant = item.data;
+                      const platform = platformMeta[variant.channels.platform_type];
+                      const isManual = platform?.connectionType === "manual";
+                      const isPublished = variant.status === "published";
+                      const dragId = `var-${variant.id}`;
+                      const isMoving = movingId === dragId;
+                      const isDragging = draggedId === dragId;
+                      const time = new Date(variant.scheduled_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+                      return (
+                        <div
+                          key={dragId}
+                          draggable={!isPublished}
+                          onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggedId(dragId); }}
+                          onDragEnd={() => { setDraggedId(null); setDropTargetDay(null); }}
+                          className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition hover:border-accent/20 ${!isPublished ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-30" : ""} ${isMoving ? "animate-pulse" : ""}`}
+                        >
+                          <span
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs"
+                            style={{ backgroundColor: (platform?.color ?? "#666") + "20", color: platform?.color ?? "#666" }}
+                          >
+                            {platform?.icon ?? "📄"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{variant.title}</p>
+                            <p className="truncate text-[11px] text-muted/50">{variant.articles.title}</p>
+                          </div>
+                          <span className="shrink-0 font-mono text-[11px] text-muted">{time}</span>
+                          {isPublished ? (
+                            variant.published_url ? (
+                              <a href={variant.published_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400 transition hover:bg-green-500/20">
+                                <ExternalLink className="h-3 w-3" />View
+                              </a>
+                            ) : (
+                              <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-400">
+                                <CheckCircle2 className="h-3 w-3" />Done
+                              </span>
+                            )
+                          ) : isManual ? (
+                            <button onClick={() => handleCopy(variant)} className="flex items-center gap-1 rounded-md bg-card-hover px-2 py-1 text-[11px] font-medium text-muted transition hover:text-foreground">
+                              <Copy className="h-3 w-3" />
+                              {copiedId === variant.id ? "Copied!" : "Copy"}
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handlePublishVariantNow(variant.id)}
+                                disabled={publishingId === variant.id}
+                                className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-white transition hover:bg-accent-light disabled:opacity-50"
+                              >
+                                {publishingId === variant.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                                Now
+                              </button>
+                              <button
+                                onClick={() => openReschedule(item)}
+                                className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:border-accent/50 hover:text-foreground"
+                              >
+                                <CalendarClock className="h-3 w-3" />
+                                Move
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            )}
-          </DragOverlay>
-        </DndContext>
+            );
+          })}
+        </div>
       )}
 
       {/* Reschedule modal */}
