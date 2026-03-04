@@ -192,30 +192,78 @@ export async function getOctoArticle(
 
 export function generateSnippetUsageExample(apiKey: string): string {
   void apiKey;
-  return `// Example: integrate in your existing blog page
-// Works alongside your current articles — nothing gets replaced
+  return `// Example: fetch and display OctoBoost articles
 
+// 1. List all articles (e.g. in your blog listing page)
 import { getOctoArticles } from "@/lib/octoboost";
 
-// In your existing blog page or data fetching:
-const octoArticles = await getOctoArticles();
+const articles = await getOctoArticles();
+// → [{ title, slug, content, metaDescription, tags, publishedAt, ... }]
 
-// Merge with your existing posts:
-const allPosts = [
-  ...yourExistingPosts,
-  ...octoArticles.map((a) => ({
-    title: a.title,
-    slug: a.slug,
-    description: a.metaDescription,
-    date: a.publishedAt,
-    source: "octoboost",
-  })),
-].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-// For individual article pages (e.g. app/blog/[slug]/page.tsx):
+// 2. Get a single article by slug (e.g. in /blog/[slug])
 import { getOctoArticle } from "@/lib/octoboost";
 
-const article = await getOctoArticle(slug);
-// If null → it's not from OctoBoost, use your normal logic
-// If found → render article.content (markdown) with your existing styles`;
+const article = await getOctoArticle("my-article-slug");
+// → { title, slug, content (markdown), metaDescription, ... }
+
+// 3. Render the markdown content
+// Option A: react-markdown
+import ReactMarkdown from "react-markdown";
+<ReactMarkdown>{article.content}</ReactMarkdown>
+
+// Option B: marked (already used in many Next.js projects)
+import { marked } from "marked";
+const html = marked(article.content);
+<div dangerouslySetInnerHTML={{ __html: html }} />`;
+}
+
+export function generateCursorPrompt(apiKey: string): string {
+  return `Integrate OctoBoost into my blog. Here is the setup:
+
+1. Create the file \`lib/octoboost.ts\` with this exact content:
+
+\`\`\`ts
+const OCTOBOOST_KEY = "${apiKey}";
+const BASE_URL = "https://octoboost.app/api/public/articles";
+
+export type OctoArticle = {
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription: string;
+  keyword: string;
+  tags: string[];
+  wordCount: number;
+  publishedAt: string;
+};
+
+export async function getOctoArticles(): Promise<OctoArticle[]> {
+  const res = await fetch(\\\`\\\${BASE_URL}?key=\\\${OCTOBOOST_KEY}\\\`, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.articles ?? [];
+}
+
+export async function getOctoArticle(slug: string): Promise<OctoArticle | null> {
+  const res = await fetch(\\\`\\\${BASE_URL}/\\\${slug}?key=\\\${OCTOBOOST_KEY}\\\`, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+\`\`\`
+
+2. In my blog data layer (where I fetch blog posts):
+- Import getOctoArticles and getOctoArticle from the new file
+- In the function that lists all posts: also call getOctoArticles(), convert each OctoArticle to my blog post format, and add a \`source: "octoboost"\` field
+- In the function that fetches a post by slug: if not found locally, fallback to getOctoArticle(slug) and convert it
+- Keep existing blog posts working exactly as before — OctoBoost articles appear alongside them
+
+3. On the blog article page (/blog/[slug]):
+- If the post source is "octoboost", render article.content as markdown (using ReactMarkdown or marked)
+- If the post source is local, keep the existing rendering logic
+
+Do NOT remove or break any existing blog functionality. OctoBoost articles are additional content.`;
 }

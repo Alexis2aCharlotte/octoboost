@@ -42,6 +42,7 @@ import {
 import {
   generateSnippetFetchUtil,
   generateSnippetUsageExample,
+  generateCursorPrompt,
   type SiteConnection,
 } from "@/lib/custom-api";
 import type { GitHubRepo, DirectoryEntry } from "@/lib/github";
@@ -143,7 +144,7 @@ export default function PublishPage() {
   // Site connection state
   const [connection, setConnection] = useState<SiteConnection | null>(null);
   
-  const [snippetTab, setSnippetTab] = useState<"util" | "usage">("util");
+  const [snippetTab, setSnippetTab] = useState<"util" | "usage" | "prompt">("util");
   const [showSecret, setShowSecret] = useState(false);
   const [showIntegration, setShowIntegration] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
@@ -627,7 +628,9 @@ export default function PublishPage() {
 
   const snippet = snippetTab === "util"
     ? generateSnippetFetchUtil(apiKey ?? "YOUR_API_KEY")
-    : generateSnippetUsageExample(apiKey ?? "YOUR_API_KEY");
+    : snippetTab === "usage"
+      ? generateSnippetUsageExample(apiKey ?? "YOUR_API_KEY")
+      : generateCursorPrompt(apiKey ?? "YOUR_API_KEY");
 
   if (loading) {
     return <PublishSkeleton />;
@@ -845,6 +848,7 @@ export default function PublishPage() {
                       {([
                         { id: "util" as const, label: "lib/octoboost.ts" },
                         { id: "usage" as const, label: "Usage example" },
+                        { id: "prompt" as const, label: "Cursor Prompt" },
                       ]).map(({ id: tabId, label }) => (
                         <button
                           key={tabId}
@@ -875,20 +879,21 @@ export default function PublishPage() {
                 {/* How it works */}
                 <div className="rounded-lg border border-border bg-white/[0.02] p-4">
                   <p className="mb-3 text-xs font-semibold text-muted/70 uppercase tracking-wider">How it works</p>
-                  <div className="space-y-2 text-xs text-muted leading-relaxed">
+                  <div className="space-y-2.5 text-xs text-muted leading-relaxed">
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">1</span>
-                      Copy <code className="rounded bg-white/[0.06] px-1 py-0.5">lib/octoboost.ts</code> into your project
+                      <span>Copy the <button onClick={() => setSnippetTab("prompt")} className="text-accent-light hover:underline font-medium">Cursor Prompt</button> and paste it in your IDE — it sets up everything automatically</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">2</span>
-                      Call <code className="rounded bg-white/[0.06] px-1 py-0.5">getOctoArticles()</code> in your blog page to display articles
+                      <span>Deploy your site — visit your <code className="rounded bg-white/[0.06] px-1 py-0.5">/blog</code> page to verify articles load</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-bold text-accent-light">3</span>
-                      Click &quot;Publish&quot; on OctoBoost and articles appear on your site
+                      <span>Click &quot;Publish&quot; on OctoBoost and articles appear on your site</span>
                     </div>
                   </div>
+                  <p className="mt-3 text-[10px] text-muted/40">Or follow the manual steps: copy <code className="rounded bg-white/[0.06] px-0.5">lib/octoboost.ts</code>, call <code className="rounded bg-white/[0.06] px-0.5">getOctoArticles()</code> in your blog page, and render the markdown content.</p>
                 </div>
               </div>
             )}
