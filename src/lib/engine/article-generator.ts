@@ -62,6 +62,13 @@ const SHARED_WRITING_RULES = `Writing style:
 - End with a clear conclusion/takeaway section
 - NEVER use em dashes. Use commas, colons, parentheses, or split into separate sentences instead.
 
+Product focus (CRITICAL):
+- The ONLY specific product, tool, or brand you may mention by name is the client's product provided in the prompt.
+- NEVER reference any other real product, tool, company, or brand by name. Do NOT pull product names from your general knowledge.
+- When discussing alternatives, competitors, or other solutions, use generic category descriptions instead of real names (e.g., "traditional keyword research platforms", "manual outreach tools", "legacy analytics suites").
+- All examples, case studies, and recommendations must center around the client's product and its features.
+- If the client's product context is empty or vague, write the article as a purely educational/informational piece without mentioning any specific product or brand at all.
+
 SEO rules:
 - Include the pillar keyword in the first 100 words
 - Use supporting keywords naturally throughout
@@ -83,7 +90,8 @@ const FAQ_RULES = `FAQ section (MANDATORY):
 function getOutlineSystem(articleType: string): string {
   const base = `You are a senior SEO content strategist. You create article outlines that are designed to rank on Google page 1 and get cited by AI tools like ChatGPT and Perplexity.
 - CRITICAL: The current year is 2026. We are in 2026. ALWAYS use 2026 when referencing the current year in titles, headings, or content. NEVER use 2023, 2024, or 2025. Any year reference must say 2026.
-- NEVER use em dashes in headings or key points`;
+- NEVER use em dashes in headings or key points
+- NEVER mention real external products, tools, companies, or brands by name. The ONLY product you may name is the client's product provided in the prompt. For any other tool or solution, use generic category descriptions.`;
 
   switch (articleType) {
     case "listicle":
@@ -92,10 +100,12 @@ function getOutlineSystem(articleType: string): string {
 You are creating a LISTICLE article (e.g., "Top 5...", "Best X for Y").
 
 Your outlines:
-- Title must include a number and the pillar keyword (e.g., "Top 7 SEO Tools for SaaS Founders in 2026")
+- Title must include a number and the pillar keyword (e.g., "Top 7 SEO Strategies for SaaS Founders in 2026")
 - Structure: intro, then one H2 per item in the list, then FAQ, then conclusion
 - Each item section should cover: what it is, key features, pros, cons, who it's best for
-- Include the client's product as one of the items (not necessarily #1, keep it credible)
+- List items must be strategies, approaches, methods, or feature categories — NOT competing brand names
+- The client's product should be woven in as the recommended solution where it naturally fits
+- NEVER name real external products or brands. Use generic descriptions for alternative approaches (e.g., "manual outreach approach", "open-source analytics tools")
 - Include 5-10 items in the list
 - Target 2000-2500 words total
 - ALWAYS include a "Frequently Asked Questions" section near the end with 3-5 Q&A pairs`;
@@ -107,8 +117,10 @@ You are creating a COMPARISON article (e.g., "X vs Y", "X alternatives").
 
 Your outlines:
 - Title should include "vs" or "alternative" and the pillar keyword
-- Structure: intro with quick verdict, overview of each product, feature-by-feature comparison table section, use cases (who should use what), FAQ, conclusion with recommendation
-- Be fair and balanced, but highlight where the client's product excels
+- Structure: intro with quick verdict, overview of the client's product vs the alternative approach/category, feature-by-feature comparison table section, use cases (who should use what), FAQ, conclusion with recommendation
+- Compare the client's product against a GENERIC category or approach (e.g., "manual methods", "traditional platforms", "DIY approach"), NOT against a specific named competitor
+- NEVER mention real competing product names or brands. Always use generic descriptions.
+- Highlight where the client's product excels compared to the traditional/manual approach
 - Include a "Quick comparison" section early with a summary table
 - Cover: features, pricing, ease of use, best for
 - Target 2000-2500 words total
@@ -156,9 +168,10 @@ Listicle-specific rules:
 - Add internal context about the product only where it genuinely helps the reader
 - STRICT word count: aim for 2000-2500 words. Do NOT exceed 2500 words.
 - Each list item should have a consistent structure: brief intro, key features, pros/cons, verdict
-- The client's product should be included naturally as one item, not as an ad
-- Use numbered H2 headings for each item (e.g., "## 1. Tool Name")
+- The client's product should be woven in naturally as the recommended solution
+- Use numbered H2 headings for each item (e.g., "## 1. Strategy Name" or "## 1. Approach Name")
 - Include a brief intro paragraph comparing the landscape before diving into the list
+- NEVER name real external products, tools, or brands. List items must be strategies, methods, or generic categories, not competitor names.
 
 ${FAQ_RULES}
 
@@ -171,7 +184,8 @@ Comparison-specific rules:
 - Add internal context about the product only where it genuinely helps the reader
 - STRICT word count: aim for 2000-2500 words. Do NOT exceed 2500 words.
 - Start with a "Quick Verdict" paragraph giving the bottom line
-- Be balanced and fair, acknowledge strengths of both sides
+- Compare the client's product against a generic category or approach, NOT a named competitor
+- NEVER mention real competing product names or brands anywhere in the article
 - Use a comparison structure: feature-by-feature analysis
 - Include a summary section with a markdown table comparing key aspects
 - The recommendation should feel earned, not forced

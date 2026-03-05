@@ -277,7 +277,8 @@ ${syndicationRules}
 CRITICAL RULES:
 - Output ONLY the adapted content, no meta-commentary
 - Start with the title on the first line, then a blank line, then the content
-- NEVER use em dashes (—). Use commas, colons, hyphens, parentheses, or split into separate sentences instead.`,
+- NEVER use em dashes (—). Use commas, colons, hyphens, parentheses, or split into separate sentences instead.
+- The ONLY specific product/brand you may mention by name is the client's product provided below. NEVER reference any other real product, tool, or brand by name.`,
     prompt: `Adapt this master article for ${spec.name}:
 
 MASTER ARTICLE:
