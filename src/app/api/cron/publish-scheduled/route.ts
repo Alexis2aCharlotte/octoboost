@@ -32,11 +32,15 @@ async function runPublishScheduled() {
   const now = new Date().toISOString();
   const results: { type: string; id: string; success: boolean; error?: string }[] = [];
 
-  const { data: dueVariants } = await supabase
+  const { data: dueVariants, error: variantsError } = await supabase
     .from("article_variants")
     .select("id")
     .in("status", ["scheduled", "failed"])
     .lte("scheduled_at", now);
+
+  if (variantsError) {
+    console.error("[Cron] Failed to query due variants:", variantsError.message);
+  }
 
   for (const v of dueVariants ?? []) {
     const result = await publishVariant(supabase, v.id);
@@ -48,11 +52,15 @@ async function runPublishScheduled() {
     });
   }
 
-  const { data: dueArticles } = await supabase
+  const { data: dueArticles, error: articlesError } = await supabase
     .from("articles")
     .select("id, title, slug, content, meta_description, pillar_keyword, supporting_keywords, canonical_url, project_id")
     .eq("status", "scheduled")
     .lte("scheduled_at", now);
+
+  if (articlesError) {
+    console.error("[Cron] Failed to query due articles:", articlesError.message);
+  }
 
   for (const article of dueArticles ?? []) {
     try {
@@ -68,7 +76,14 @@ async function runPublishScheduled() {
       }
 
       const conn = project.site_connection as SiteConnection | null;
-      if (!conn || conn.status !== "connected") {
+
+      const hasPushConfig =
+        conn?.status === "connected" &&
+        (conn.type === "github"
+          ? !!(conn as unknown as GitHubSiteConnection).github_token
+          : !!(conn.endpoint_url && conn.secret));
+
+      if (!hasPushConfig) {
         await supabase
           .from("articles")
           .update({ status: "published", updated_at: now })
@@ -91,7 +106,7 @@ async function runPublishScheduled() {
 
       let resultUrl: string;
 
-      if (conn.type === "github") {
+      if (conn!.type === "github") {
         const ghConn = conn as unknown as GitHubSiteConnection;
         const tokenResult = await getValidToken(ghConn);
         if (!tokenResult) {
@@ -115,11 +130,7 @@ async function runPublishScheduled() {
         });
         resultUrl = ghResult.url;
       } else {
-        if (!conn.endpoint_url || !conn.secret) {
-          results.push({ type: "article", id: article.id, success: false, error: "Custom API not configured" });
-          continue;
-        }
-        const apiResult = await publishToSite(conn.endpoint_url, conn.secret, {
+        const apiResult = await publishToSite(conn!.endpoint_url!, conn!.secret!, {
           title: article.title,
           slug,
           content: article.content,
@@ -150,8 +161,22 @@ async function runPublishScheduled() {
     }
   }
 
+  const succeeded = results.filter((r) => r.success).length;
+  const failed = results.filter((r) => !r.success).length;
+
+  if (results.length > 0) {
+    console.log(
+      `[Cron] Processed ${results.length} items: ${succeeded} succeeded, ${failed} failed`,
+      failed > 0 ? results.filter((r) => !r.success) : ""
+    );
+  }
+
   return NextResponse.json({
     processed: results.length,
+    succeeded,
+    failed,
+    dueVariants: dueVariants?.length ?? 0,
+    dueArticles: dueArticles?.length ?? 0,
     results,
   });
 }

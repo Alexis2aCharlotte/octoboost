@@ -11,11 +11,15 @@ jobs:
     steps:
       - name: Trigger publish endpoint
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+          tmpfile=$(mktemp)
+          http_code=$(curl -s -w "%{http_code}" -o "$tmpfile" -X POST \
             "https://octoboost.app/api/cron/publish-scheduled" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-          echo "HTTP status: $response"
-          if [ "$response" != "200" ]; then
-            echo "::error::Publish endpoint returned $response"
+          body=$(cat "$tmpfile")
+          rm -f "$tmpfile"
+          echo "HTTP status: $http_code"
+          echo "Response: $body"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Publish endpoint returned $http_code: $body"
             exit 1
           fi
