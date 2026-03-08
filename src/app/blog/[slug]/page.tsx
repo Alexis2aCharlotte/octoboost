@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Calendar, Eye, User } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { fetchPostBySlug, fetchAllSlugs } from "../data";
+import { extractFAQFromHtml, buildFAQSchema } from "@/lib/blog-schema";
 
 export const revalidate = 3600;
 
@@ -70,6 +71,8 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   const htmlContent = marked(post.content) as string;
+  const faqs = extractFAQFromHtml(htmlContent);
+  const faqSchema = buildFAQSchema(faqs);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -106,6 +109,12 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
       <Navbar />
 
       <article className="relative z-10 px-6 pt-28 pb-16">
