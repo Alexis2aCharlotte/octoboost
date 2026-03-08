@@ -220,10 +220,10 @@ export default async function BlogPostPage({
               handle your content strategy on autopilot.
             </p>
             <Link
-              href="/waitlist"
+              href="/"
               className="btn-glow mt-5 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
             >
-              Get early access
+              Start generating
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
