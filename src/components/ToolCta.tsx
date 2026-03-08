@@ -44,10 +44,10 @@ export function ToolCta({ currentTool }: { currentTool: string }) {
           Analyze your site, generate SEO-optimized articles, and publish them across 11+ platforms — automatically.
         </p>
         <Link
-          href="/waitlist"
+          href="/"
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-light"
         >
-          Get Started Free
+          Start generating
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
         <p className="mt-2 text-xs text-muted">No credit card required</p>

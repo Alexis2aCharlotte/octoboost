@@ -260,11 +260,11 @@ function DemoBanner() {
         </span>
       </p>
       <Link
-        href="/waitlist"
+        href="/"
         className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-light"
       >
         <Rocket className="h-3.5 w-3.5" />
-        Join the waitlist
+        Start generating
       </Link>
     </div>
   );

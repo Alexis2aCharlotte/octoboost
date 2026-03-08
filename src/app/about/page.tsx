@@ -14,7 +14,6 @@ import {
   Send,
   Twitter,
   ExternalLink,
-  CheckCircle2,
   Clock,
   AlertTriangle,
   Lightbulb,
@@ -39,7 +38,7 @@ export const metadata: Metadata = {
 const stats = [
   { value: "43.3k+", label: "Impressions in 2 months" },
   { value: "11", label: "Publishing platforms" },
-  { value: "67+", label: "Founders on the waitlist" },
+  { value: "67+", label: "Founders joined" },
   { value: "5", label: "Free SEO tools" },
 ];
 
@@ -413,14 +412,14 @@ export default function AboutPage() {
             research, article generation, and multi-platform publishing — all on
             autopilot.
           </p>
-          <Link href="/waitlist" className="btn-glow inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-base">
-            Join the Waitlist
+          <Link href="/" className="btn-glow inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-base">
+            Start generating
             <ArrowLeft className="h-4 w-4 rotate-180" />
           </Link>
           <div className="mt-6 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-muted/60">
               <div className="flex -space-x-1.5">
-                {[3, 11, 32].map((id) => (
+                {[3, 11, 32, 44, 49].map((id) => (
                   <img
                     key={id}
                     src={`https://i.pravatar.cc/48?img=${id}`}
@@ -434,23 +433,17 @@ export default function AboutPage() {
               </div>
               <span>
                 Already{" "}
-                <strong className="text-foreground/70">89 founders</strong> on
-                the waitlist
+                <strong className="text-foreground/70">67 founders</strong>{" "}
+                joined
               </span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted/50">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3 text-success" />
-                Free to join
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
+                Google + AI optimized
               </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3 text-success" />
-                No spam
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3 text-success" />
-                Early access perks
-              </span>
+              <span>11 platforms</span>
+              <span>Autopilot publishing</span>
             </div>
           </div>
         </div>

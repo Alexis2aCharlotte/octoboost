@@ -145,13 +145,13 @@ export default async function BlogPage() {
               </h2>
               <p className="mt-3 max-w-sm text-sm text-muted">
                 We&apos;re preparing articles about SEO, GEO, and AI-powered
-                content strategy. Join the waitlist to get notified.
+                content strategy.
               </p>
               <Link
-                href="/waitlist"
+                href="/"
                 className="btn-glow mt-6 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm"
               >
-                Join the waitlist
+                Start generating
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -162,14 +162,43 @@ export default async function BlogPage() {
       <section className="relative z-10 px-6 py-16 md:py-20">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="text-2xl font-bold tracking-tighter md:text-4xl">
-            Stay ahead with{" "}
-            <span className="gradient-text">SEO insights</span>
+            Start growing your traffic{" "}
+            <span className="gradient-text">today</span>
           </h2>
           <p className="mx-auto mt-3 mb-6 max-w-md text-sm text-muted">
-            Get the latest tips on SEO, GEO, and content strategy delivered to
-            your inbox.
+            Paste your URL and let OctoBoost handle the rest. SEO articles,
+            backlinks, and organic traffic on autopilot.
           </p>
           <WaitlistForm />
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2 text-xs text-muted/50">
+              <div className="flex -space-x-1.5">
+                {[3, 11, 32, 44, 49].map((id) => (
+                  <img
+                    key={id}
+                    src={`https://i.pravatar.cc/48?img=${id}`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="h-5 w-5 rounded-full border-2 border-background object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+              <span>
+                Already{" "}
+                <strong className="text-foreground/70">67 founders</strong> joined
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted/50">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
+                Google + AI optimized
+              </span>
+              <span>11 platforms</span>
+              <span>Autopilot publishing</span>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -391,12 +391,9 @@ export default function PricingPage() {
           </p>
           <WaitlistForm />
           <div className="mt-4 flex flex-col items-center gap-2">
-            <p className="text-xs text-muted/50">
-              No spam · We&apos;ll notify you at launch
-            </p>
             <div className="flex items-center gap-2 text-xs text-muted/50">
               <div className="flex -space-x-1.5">
-                {[3, 11, 32].map((id) => (
+                {[3, 11, 32, 44, 49].map((id) => (
                   <img
                     key={id}
                     src={`https://i.pravatar.cc/48?img=${id}`}
@@ -410,9 +407,17 @@ export default function PricingPage() {
               </div>
               <span>
                 Already{" "}
-                <strong className="text-foreground/70">89 founders</strong> on
-                the waitlist
+                <strong className="text-foreground/70">67 founders</strong>{" "}
+                joined
               </span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted/50">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
+                Google + AI optimized
+              </span>
+              <span>11 platforms</span>
+              <span>Autopilot publishing</span>
             </div>
           </div>
         </div>
