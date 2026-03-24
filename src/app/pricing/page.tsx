@@ -118,7 +118,7 @@ const faqJsonLd = {
 };
 
 export default function PricingPage() {
-  const [yearly, setYearly] = useState(true);
+  const [yearly, setYearly] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleCheckout(plan: string) {

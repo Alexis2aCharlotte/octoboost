@@ -52,7 +52,7 @@ const plans = [
 ];
 
 export function PricingSection() {
-  const [yearly, setYearly] = useState(true);
+  const [yearly, setYearly] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleCheckout(plan: string) {
